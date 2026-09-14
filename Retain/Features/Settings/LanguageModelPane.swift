@@ -31,12 +31,7 @@ struct LanguageModelPane: View {
                         text: String(localized: "API key", comment: "Settings field label for the optional API key"),
                         note: String(localized: "optional", comment: "Note beside the API key field label")
                     )
-                    RetainTextField(
-                        placeholder: model.apiKeyPlaceholder,
-                        text: $model.apiKeyDraft,
-                        isSecure: true,
-                        onSubmit: model.commitAPIKey
-                    )
+                    apiKeyField
                 }
 
                 GridRow {
@@ -79,6 +74,31 @@ struct LanguageModelPane: View {
             )
             if let rejection = model.addressRejection {
                 Text(rejection)
+                    .retainStyle(RetainTypography.captionSmall)
+                    .foregroundStyle(RetainPalette.redInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    /// The key field plus, when the keychain refused the item, the reason
+    /// under it.
+    ///
+    /// Not drawn in the export, which has no failure state for this row. It is
+    /// here because the alternative is what Retain used to do: swallow the
+    /// error, flip the placeholder to "Stored in the Keychain", and send every
+    /// request without the key.
+    private var apiKeyField: some View {
+        VStack(alignment: .leading, spacing: RetainMetrics.settingsHeadingDescriptionGap) {
+            RetainTextField(
+                placeholder: model.apiKeyPlaceholder,
+                text: $model.apiKeyDraft,
+                isSecure: true,
+                onSubmit: model.commitAPIKey,
+                onFocusLost: model.commitAPIKey
+            )
+            if let problem = model.apiKeyProblem {
+                Text(problem)
                     .retainStyle(RetainTypography.captionSmall)
                     .foregroundStyle(RetainPalette.redInk)
                     .fixedSize(horizontal: false, vertical: true)

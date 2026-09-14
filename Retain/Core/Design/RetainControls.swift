@@ -98,6 +98,13 @@ struct RetainTextField: View {
 
     var onSubmit: () -> Void = {}
 
+    /// Runs when the field gives up focus, in addition to `onSubmit`.
+    ///
+    /// The API key field needs both. Return commits it, but nobody presses
+    /// Return in a form — they paste, click the next control, and expect what
+    /// they typed to have been taken.
+    var onFocusLost: () -> Void = {}
+
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -116,6 +123,9 @@ struct RetainTextField: View {
                 .tint(RetainPalette.accent)
                 .focused($focused)
                 .onSubmit(onSubmit)
+                .onChange(of: focused) { wasFocused, isFocused in
+                    if wasFocused && !isFocused { onFocusLost() }
+                }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .retainFieldChrome(isFocused: focused, cornerRadius: cornerRadius, padding: padding)

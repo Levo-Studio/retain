@@ -61,6 +61,14 @@ final class SettingsModel {
 
     private(set) var hasStoredKey = false
 
+    /// Why the last attempt to store the key failed, drawn under the field.
+    ///
+    /// The write used to be `try?` with `hasStoredKey = true` after it
+    /// regardless, so a keychain that refused the item still flipped the
+    /// placeholder to "Stored in the Keychain" — the field then said the key
+    /// was saved while every request went out without it.
+    private(set) var apiKeyProblem: String?
+
     // MARK: - Handed in
 
     let speechModels: SpeechModels?
@@ -113,6 +121,15 @@ final class SettingsModel {
     /// when somebody is.
     func testConnection() async {
         guard !isTesting else { return }
+
+        // The key is stored before the request rather than after the window
+        // closes. Somebody who pastes a token and presses Test has said what
+        // they want the test to use; without this the field was still a draft,
+        // the request went out with no `Authorization` header, and the server
+        // answered 401 — which reads as "the key is wrong" when the key had
+        // simply never been sent.
+        commitAPIKey()
+
         isTesting = true
         connection = .testing
         defer { isTesting = false }
@@ -178,11 +195,26 @@ final class SettingsModel {
         case .keep:
             return
         case .store(let key):
-            try? keychain.write(key)
+            do {
+                try keychain.write(key)
+            } catch {
+                // Kept in the field on purpose. Dropping a draft that was
+                // never stored loses what the user typed and leaves the pane
+                // claiming a key that is not there.
+                apiKeyProblem = Self.message(for: error)
+                return
+            }
             hasStoredKey = true
+            apiKeyProblem = nil
         case .remove:
-            try? keychain.delete()
+            do {
+                try keychain.delete()
+            } catch {
+                apiKeyProblem = Self.message(for: error)
+                return
+            }
             hasStoredKey = false
+            apiKeyProblem = nil
         }
         // The draft is dropped the moment it has been stored, so the secret is
         // not sitting in an observable property for the rest of the session.

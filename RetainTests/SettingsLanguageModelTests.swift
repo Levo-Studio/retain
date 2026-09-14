@@ -302,4 +302,45 @@ struct SettingsLanguageModelTests {
         model.commitAPIKey()
         #expect((try? item.read()) == "sk-typed")
     }
+
+    /// The bug this exists for, reported from the app: a token was pasted into
+    /// the field, "Test connection" was pressed, and LM Studio answered that it
+    /// requires an API token — because the field was still a draft and the
+    /// request had gone out with no `Authorization` header at all. Nothing on
+    /// screen said the key had not been taken.
+    @Test("Testing the connection stores what is in the key field first")
+    func testingCommitsTheKey() async {
+        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-test-commits")
+        defer { try? item.delete() }
+        try? item.delete()
+
+        let model = SettingsModel(
+            keychain: item,
+            makeBackend: { _ in SettingsStubBackend(models: []) }
+        )
+        model.apiKeyDraft = "sk-pasted"
+        await model.testConnection()
+
+        #expect((try? item.read()) == "sk-pasted")
+        #expect(model.hasStoredKey)
+    }
+
+    @Test("An untouched key field is not cleared by testing the connection")
+    func testingLeavesAStoredKeyAlone() async {
+        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-test-keeps")
+        defer { try? item.delete() }
+        try? item.write("sk-stored")
+
+        let model = SettingsModel(
+            keychain: item,
+            makeBackend: { _ in SettingsStubBackend(models: []) }
+        )
+        await model.testConnection()
+
+        // The field is empty because a stored key is never loaded into it, not
+        // because there is no key. Committing an untouched field must not read
+        // that emptiness as "remove it".
+        #expect((try? item.read()) == "sk-stored")
+        #expect(model.hasStoredKey)
+    }
 }
