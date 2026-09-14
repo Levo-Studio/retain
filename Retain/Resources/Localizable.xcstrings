@@ -1,8 +1,100 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%lld lines": {
-      "comment": "Number of transcript lines so far",
+    "%@ W": {
+      "comment": "The live power reading beside a running recording, in watts",
+      "extractionState": "manual"
+    },
+    "%lld markers · %lld sections": {
+      "comment": "What the finished summary contains, under the Open summary card",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@markers@ · %#@sections@"
+          },
+          "substitutions": {
+            "markers": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld marker"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld markers"
+                    }
+                  }
+                }
+              }
+            },
+            "sections": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld section"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld sections"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld min recorded · %lld note blocks": {
+      "comment": "The line under the title while a recording is being summarised",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld min recorded · %#@blocks@"
+          },
+          "substitutions": {
+            "blocks": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld note block"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld note blocks"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld note blocks": {
+      "comment": "How many note cards a running lecture has produced",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11,13 +103,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld line"
+                  "value": "%lld note block"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld lines"
+                  "value": "%lld note blocks"
                 }
               }
             }
@@ -29,6 +121,10 @@
       "comment": "Status bar menu item opening the about panel",
       "extractionState": "manual"
     },
+    "Audience": {
+      "comment": "Speaker of a transcript line that came from the room",
+      "extractionState": "manual"
+    },
     "Close": {
       "comment": "Window menu item closing the front window",
       "extractionState": "manual"
@@ -37,16 +133,28 @@
       "comment": "Edit menu item",
       "extractionState": "manual"
     },
+    "Course": {
+      "comment": "Meta strip label above the course a recording belongs to",
+      "extractionState": "manual"
+    },
     "Cut": {
       "comment": "Edit menu item",
       "extractionState": "manual"
     },
+    "Date": {
+      "comment": "Meta strip label above the day a recording was made",
+      "extractionState": "manual"
+    },
     "Downloading speech models": {
-      "comment": "Status bar menu header during the one-time model download",
+      "comment": "Status bar tooltip during the one-time model download",
       "extractionState": "manual"
     },
     "Edit": {
       "comment": "Edit menu title",
+      "extractionState": "manual"
+    },
+    "Finish": {
+      "comment": "Button that ends a recording and starts the summary",
       "extractionState": "manual"
     },
     "Hide Others": {
@@ -69,24 +177,60 @@
       "comment": "The chat completion had no choices in it",
       "extractionState": "manual"
     },
-    "Lecture finished": {
-      "comment": "Status bar menu header after a lecture",
+    "Last line before the pause": {
+      "comment": "Header above the transcript line a paused recording stopped on",
+      "extractionState": "manual"
+    },
+    "Live transcript": {
+      "comment": "Header of the popover's transcript section",
+      "extractionState": "manual"
+    },
+    "Microphone on": {
+      "comment": "Title bar state saying the microphone is open",
+      "extractionState": "manual"
+    },
+    "Microphone on · %@ W": {
+      "comment": "Title bar state saying the microphone is open, with the live power reading in watts",
       "extractionState": "manual"
     },
     "Minimise": {
       "comment": "Window menu item minimising the front window",
       "extractionState": "manual"
     },
+    "No course": {
+      "comment": "The course field when the current term has no courses",
+      "extractionState": "manual"
+    },
     "No language model is selected.": {
       "comment": "Summarizing was asked for before a model was chosen in settings",
       "extractionState": "manual"
     },
-    "Not recording": {
-      "comment": "Status bar menu header while idle",
+    "No microphone": {
+      "comment": "Shown instead of a microphone name when there is none",
+      "extractionState": "manual"
+    },
+    "Note — goes to the model": {
+      "comment": "Placeholder of the annotation composer, which sends what is typed to the language model",
+      "extractionState": "manual"
+    },
+    "Open summary": {
+      "comment": "Opens the window showing the notes as they are written",
       "extractionState": "manual"
     },
     "Paste": {
       "comment": "Edit menu item",
+      "extractionState": "manual"
+    },
+    "Pause": {
+      "comment": "Button that holds a running recording",
+      "extractionState": "manual"
+    },
+    "Pause holds immediately and carries on afterwards. Finish closes the recording and starts the summary.": {
+      "comment": "The sentence in the stop confirmation explaining what the two buttons do",
+      "extractionState": "manual"
+    },
+    "Paused": {
+      "comment": "Popover header while a recording is paused, and the status bar tooltip for the same",
       "extractionState": "manual"
     },
     "Questions can be asked once the recording has stopped.": {
@@ -101,12 +245,52 @@
       "comment": "Status bar menu item quitting the app",
       "extractionState": "manual"
     },
+    "Ready": {
+      "comment": "Popover header when nothing is recording",
+      "extractionState": "manual"
+    },
+    "Record": {
+      "comment": "Button that starts a recording",
+      "extractionState": "manual"
+    },
+    "Recording": {
+      "comment": "Popover header while a lecture is being recorded, and the title of the recording window",
+      "extractionState": "manual"
+    },
+    "Recording for %lld minutes": {
+      "comment": "Label above the stop confirmation, saying how long the recording has run",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Recording for %lld minute"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Recording for %lld minutes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Recording · %@": {
-      "comment": "Status bar menu header while recording, with elapsed time",
+      "comment": "Status bar tooltip while recording, with elapsed time",
       "extractionState": "manual"
     },
     "Redo": {
       "comment": "Edit menu item",
+      "extractionState": "manual"
+    },
+    "Resume": {
+      "comment": "Button that continues a paused recording",
       "extractionState": "manual"
     },
     "Retain": {
@@ -181,16 +365,32 @@
       "comment": "Edit menu item",
       "extractionState": "manual"
     },
-    "Separating speakers": {
-      "comment": "Status bar menu header during diarization",
+    "Settings…": {
+      "comment": "Status bar menu item opening the settings window",
       "extractionState": "manual"
     },
-    "Start Recording": {
-      "comment": "Status bar menu item starting a recording",
+    "Silence": {
+      "comment": "Title bar state while nobody is speaking",
       "extractionState": "manual"
     },
-    "Stop Recording": {
-      "comment": "Status bar menu item stopping a recording",
+    "Silence · %@": {
+      "comment": "The level line in the popover's ready state, with the microphone's name",
+      "extractionState": "manual"
+    },
+    "Speaker": {
+      "comment": "Speaker of a transcript line, the person teaching",
+      "extractionState": "manual"
+    },
+    "Speaker detected": {
+      "comment": "Title bar state while somebody is speaking",
+      "extractionState": "manual"
+    },
+    "Stop": {
+      "comment": "Button that asks to end a recording",
+      "extractionState": "manual"
+    },
+    "Summarizing": {
+      "comment": "Popover header while the passes after a recording run",
       "extractionState": "manual"
     },
     "The keychain holds something Retain cannot read as an API key.": {
@@ -217,8 +417,12 @@
       "comment": "The prompt is too large for the loaded context length, measured before sending",
       "extractionState": "manual"
     },
-    "Transcribing": {
-      "comment": "Status bar menu header during the batch pass",
+    "Topic · detected": {
+      "comment": "Meta strip label above the topic the model reads out of the transcript",
+      "extractionState": "manual"
+    },
+    "Transcript": {
+      "comment": "Header of the recording window's transcript rail",
       "extractionState": "manual"
     },
     "Undo": {
@@ -227,6 +431,50 @@
     },
     "Window": {
       "comment": "Window menu title",
+      "extractionState": "manual"
+    },
+    "You · %@": {
+      "comment": "Label above an annotation the user typed during the lecture, with the moment they typed it",
+      "extractionState": "manual"
+    },
+    "keep running in the background": {
+      "comment": "Dismisses the popover and leaves the summary running",
+      "extractionState": "manual"
+    },
+    "live": {
+      "comment": "Note in the transcript rail header saying the transcript is running",
+      "extractionState": "manual"
+    },
+    "writing …": {
+      "comment": "Shown beside the heading of a note block the model has not finished",
+      "extractionState": "manual"
+    },
+    "⌘⇧M · %lld markers": {
+      "comment": "The chip inside the annotation composer, with the shortcut and how many markers there are",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "⌘⇧M · %lld marker"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "⌘⇧M · %lld markers"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "⌘⇧P resumes": {
+      "comment": "Reminder of the shortcut that resumes a paused recording",
       "extractionState": "manual"
     }
   },
