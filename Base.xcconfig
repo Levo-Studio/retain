@@ -1,0 +1,9 @@
+// Base.xcconfig — the project's base configuration.
+//
+// It exists for one reason: to pull in Local.xcconfig if that file is there.
+// A baseConfigurationReference pointing straight at Local.xcconfig would be a
+// hard build error on every clone that does not have it — "Unable to open base
+// configuration reference file" — so the project points here instead, and the
+// optional include below silently does nothing when the file is absent.
+
+#include? "Local.xcconfig"

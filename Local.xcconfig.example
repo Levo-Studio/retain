@@ -1,0 +1,17 @@
+// Local.xcconfig.example — template for machine-local build settings.
+//
+// Retain is a public repository, so no development team is stored in
+// Retain.xcodeproj. Unsigned local builds need none. Signing a build for
+// distribution does, and picking a team in Xcode's Signing & Capabilities
+// editor writes it straight back into project.pbxproj — where it would be
+// committed and public.
+//
+// So the team lives here instead: copy this file to Local.xcconfig and put your
+// own Team ID in. Base.xcconfig, which the project uses as its base
+// configuration, includes it optionally, so a clone without it still builds.
+// Local.xcconfig is in .gitignore and never reaches a commit.
+//
+// Your Team ID is the ten-character string in the Membership tab of your Apple
+// Developer account.
+
+DEVELOPMENT_TEAM =
