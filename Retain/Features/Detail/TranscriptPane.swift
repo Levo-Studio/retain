@@ -65,21 +65,13 @@ struct TranscriptPane: View {
 
     private var findBar: some View {
         HStack(spacing: RetainMetrics.findBarGap) {
-            TextField(text: $model.findQuery) {
-                Text(verbatim: DetailCopy.findPlaceholder)
-            }
-            .textFieldStyle(.plain)
-            .retainStyle(RetainTypography.fieldText)
-            .foregroundStyle(RetainPalette.inkPrimary)
-            .padding(RetainMetrics.searchFieldPadding)
-            .background {
-                RoundedRectangle(cornerRadius: RetainMetrics.radiusSearchField, style: .continuous)
-                    .fill(RetainPalette.surfaceInsetControl)
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: RetainMetrics.radiusSearchField, style: .continuous)
-                    .strokeBorder(fieldBorder, lineWidth: 1)
-            }
+            RetainTextField(
+                placeholder: DetailCopy.findPlaceholder,
+                text: $model.findQuery,
+                cornerRadius: RetainMetrics.radiusSearchField,
+                padding: RetainMetrics.searchFieldPadding,
+                onSubmit: { model.findNext() }
+            )
 
             Text(verbatim: countLabel)
                 .retainStyle(RetainTypography.findCount)
@@ -90,13 +82,6 @@ struct TranscriptPane: View {
         }
         .padding(RetainMetrics.findBarPadding)
         .overlay(alignment: .bottom) { RetainDivider() }
-    }
-
-    /// A field with something in it is drawn at the stronger border — the
-    /// export's `#2f353c` — which is also what `RetainInteraction` uses for
-    /// focus, so a field being typed into never loses it.
-    private var fieldBorder: Color {
-        model.findQuery.isEmpty ? RetainPalette.lineControlBorder : RetainInteraction.focusBorder
     }
 
     private var countLabel: String {

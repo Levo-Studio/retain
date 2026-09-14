@@ -145,10 +145,6 @@
         }
       }
     },
-    "+ New course": {
-      "comment": "Action at the foot of the library sidebar — the export's + Kurs anlegen",
-      "extractionState": "manual"
-    },
     "About Retain": {
       "comment": "Status bar menu item opening the about panel",
       "extractionState": "manual"
@@ -207,6 +203,10 @@
     },
     "Library": {
       "comment": "Title of the library window — the export's Bibliothek",
+      "extractionState": "manual"
+    },
+    "New course": {
+      "comment": "Creating a course: the library sidebar's action and the dialog that opens",
       "extractionState": "manual"
     },
     "Next match": {

@@ -87,14 +87,25 @@ struct ChatList: View {
     // MARK: - Asking
 
     private var composer: some View {
+        // The composer is a field with the return glyph inside the same box, so
+        // it wears the field's chrome rather than nesting a `RetainTextField`
+        // inside a second border.
         HStack(spacing: RetainMetrics.chatComposerGap) {
-            TextField(text: $model.question) {
-                Text(verbatim: DetailCopy.askPlaceholder)
+            ZStack(alignment: .leading) {
+                if model.question.isEmpty {
+                    Text(verbatim: DetailCopy.askPlaceholder)
+                        .retainStyle(RetainTypography.captionLarge)
+                        .foregroundStyle(RetainPalette.inkLabel)
+                        .allowsHitTesting(false)
+                }
+                TextField(text: $model.question) { EmptyView() }
+                    .textFieldStyle(.plain)
+                    .retainStyle(RetainTypography.captionLarge)
+                    .foregroundStyle(RetainPalette.inkPrimary)
+                    .tint(RetainPalette.accent)
+                    .onSubmit { send() }
             }
-            .textFieldStyle(.plain)
-            .retainStyle(RetainTypography.captionLarge)
-            .foregroundStyle(RetainPalette.inkPrimary)
-            .onSubmit { send() }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .disabled(!isReady || model.isAnswering)
 
             Button(action: send) {
@@ -106,15 +117,10 @@ struct ChatList: View {
             .disabled(!isReady || model.isAnswering)
             .accessibilityLabel(Text(verbatim: DetailCopy.send))
         }
-        .padding(RetainMetrics.chatComposerPadding)
-        .background {
-            RoundedRectangle(cornerRadius: RetainMetrics.radiusChatComposer, style: .continuous)
-                .fill(RetainPalette.surfaceInsetControl)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: RetainMetrics.radiusChatComposer, style: .continuous)
-                .strokeBorder(RetainPalette.lineControlBorder, lineWidth: 1)
-        }
+        .retainFieldChrome(
+            cornerRadius: RetainMetrics.radiusChatComposer,
+            padding: RetainMetrics.chatComposerPadding
+        )
         .opacity(isReady ? 1 : RetainInteraction.disabledOpacity)
         .padding(RetainMetrics.chatComposerMargin)
     }
@@ -224,10 +230,12 @@ struct TypingIndicator: View {
     var body: some View {
         HStack(spacing: RetainMetrics.typingDotGap) {
             ForEach(Array(RetainMotion.typingIndicatorDelays.enumerated()), id: \.offset) { _, delay in
-                Circle()
-                    .fill(RetainPalette.inkFaintest)
-                    .frame(width: RetainMetrics.statusDotSmall, height: RetainMetrics.statusDotSmall)
-                    .retainLoop(.typingIndicator, delay: delay)
+                RetainStatusDot(
+                    colour: RetainPalette.inkFaintest,
+                    diameter: RetainMetrics.statusDotSmall,
+                    loop: .typingIndicator,
+                    loopDelay: delay
+                )
             }
         }
         .accessibilityElement()

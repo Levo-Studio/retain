@@ -27,40 +27,37 @@ struct LibraryView: View {
 
     // MARK: - The term picker
 
+    /// Choosing a term goes through the model, which reloads the courses under
+    /// it and remembers the choice for the next time the window opens.
+    private var termBinding: Binding<Term> {
+        Binding(
+            get: { model.selectedTerm ?? model.terms.first ?? Term(title: "", startsOn: .now, endsOn: .now) },
+            set: { term in Task { await model.select(term: term) } }
+        )
+    }
+
     private var titleBar: some View {
         RetainTitleBar(title: LibraryCopy.windowTitle) {
-            Menu {
-                ForEach(model.terms) { term in
-                    Button(term.title) {
-                        Task { await model.select(term: term) }
-                    }
-                }
-            } label: {
+            // The same picker the settings boards draw, in the box this title
+            // bar draws it in: a rounder corner and tighter padding, with the
+            // accent dot in front of the name.
+            RetainPickerField(
+                selection: termBinding,
+                options: model.terms,
+                title: \.title,
+                cornerRadius: RetainMetrics.radiusStatusPill,
+                padding: RetainMetrics.titleBarPillPadding
+            ) {
                 HStack(spacing: RetainMetrics.titleBarPillGap) {
-                    Circle()
-                        .fill(RetainPalette.accent)
-                        .frame(width: RetainMetrics.statusDotSmall, height: RetainMetrics.statusDotSmall)
+                    RetainStatusDot(colour: RetainPalette.accent, diameter: RetainMetrics.statusDotSmall)
 
                     Text(verbatim: model.selectedTerm?.title ?? LibraryCopy.noTerms)
                         .retainStyle(RetainTypography.titleBarTermPill)
                         .foregroundStyle(RetainPalette.inkPrimary)
-
-                    Text(verbatim: "▾")
-                        .retainStyle(RetainTypography.chevron)
-                        .foregroundStyle(RetainPalette.inkLabel)
+                        .fixedSize()
                 }
-                .padding(RetainMetrics.titleBarPillPadding)
-                .background {
-                    RoundedRectangle(cornerRadius: RetainMetrics.radiusStatusPill, style: .continuous)
-                        .fill(RetainPalette.surfaceInsetControl)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: RetainMetrics.radiusStatusPill, style: .continuous)
-                        .strokeBorder(RetainPalette.lineControlBorder, lineWidth: 1)
-                }
+                .padding(.trailing, RetainMetrics.titleBarPillGap)
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
             .fixedSize()
         }
     }
@@ -81,29 +78,17 @@ struct LibraryView: View {
 
     private var header: some View {
         HStack(spacing: RetainMetrics.libraryHeaderGap) {
-            TextField(text: $model.query) {
-                Text(verbatim: LibraryCopy.searchPlaceholder)
-            }
-            .textFieldStyle(.plain)
-            .retainStyle(RetainTypography.fieldText)
-            .foregroundStyle(RetainPalette.inkPrimary)
-            .padding(RetainMetrics.searchFieldPadding)
-            .background {
-                RoundedRectangle(cornerRadius: RetainMetrics.radiusSearchField, style: .continuous)
-                    .fill(RetainPalette.surfaceInsetControl)
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: RetainMetrics.radiusSearchField, style: .continuous)
-                    .strokeBorder(
-                        model.query.isEmpty ? RetainPalette.lineControlBorder : RetainInteraction.focusBorder,
-                        lineWidth: 1
-                    )
-            }
+            RetainTextField(
+                placeholder: LibraryCopy.searchPlaceholder,
+                text: $model.query,
+                cornerRadius: RetainMetrics.radiusSearchField,
+                padding: RetainMetrics.searchFieldPadding
+            )
 
             // The export draws one order and names it. There is no second one
             // to offer, so this says what the order is rather than pretending
             // to be a choice.
-            Text(verbatim: LibraryCopy.sortByDate + " ▾")
+            Text(verbatim: LibraryCopy.sortByDate + " " + RetainGlyph.disclosure)
                 .retainStyle(RetainTypography.librarySortControl)
                 .foregroundStyle(RetainPalette.inkLabel)
         }
@@ -138,10 +123,13 @@ struct LibrarySidebar: View {
 
             Spacer(minLength: 0)
 
+            // The seam to board 07's new-course sheet. That dialog and the
+            // `CourseDraft` behind it belong to the screen that owns the
+            // dialogs; the window fills this closure in with it.
             Button {
                 model.onNewCourse?()
             } label: {
-                Text(verbatim: LibraryCopy.newCourse)
+                Text(verbatim: RetainGlyph.add + " " + LibraryCopy.newCourse)
                     .retainStyle(RetainTypography.librarySidebarNewCourse)
                     .foregroundStyle(RetainPalette.inkLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)

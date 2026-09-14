@@ -38,24 +38,13 @@ struct RecordingRail: View {
     /// thing the list under it can show: it filters the chapters, keeping the
     /// ones whose notes or whose stretch of the transcript match.
     private var searchField: some View {
-        TextField(text: $model.railQuery) {
-            Text(verbatim: DetailCopy.railSearchPlaceholder)
-        }
-        .textFieldStyle(.plain)
-        .retainStyle(RetainTypography.captionLarge)
-        .foregroundStyle(RetainPalette.inkPrimary)
-        .padding(RetainMetrics.railSearchFieldPadding)
-        .background {
-            RoundedRectangle(cornerRadius: RetainMetrics.radiusButton, style: .continuous)
-                .fill(RetainPalette.surfaceInsetControl)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: RetainMetrics.radiusButton, style: .continuous)
-                .strokeBorder(
-                    model.railQuery.isEmpty ? RetainPalette.lineControlBorder : RetainInteraction.focusBorder,
-                    lineWidth: 1
-                )
-        }
+        RetainTextField(
+            placeholder: DetailCopy.railSearchPlaceholder,
+            text: $model.railQuery,
+            cornerRadius: RetainMetrics.radiusButton,
+            padding: RetainMetrics.railSearchFieldPadding,
+            textStyle: RetainTypography.captionLarge
+        )
     }
 
     // MARK: - Chapters / Chat
@@ -177,9 +166,7 @@ struct ChapterRow: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     if chapter.hasMarker {
-                        Circle()
-                            .fill(RetainPalette.amber)
-                            .frame(width: RetainMetrics.statusDotSmall, height: RetainMetrics.statusDotSmall)
+                        RetainStatusDot(colour: RetainPalette.amber, diameter: RetainMetrics.statusDotSmall)
                             .alignmentGuide(.firstTextBaseline) { $0[.bottom] }
                     }
                 }

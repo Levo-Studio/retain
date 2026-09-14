@@ -98,7 +98,7 @@ struct HitRow: View {
             .padding(RetainMetrics.tableRow)
             .contentShape(Rectangle())
             .overlay(alignment: .bottom) {
-                if !isLast { Rectangle().fill(RetainPalette.lineTableRowSeparator).frame(height: 1) }
+                if !isLast { Rectangle().fill(RetainPalette.lineTableRowSeparator).frame(height: RetainMetrics.borderWidth) }
             }
         }
         .buttonStyle(RetainSurfaceButtonStyle())

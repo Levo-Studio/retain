@@ -39,15 +39,15 @@ struct RecordingDetailView: View {
                 NotesExport.run(markdown: model.notes.markdown, recording: model.recording, course: courseName)
             } label: {
                 Text(verbatim: DetailCopy.export)
-                    .retainStyle(RetainTypography.titleBarButton)
-                    .foregroundStyle(RetainPalette.inkBody)
-                    .padding(RetainMetrics.titleBarButtonPadding)
             }
+            // The outlined button on the inset fill, which is the same control
+            // the settings and dialog boards draw.
             .buttonStyle(
-                RetainSurfaceButtonStyle(
-                    resting: RetainPalette.insetControlSwatch,
+                RetainSecondaryButtonStyle(
+                    textStyle: RetainTypography.titleBarButton,
+                    padding: RetainMetrics.titleBarButtonPadding,
                     cornerRadius: RetainMetrics.radiusExportButton,
-                    border: RetainPalette.lineControlBorder
+                    isFilled: true
                 )
             )
             .disabled(model.blocks.isEmpty)
