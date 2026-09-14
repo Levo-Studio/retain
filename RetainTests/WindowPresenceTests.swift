@@ -1,4 +1,3 @@
-import AppKit
 import Testing
 
 @testable import Retain
@@ -8,65 +7,56 @@ import Testing
 /// one of the two: a Dock tile that never goes away, or a window that cannot be
 /// reached with ⌘-Tab and has no menu bar.
 ///
-/// Serialised, because there is one application and one counter.
-@MainActor
-@Suite("Window presence", .serialized)
+/// The tally is asserted rather than the application: raising the activation
+/// policy of the process a test is running in is not a thing a test may do.
+@Suite("Window presence")
 struct WindowPresenceTests {
 
-    /// Puts the app back where it launched, whatever the test did.
-    private func restore() {
-        while WindowPresence.openWindowCount > 0 {
-            WindowPresence.closed()
-        }
-        NSApp.setActivationPolicy(.accessory)
+    @Test("The first window is the one that matters")
+    func firstWindow() {
+        var tally = WindowTally()
+        let isFirst = tally.opened()
+        #expect(isFirst)
+        #expect(tally.open == 1)
+        #expect(tally.hasWindow)
     }
 
-    @Test("The first window makes Retain an ordinary app")
-    func firstWindowRaisesThePolicy() {
-        defer { restore() }
-
-        #expect(WindowPresence.openWindowCount == 0)
-        WindowPresence.opened()
-        #expect(WindowPresence.openWindowCount == 1)
-        #expect(NSApp.activationPolicy() == .regular)
+    @Test("A second window changes nothing")
+    func secondWindow() {
+        var tally = WindowTally()
+        _ = tally.opened()
+        let isFirst = tally.opened()
+        #expect(!isFirst)
+        #expect(tally.open == 2)
     }
 
-    @Test("The last window closing drops it back to the status bar")
-    func lastWindowDropsThePolicy() {
-        defer { restore() }
-
-        WindowPresence.opened()
-        WindowPresence.closed()
-        #expect(WindowPresence.openWindowCount == 0)
-        #expect(NSApp.activationPolicy() == .accessory)
-    }
-
-    @Test("A second window does not drop the policy when the first one closes")
-    func twoWindows() {
-        defer { restore() }
-
+    @Test("The last window closing is the one that matters")
+    func lastWindow() {
         // The recording window and the library are both open, and closing one
         // of them must not take the menu bar away from the other.
-        WindowPresence.opened()
-        WindowPresence.opened()
-        WindowPresence.closed()
-        #expect(WindowPresence.openWindowCount == 1)
-        #expect(NSApp.activationPolicy() == .regular)
+        var tally = WindowTally()
+        _ = tally.opened()
+        _ = tally.opened()
 
-        WindowPresence.closed()
-        #expect(NSApp.activationPolicy() == .accessory)
+        let wasLast = tally.closed()
+        #expect(!wasLast)
+        #expect(tally.hasWindow)
+
+        let nowLast = tally.closed()
+        #expect(nowLast)
+        #expect(!tally.hasWindow)
     }
 
     @Test("A close with nothing open does not go negative")
     func unbalancedClose() {
-        defer { restore() }
-
         // A window controller that closes twice would otherwise leave the count
-        // below zero, and the next window opened would not raise the policy.
-        WindowPresence.closed()
-        #expect(WindowPresence.openWindowCount == 0)
+        // below zero, and the next window opened would not be the first.
+        var tally = WindowTally()
+        let wasLast = tally.closed()
+        #expect(!wasLast)
+        #expect(tally.open == 0)
 
-        WindowPresence.opened()
-        #expect(NSApp.activationPolicy() == .regular)
+        let isFirst = tally.opened()
+        #expect(isFirst)
     }
 }
