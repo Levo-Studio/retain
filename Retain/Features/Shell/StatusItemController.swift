@@ -25,17 +25,18 @@ final class StatusItemController {
     init() {
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
-        // `waveform` stands in until the menu-bar glyph is drawn. The design
-        // export has no status-bar icon on any board, and inventing one is the
-        // owner's call, not a gap to fill with taste.
-        let image = NSImage(
-            systemSymbolName: "waveform",
-            accessibilityDescription: String(localized: "Retain", comment: "Accessibility label of the status bar item")
+        // The mark from the repository, not an SF Symbol: the owner settled
+        // that the status bar wears the same waveform as the app icon.
+        //
+        // It is a template image, which is what lets the status bar paint the
+        // glyph itself — so it stays legible in a light menu bar, a dark one,
+        // and under an accent tint, without Retain tracking the appearance.
+        // The asset carries that intent, so nothing has to set isTemplate here.
+        let image = NSImage(named: "MenuBarIcon")
+        image?.accessibilityDescription = String(
+            localized: "Retain",
+            comment: "Accessibility label of the status bar item"
         )
-        // A template image is what lets the status bar tint the glyph itself,
-        // so it stays legible in a light menu bar, a dark one, and under an
-        // accent tint, without Retain tracking the appearance.
-        image?.isTemplate = true
         item.button?.image = image
 
         item.menu = makeMenu()
