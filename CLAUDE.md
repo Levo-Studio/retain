@@ -93,7 +93,7 @@ change it on your own.
 | Voice activity | FluidAudio `VadManager`, gating the ASR |
 | Diarization | FluidAudio, offline, after the lesson |
 | Language model | LM Studio over **`/api/v0/chat/completions`**, not `/v1/` — `/api/v0/` returns `stop_reason` and `loaded_context_length`, which are needed |
-| Persistence | **GRDB.swift with FTS5.** Not SwiftData — it has no full-text search. |
+| Persistence | **GRDB.swift with FTS5.** Not SwiftData — it has no full-text search. The database is a plain SQLite file at `~/Library/Application Support/Retain/Retain.sqlite`. |
 | UI shell | **`NSStatusItem` + `NSPanel`.** Not `MenuBarExtra` — it still cannot be opened programmatically, so it cannot have a hotkey. |
 | Distribution | Developer ID and notarization. No sandbox, no App Store. |
 
@@ -398,4 +398,11 @@ Ask first, then touch:
   approved, but ask anyway so the answer is on the record.
 - **Deleting user data paths** — anything that drops a table, throws a store
   away, or removes a recording from disk.
+- **Editing a migration that has already shipped.** The migrator only compares
+  identifiers, so an edited migration never runs again on a database that has
+  recorded it — the install is left on the old schema for good, and every query
+  against the new one throws behind a `try?`. That happened once, to
+  `v1.library`; `v4.courses-across-terms` is the repair. Correct a mistake with
+  the next migration, guarded on the shape it finds rather than on the
+  identifier.
 - **Push to `main`.**

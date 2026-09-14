@@ -19,6 +19,12 @@ nonisolated enum RetainMigration: String, CaseIterable, Sendable {
 
     /// The FTS5 indexes over transcript lines, notes and annotations.
     case search = "v3.search"
+
+    /// Repairs a database created before a course could run in more than one
+    /// term. See the migration itself — it exists because `v1.library` was
+    /// edited after it had shipped, which is the one thing the note above says
+    /// never to do.
+    case coursesAcrossTerms = "v4.courses-across-terms"
 }
 
 // MARK: -
@@ -292,7 +298,140 @@ nonisolated enum RetainMigrations {
             try createSearchIndexes(db)
         }
 
+        // MARK: v4 — courses across terms, on a database that predates them
+
+        // **This migration exists because the rule at the top of this file was
+        // broken.** `v1.library` was edited in place when a course stopped
+        // belonging to exactly one term: `courseTerm` was added to it,
+        // `course.termID` removed, `termID` put on `recording`, and the term's
+        // two dates made nullable. A database that had already recorded
+        // `v1.library` as applied never ran a line of that — the migrator only
+        // ever looks at the identifier — so every install that existed before
+        // the change was left on the old shape with no way forward.
+        //
+        // What that looked like in the app: `courseTerm` and `recording.termID`
+        // are in every query the library and the settings pane make, so each of
+        // them threw `no such table` or `no such column`, and each of them was
+        // called behind a `try?`. Creating a course did nothing. The course
+        // list stayed empty. Deleting a term did nothing. Nothing said why.
+        //
+        // The repair is guarded on the old shape rather than on the migration
+        // identifier, so a database created by the current `v1.library` — which
+        // is every fresh install — passes straight through it.
+        migrator.registerMigration(RetainMigration.coursesAcrossTerms.rawValue) { db in
+            let courseColumns = try db.columns(in: "course").map(\.name)
+            guard courseColumns.contains("termID") else { return }
+
+            try repairCoursesAcrossTerms(db)
+        }
+
         return migrator
+    }
+
+    // MARK: - The v4 repair
+
+    /// Moves a pre-`courseTerm` database onto the current shape, keeping every
+    /// row.
+    ///
+    /// Three tables are recreated rather than altered, which is SQLite's own
+    /// answer to changing a column's nullability or dropping one. It is safe
+    /// here because the migrator runs with foreign keys disabled and checks
+    /// them once at the end — `DatabaseMigrator.ForeignKeyChecks.deferred`,
+    /// which is the default and has to stay it. With foreign keys on, dropping
+    /// `recording` would cascade into every transcript line in the database.
+    private static func repairCoursesAcrossTerms(_ db: Database) throws {
+        // 1. The pairing table, filled from the term each course used to
+        //    carry. One row per course, which is exactly what the old shape
+        //    could express.
+        try db.create(table: "courseTerm") { t in
+            t.autoIncrementedPrimaryKey("id")
+            t.column("courseID", .integer)
+                .notNull()
+                .references("course", onDelete: .cascade)
+            t.column("termID", .integer)
+                .notNull()
+                .references("term", onDelete: .cascade)
+        }
+        try db.create(
+            index: "courseTermOnCourseIDAndTermID",
+            on: "courseTerm",
+            columns: ["courseID", "termID"],
+            unique: true
+        )
+        try db.create(index: "courseTermOnTermID", on: "courseTerm", columns: ["termID"])
+
+        try db.execute(sql: "INSERT INTO courseTerm (courseID, termID) SELECT id, termID FROM course")
+
+        // 2. The recording's own term, which used to be read through the
+        //    course. It is copied across rather than derived from now on: a
+        //    course runs in several terms, so the course no longer answers the
+        //    question, and the recording's term is whichever one was current
+        //    when the microphone opened.
+        try db.create(table: "recordingNew") { t in
+            t.autoIncrementedPrimaryKey("id")
+            t.column("courseID", .integer).notNull().references("course", onDelete: .cascade)
+            t.column("termID", .integer).notNull().references("term", onDelete: .cascade)
+            t.column("startedAt", .datetime).notNull()
+            t.column("duration", .double).notNull().defaults(to: 0)
+            t.column("state", .text).notNull()
+            t.column("topic", .text)
+            t.column("filename", .text)
+        }
+        try db.execute(sql: """
+            INSERT INTO recordingNew (id, courseID, termID, startedAt, duration, state, topic, filename)
+            SELECT recording.id, recording.courseID, course.termID, recording.startedAt,
+                   recording.duration, recording.state, recording.topic, recording.filename
+            FROM recording JOIN course ON course.id = recording.courseID
+            """)
+        try db.drop(table: "recording")
+        try db.rename(table: "recordingNew", to: "recording")
+        try db.create(
+            index: "recordingOnCourseIDAndTermIDAndStartedAt",
+            on: "recording",
+            columns: ["courseID", "termID", "startedAt"]
+        )
+        try db.create(
+            index: "recordingOnTermIDAndStartedAt",
+            on: "recording",
+            columns: ["termID", "startedAt"]
+        )
+
+        // 3. The course without its term. One subject, once — the name and the
+        //    colour now live in one row however many terms it runs in.
+        try db.create(table: "courseNew") { t in
+            t.autoIncrementedPrimaryKey("id")
+            t.column("name", .text).notNull()
+            t.column("color", .integer).notNull()
+        }
+        try db.execute(sql: "INSERT INTO courseNew (id, name, color) SELECT id, name, color FROM course")
+        try db.drop(table: "course")
+        try db.rename(table: "courseNew", to: "course")
+
+        // 4. The term's period, which used to be required. It is a caption and
+        //    nothing computes with it, and somebody who does not know when
+        //    their half-year officially ends should not be stopped by a field
+        //    they cannot answer.
+        try db.create(table: "termNew") { t in
+            t.autoIncrementedPrimaryKey("id")
+            t.column("title", .text).notNull()
+            t.column("kind", .text).notNull()
+            t.column("startsOn", .datetime)
+            t.column("endsOn", .datetime)
+            t.column("isCurrent", .boolean).notNull().defaults(to: false)
+        }
+        try db.execute(sql: """
+            INSERT INTO termNew (id, title, kind, startsOn, endsOn, isCurrent)
+            SELECT id, title, kind, startsOn, endsOn, isCurrent FROM term
+            """)
+        try db.drop(table: "term")
+        try db.rename(table: "termNew", to: "term")
+        try db.create(
+            index: "termOnIsCurrent",
+            on: "term",
+            columns: ["isCurrent"],
+            unique: true,
+            condition: Column("isCurrent")
+        )
     }
 
     // MARK: - Search indexes
@@ -350,9 +489,10 @@ nonisolated enum RetainMigrations {
     /// holds nothing but terms derived from rows that stay exactly where they
     /// are, and re-running the migration rebuilds it from those rows.
     ///
-    /// `v1.library` and `v2.recording-content` have none, and not for want of
-    /// writing one. Their only inverse is `DROP TABLE` over the tables that
-    /// hold every recording the user has ever made — the transcripts, the
+    /// `v1.library`, `v2.recording-content` and `v4.courses-across-terms` have
+    /// none, and not for want of writing one. Their only inverse is
+    /// `DROP TABLE` over the tables that hold every recording the user has ever
+    /// made — the transcripts, the
     /// notes, the highlights. That is data loss dressed up as a schema
     /// operation, it is exactly what this repository says to stop and ask
     /// about, and a convenience method for it would eventually be called by
@@ -360,7 +500,7 @@ nonisolated enum RetainMigrations {
     /// backup, not a function in here.
     static func rollBack(_ migration: RetainMigration, in db: Database) throws {
         switch migration {
-        case .library, .recordingContent:
+        case .library, .recordingContent, .coursesAcrossTerms:
             throw RetainDatabaseError.migrationHasNoRollback(migration.rawValue)
 
         case .search:

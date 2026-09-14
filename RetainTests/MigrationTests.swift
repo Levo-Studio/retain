@@ -126,9 +126,13 @@ struct MigrationTests {
         #expect(try database.tableNames().isDisjoint(with: [
             "transcriptLineSearch", "noteBlockSearch", "annotationSearch",
         ]))
+        // Everything except the one that was rolled back. `v4` is in the list
+        // because it ran — on a database this migrator built it finds the
+        // current shape and does nothing, which is the point of it.
         #expect(try database.appliedMigrations() == [
             RetainMigration.library.rawValue,
             RetainMigration.recordingContent.rawValue,
+            RetainMigration.coursesAcrossTerms.rawValue,
         ])
 
         // The transcript is untouched, which is the whole point: the index was
