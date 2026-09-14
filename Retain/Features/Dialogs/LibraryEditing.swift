@@ -25,11 +25,21 @@ nonisolated enum LibrarySheet: Identifiable, Equatable, Sendable {
     /// be said by making a second course that shares nothing with the first.
     case editCourse(Course, termIDs: Set<Int64>)
 
+    /// A term and what deleting it would cost, counted before the sheet opens.
+    ///
+    /// The cost travels in the case rather than being read inside the dialog
+    /// because the dialog is the last thing between a lecture and no lecture:
+    /// a sheet that opens saying "0 recordings" and fills the real number in a
+    /// frame later is a sheet somebody can confirm before it has told them
+    /// anything.
+    case deleteTerm(Term, TermDeletion)
+
     var id: String {
         switch self {
         case .nameTerm(let term): "term-\(term?.id ?? 0)"
         case .newCourse(let termID): "course-\(termID ?? 0)"
         case .editCourse(let course, _): "edit-course-\(course.id ?? 0)"
+        case .deleteTerm(let term, _): "delete-term-\(term.id ?? 0)"
         }
     }
 }
@@ -78,6 +88,27 @@ enum LibraryEditing {
     /// in every term it runs in — that is the whole point of one course being
     /// in several — and removing a term unlinks it without touching the
     /// recordings made in the ones that remain.
+    /// Deletes a term and everything the confirmation said would go with it.
+    ///
+    /// Thin on purpose: every rule about what a deletion takes — the cascade,
+    /// the courses left stranded, which term becomes current afterwards — is
+    /// in the one transaction in `LibraryRepository`, where it is written once
+    /// and tested without a view.
+    static func delete(_ term: Term, in library: LibraryRepository) async {
+        guard let id = term.id else { return }
+        try? await library.delete(term: id)
+    }
+
+    /// Reads what a deletion would cost, for the sheet that is about to ask.
+    ///
+    /// `nil` when the count could not be read, and the caller then opens
+    /// nothing: a confirmation that cannot say what is lost has no business
+    /// being shown.
+    static func impact(of term: Term, in library: LibraryRepository) async -> TermDeletion? {
+        guard let id = term.id else { return nil }
+        return try? await library.deletionImpact(of: id)
+    }
+
     @discardableResult
     static func update(_ draft: CourseDraft, in library: LibraryRepository) async -> Course? {
         guard let course = draft.course(), let id = course.id else { return nil }
@@ -132,6 +163,21 @@ extension View {
                             guard let library else { return }
                             Task {
                                 await LibraryEditing.create(draft, in: library)
+                                await reload()
+                            }
+                        },
+                        cancel: { sheet.wrappedValue = nil }
+                    )
+
+                case .deleteTerm(let term, let impact):
+                    DeleteTermDialog(
+                        term: term,
+                        impact: impact,
+                        delete: {
+                            sheet.wrappedValue = nil
+                            guard let library else { return }
+                            Task {
+                                await LibraryEditing.delete(term, in: library)
                                 await reload()
                             }
                         },

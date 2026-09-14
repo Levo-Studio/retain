@@ -65,6 +65,18 @@ struct LibraryView: View {
                 .padding(.trailing, RetainMetrics.titleBarPillGap)
             }
             .fixedSize()
+            .contextMenu {
+                // The library is where somebody goes looking for an old
+                // half-year, so it is where they decide they are done with it.
+                // Creating and renaming a term still live in Settings; this is
+                // the one action that is about a term you are already looking
+                // at.
+                if let selected = model.selectedTerm {
+                    Button(LibraryCopy.deleteTerm) {
+                        Task { await model.confirmDeletion(of: selected) }
+                    }
+                }
+            }
         }
     }
 

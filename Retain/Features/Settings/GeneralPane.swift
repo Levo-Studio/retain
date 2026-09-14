@@ -88,16 +88,46 @@ struct GeneralPane: View {
             .buttonStyle(inlineButton)
             .fixedSize()
 
-            if model.selectedTerm != nil {
+            if let selected = model.selectedTerm {
                 Button {
-                    sheet = .nameTerm(model.selectedTerm)
+                    sheet = .nameTerm(selected)
                 } label: {
                     Text(renameTitle)
                 }
                 .buttonStyle(inlineButton)
                 .fixedSize()
+
+                // Red ink and no fill, the same way the export draws "Stop"
+                // and "Finish" — the only mark Retain gives a control that
+                // destroys something.
+                Button {
+                    Task { await confirmDeletion(of: selected) }
+                } label: {
+                    Text(deleteTitle)
+                }
+                .buttonStyle(
+                    RetainSecondaryButtonStyle(
+                        textStyle: RetainTypography.fieldLabelSettings,
+                        padding: RetainMetrics.settingsInlineButtonPadding,
+                        cornerRadius: RetainMetrics.radiusTextField,
+                        isFilled: true,
+                        ink: RetainPalette.redInk,
+                        border: RetainPalette.redBorderSwatch
+                    )
+                )
+                .fixedSize()
             }
         }
+    }
+
+    /// Counts what the deletion would cost, then opens the confirmation.
+    ///
+    /// The count is read here rather than in the dialog so that the sheet
+    /// arrives already knowing what it is asking about.
+    private func confirmDeletion(of term: Term) async {
+        guard let library = model.library else { return }
+        guard let impact = await LibraryEditing.impact(of: term, in: library) else { return }
+        sheet = .deleteTerm(term, impact)
     }
 
     private var kindRow: some View {
@@ -202,6 +232,10 @@ struct GeneralPane: View {
 
     private var editTitle: String {
         String(localized: "Edit", comment: "Action beside a course that opens the edit-course dialog")
+    }
+
+    private var deleteTitle: String {
+        String(localized: "Delete", comment: "Button beside the term picker that opens the delete-term confirmation")
     }
 
     private var renameTitle: String {

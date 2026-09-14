@@ -84,10 +84,26 @@ final class LibraryModel {
             // The picker opens on the term that was marked current, and on the
             // newest one before anything has been marked.
             let opening = try await library.currentTerm() ?? terms.first
-            if let opening { await select(term: opening) }
+            if let opening {
+                await select(term: opening)
+            } else {
+                // No terms left — which only happens after the last one is
+                // deleted. Without this the window kept the deleted term in
+                // the picker and its courses in the sidebar, and clicking one
+                // asked the database for recordings in a term that is gone.
+                clearSelection()
+            }
         } catch {
             terms = []
+            clearSelection()
         }
+    }
+
+    private func clearSelection() {
+        selectedTerm = nil
+        courses = []
+        selectedCourse = nil
+        recordings = []
     }
 
     /// Choosing a term reloads everything under it, and makes that choice the
@@ -202,6 +218,17 @@ final class LibraryModel {
     ///
     /// Read here rather than in the view: the chips have to arrive correct
     /// rather than filling in a frame later, and the view has no repository.
+    /// Counts what deleting a term would cost, then opens the confirmation.
+    ///
+    /// The count is read before the sheet rather than inside it, so the dialog
+    /// arrives already able to say what is lost. Nothing opens if the count
+    /// could not be read — a confirmation that cannot name the cost is worse
+    /// than no confirmation.
+    func confirmDeletion(of term: Term) async {
+        guard let impact = await LibraryEditing.impact(of: term, in: libraryRepository) else { return }
+        sheet = .deleteTerm(term, impact)
+    }
+
     func edit(_ course: Course) async {
         guard let id = course.id else { return }
         let termIDs = Set((try? await libraryRepository.terms(of: id))?.compactMap(\.id) ?? [])

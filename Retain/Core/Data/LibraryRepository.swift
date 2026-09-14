@@ -95,6 +95,77 @@ nonisolated struct LibraryRepository: Sendable {
         }
     }
 
+    /// What deleting a term would take with it.
+    ///
+    /// Read before the confirmation rather than after, because this is the one
+    /// action in Retain that destroys work: a term's recordings cascade with
+    /// it, and a recording is a lecture somebody sat through. The dialog says
+    /// these numbers out loud so nobody agrees to it by reflex.
+    func deletionImpact(of termID: Int64) async throws -> TermDeletion {
+        try await database.writer.read { db in
+            let recordings = try Int.fetchOne(
+                db,
+                sql: "SELECT COUNT(*) FROM recording WHERE termID = ?",
+                arguments: [termID]
+            ) ?? 0
+
+            // A course that runs in another term survives the deletion with
+            // that term's recordings intact. One that ran only here has nowhere
+            // left to be, and every list of courses in the app is a term's
+            // list — so it would become a row nobody can reach.
+            let orphanedCourses = try String.fetchAll(
+                db,
+                sql: """
+                    SELECT course.name FROM course
+                    JOIN courseTerm ON courseTerm.courseID = course.id
+                    WHERE courseTerm.termID = ?
+                      AND NOT EXISTS (
+                        SELECT 1 FROM courseTerm AS other
+                        WHERE other.courseID = course.id AND other.termID <> ?
+                      )
+                    ORDER BY course.name
+                    """,
+                arguments: [termID, termID]
+            )
+
+            return TermDeletion(recordings: recordings, coursesLost: orphanedCourses)
+        }
+    }
+
+    /// Deletes a term, everything recorded in it, and any course left with
+    /// nowhere to be.
+    ///
+    /// One transaction. The cascade takes the recordings and the course links;
+    /// what it cannot know is that a course whose last term this was has become
+    /// unreachable, so that is swept here rather than left behind.
+    ///
+    /// If the deleted term was the current one, the most recent survivor takes
+    /// its place — a library with terms but none of them current opens on
+    /// nothing and looks broken.
+    func delete(term termID: Int64) async throws {
+        try await database.writer.write { db in
+            let wasCurrent = try Bool.fetchOne(
+                db,
+                sql: "SELECT isCurrent FROM term WHERE id = ?",
+                arguments: [termID]
+            ) ?? false
+
+            try db.execute(sql: "DELETE FROM term WHERE id = ?", arguments: [termID])
+
+            try db.execute(sql: """
+                DELETE FROM course
+                WHERE NOT EXISTS (SELECT 1 FROM courseTerm WHERE courseTerm.courseID = course.id)
+                """)
+
+            if wasCurrent {
+                try db.execute(sql: """
+                    UPDATE term SET isCurrent = 1
+                    WHERE id = (SELECT id FROM term ORDER BY startsOn DESC, id DESC LIMIT 1)
+                    """)
+            }
+        }
+    }
+
     // MARK: - Courses
 
     /// The courses of one term, in the order they were created, each with the

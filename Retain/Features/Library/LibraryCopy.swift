@@ -16,6 +16,12 @@ nonisolated enum LibraryCopy {
         String(localized: "Library", comment: "Title of the library window — the export's Bibliothek")
     }
 
+    /// The term picker's context menu. Written with the ellipsis every macOS
+    /// menu item takes when it opens a dialog rather than acting at once.
+    static var deleteTerm: String {
+        String(localized: "Delete term…", comment: "Context menu item on the term picker that opens the delete-term confirmation")
+    }
+
     static var rename: String {
         String(localized: "Rename", comment: "Action beside the term's name in the library sidebar")
     }
