@@ -55,9 +55,16 @@ nonisolated struct TransientAudio: Sendable {
     /// - Returns: whether the recording has no audio any more, which includes
     ///   the case where the file was already gone.
     @discardableResult
-    func discardAudio(of recordingID: Int64) async -> Bool {
+    /// - Parameter passFinished: set only by the transcription pass's own
+    ///   success branch, where the caller knows something the row cannot say.
+    ///   A lecture nobody spoke in produces no final lines, and at the row
+    ///   level that is indistinguishable from a pass that crashed — so without
+    ///   this the silent one would keep its file for ever and be re-examined at
+    ///   every launch. The sweep never passes it: from outside that moment, the
+    ///   transcript is the only honest evidence.
+    func discardAudio(of recordingID: Int64, passFinished: Bool = false) async -> Bool {
         guard let recording = try? await library.recording(recordingID) else { return false }
-        return await discard(recording)
+        return await discard(recording, passFinished: passFinished)
     }
 
     // MARK: - The launch sweep
@@ -100,7 +107,7 @@ nonisolated struct TransientAudio: Sendable {
     /// The order is: delete the file, and only then forget its name. A name
     /// cleared before a deletion that then failed would be a file nothing can
     /// find again — the sweep walks the database, not the folder.
-    private func discard(_ recording: Recording) async -> Bool {
+    private func discard(_ recording: Recording, passFinished: Bool = false) async -> Bool {
         guard let recordingID = recording.id else { return false }
         guard let filename = recording.filename, !filename.isEmpty else { return false }
 
@@ -108,7 +115,14 @@ nonisolated struct TransientAudio: Sendable {
         // crash left looking like it. Either way the file may have a writer on
         // it, and neither is a recording that has been transcribed.
         guard recording.state != .recording else { return false }
-        guard await hasFinalTranscript(recordingID) else { return false }
+
+        // The transcript, not the state. `.done` is written by the failure path
+        // too — a pass that crashed closes the row rather than leaving it
+        // saying it is still recording for ever — so a state check here would
+        // delete exactly the audio that has to survive for a retry.
+        if !passFinished {
+            guard await hasFinalTranscript(recordingID) else { return false }
+        }
 
         let url = directory.appendingPathComponent(filename)
         if FileManager.default.fileExists(atPath: url.path) {

@@ -283,4 +283,55 @@ struct TransientAudioTests {
             #expect(stored != nil)
         }
     }
+    // MARK: - A lecture nobody spoke in
+
+    /// A silent lecture produces no final transcript lines, which at the row
+    /// level is indistinguishable from a pass that crashed — `.done` is written
+    /// by both paths. So the row cannot answer it and the pass itself has to
+    /// say so. Without that, the silent one keeps its file for ever and is
+    /// re-examined at every launch.
+    @Test("A finished pass that produced nothing still releases the audio")
+    func silentLectureIsCleanedUp() async throws {
+        try await inAFolder { directory, database in
+            let term = try await StoreFixture.term(in: database)
+            let course = try await StoreFixture.course(in: database, term: term)
+            let recording = try await lecture(
+                in: database,
+                course: course,
+                directory: directory,
+                filename: "silent.caf",
+                transcript: []
+            )
+            guard let id = recording.id else { return }
+
+            let discarded = await TransientAudio(database, directory: directory)
+                .discardAudio(of: id, passFinished: true)
+
+            #expect(discarded)
+            #expect(!exists("silent.caf", in: directory))
+        }
+    }
+
+    /// The half that must not be weakened with it, and the reason the sweep
+    /// never says `passFinished`: from outside that moment the transcript is
+    /// the only honest evidence, and losing a lecture because a model crashed
+    /// is the one outcome here worth any amount of disk.
+    @Test("The sweep still keeps a silent lecture, having no way to know")
+    func theSweepCannotTellAndKeepsIt() async throws {
+        try await inAFolder { directory, database in
+            let term = try await StoreFixture.term(in: database)
+            let course = try await StoreFixture.course(in: database, term: term)
+            try await lecture(
+                in: database,
+                course: course,
+                directory: directory,
+                filename: "silent.caf",
+                transcript: []
+            )
+
+            await TransientAudio(database, directory: directory).sweep()
+
+            #expect(exists("silent.caf", in: directory))
+        }
+    }
 }

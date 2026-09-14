@@ -344,7 +344,7 @@ final class LectureSession {
             // `TransientAudio`, which deletes nothing whose transcript is not
             // stored, so the `catch` below still leaves its file on disk.
             if let store, let recordingID {
-                await TransientAudio(store.database).discardAudio(of: recordingID)
+                await TransientAudio(store.database).discardAudio(of: recordingID, passFinished: true)
             }
 
             phase = .done
