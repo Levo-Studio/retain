@@ -113,10 +113,11 @@ final class RecordingDetailModel {
             lines = try await transcripts.lines(for: recordingID)
             annotations = try await transcripts.annotations(for: recordingID)
 
-            if let course = try await library.course(recording.courseID) {
-                self.course = course
-                term = try await library.term(course.termID)
-            }
+            self.course = try await library.course(recording.courseID)
+            // The recording's own term, not the course's: a course runs in
+            // several, and this window is about one lesson — the half-year it
+            // was recorded in, whatever the course has been used for since.
+            term = try await library.term(recording.termID)
         } catch {
             // A read that failed leaves the window empty rather than wrong.
             // There is no error state drawn for the detail window, and a

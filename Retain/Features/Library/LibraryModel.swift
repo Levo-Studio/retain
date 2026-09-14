@@ -116,14 +116,18 @@ final class LibraryModel {
         if isShowingResults { search() }
     }
 
+    /// The table is this course **in the term that is selected**, and the term
+    /// is half the question rather than context: the same course in the other
+    /// half-year is a different set of recordings and different notes, and
+    /// nothing is shared between them but the name and the colour.
     func select(course: CourseListing) async {
         selectedCourse = course
-        guard let courseID = course.id else {
+        guard let courseID = course.id, let termID = selectedTerm?.id else {
             recordings = []
             return
         }
         do {
-            recordings = try await LibraryRepository(database).recordings(in: courseID)
+            recordings = try await LibraryRepository(database).recordings(in: courseID, during: termID)
         } catch {
             recordings = []
         }
@@ -170,13 +174,12 @@ final class LibraryModel {
 
     // MARK: - Derived
 
-    /// "Oct 2025 – Mar 2026 · 4 courses" under the term's name.
+    /// "Oct 2025 – Mar 2026 · 4 courses" under the term's name — and "4 courses"
+    /// on its own for a term nobody gave a period.
     var termSubtitle: String {
         guard let term = selectedTerm else { return "" }
-        let month = Date.FormatStyle.dateTime.month(.abbreviated).year()
-        return LibraryCopy.termPeriod(
-            from: term.startsOn.formatted(month),
-            to: term.endsOn.formatted(month),
+        return LibraryCopy.termSubtitle(
+            period: TermPeriod.caption(of: term),
             courses: LibraryCopy.courses(courses.count)
         )
     }

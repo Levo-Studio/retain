@@ -70,9 +70,25 @@ nonisolated extension Course: FetchableRecord, MutablePersistableRecord {
 
     enum Columns {
         static let id = Column("id")
-        static let termID = Column("termID")
         static let name = Column("name")
         static let color = Column("color")
+    }
+
+    mutating func didInsert(_ inserted: InsertionSuccess) {
+        id = inserted.rowID
+    }
+}
+
+// MARK: - Which terms a course runs in
+
+nonisolated extension CourseTerm: FetchableRecord, MutablePersistableRecord {
+
+    static var databaseTableName: String { "courseTerm" }
+
+    enum Columns {
+        static let id = Column("id")
+        static let courseID = Column("courseID")
+        static let termID = Column("termID")
     }
 
     mutating func didInsert(_ inserted: InsertionSuccess) {
@@ -89,6 +105,7 @@ nonisolated extension Recording: FetchableRecord, MutablePersistableRecord {
     enum Columns {
         static let id = Column("id")
         static let courseID = Column("courseID")
+        static let termID = Column("termID")
         static let startedAt = Column("startedAt")
         static let duration = Column("duration")
         static let state = Column("state")

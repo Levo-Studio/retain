@@ -37,7 +37,7 @@ struct LibraryView: View {
     /// it and remembers the choice for the next time the window opens.
     private var termBinding: Binding<Term> {
         Binding(
-            get: { model.selectedTerm ?? model.terms.first ?? Term(title: "", startsOn: .now, endsOn: .now) },
+            get: { model.selectedTerm ?? model.terms.first ?? Term(title: "") },
             set: { term in Task { await model.select(term: term) } }
         )
     }

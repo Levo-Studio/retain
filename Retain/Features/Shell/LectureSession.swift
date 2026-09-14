@@ -45,6 +45,14 @@ final class LectureSession {
     /// no lecture without one.
     private(set) var course: Course?
 
+    /// The term the lecture is being recorded in — the one that was current
+    /// when the microphone opened.
+    ///
+    /// Held for the length of the lecture rather than read back when the row is
+    /// written: somebody who changes the current term in the library window
+    /// halfway through a lesson has not moved the lesson they are sitting in.
+    private(set) var term: Term?
+
     /// The row the lecture is being written into, once there is a database and
     /// a course. `nil` in a session built without a store.
     private(set) var recordingID: Int64?
@@ -159,16 +167,27 @@ final class LectureSession {
 
     // MARK: - Running a lecture
 
-    /// Opens the microphone for one course.
+    /// Opens the microphone for one course, in one term.
     ///
-    /// The course is taken rather than chosen here: it is what the recording
-    /// row hangs off, and the popover has already asked for it. Nothing in
-    /// Retain records into no course.
-    func start(in course: Course) async {
+    /// Both are taken rather than chosen here: they are what the recording row
+    /// hangs off, and the popover has already asked for both. Nothing in Retain
+    /// records into no course, and nothing records into no term.
+    func start(in course: Course, during term: Term) async {
         switch phase {
         case .idle, .done, .failed:
             break
         case .preparingModels, .recording, .transcribing, .separatingSpeakers:
+            return
+        }
+
+        // A term that was never written has no id, and a recording carries its
+        // term as an id. The library filters on that column, so an invented or
+        // borrowed one would file the lecture under a half-year it did not
+        // happen in — quietly, and for good. Refusing is the honest answer, and
+        // it is said out loud rather than by recording into nowhere.
+        guard term.id != nil else {
+            phase = .failed(String(localized: "Retain has no current term to record into.",
+                                   comment: "A lecture could not start because no term is marked as the current one"))
             return
         }
 
@@ -187,6 +206,7 @@ final class LectureSession {
         topic = nil
         startedAt = .now
         self.course = course
+        self.term = term
 
         // The models come first: starting the recording and only then
         // discovering there is a gigabyte to fetch would mean the first
@@ -238,9 +258,10 @@ final class LectureSession {
         // The row is opened only once audio is actually flowing. A row written
         // before `recorder.start` would survive a microphone that never opened
         // as a recording of nothing, and the library would show it.
-        if let store, let courseID = course.id {
+        if let store, let courseID = course.id, let termID = term.id {
             recordingID = try? await store.library.startRecording(
                 in: courseID,
+                during: termID,
                 filename: url.lastPathComponent
             ).id
         }

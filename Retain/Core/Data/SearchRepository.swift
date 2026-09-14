@@ -91,10 +91,15 @@ nonisolated struct SearchRepository: Sendable {
     /// Everything the three queries have in common: the join that scopes a
     /// match to a term, and the columns a hit is labelled with.
     ///
-    /// The FTS table carries no term, so every match is walked back to its
-    /// recording and its course to see which term it belongs to. That is also
-    /// why the index is external-content — the row it points at is the real
-    /// one, so the join is against live data and not a copy.
+    /// The FTS table carries no term, so every match is walked back to the
+    /// recording it is in — and **the recording is where the term is**. It used
+    /// to be read off the course, which no longer has one: a course runs in
+    /// several terms, and a course-shaped scope would have pulled last
+    /// summer's transcripts into this winter's results. The course is still
+    /// joined, for the name the row is labelled with and nothing else.
+    ///
+    /// That is also why the index is external-content — the row it points at is
+    /// the real one, so the join is against live data and not a copy.
     private func sql(searchTable: String, contentTable: String, text: String, time: String) -> String {
         """
         SELECT \(contentTable).id AS hitID,
@@ -109,7 +114,7 @@ nonisolated struct SearchRepository: Sendable {
         JOIN \(contentTable) ON \(contentTable).id = \(searchTable).rowid
         JOIN recording ON recording.id = \(contentTable).recordingID
         JOIN course ON course.id = recording.courseID
-        WHERE \(searchTable) MATCH ? AND course.termID = ?
+        WHERE \(searchTable) MATCH ? AND recording.termID = ?
         ORDER BY recording.startedAt DESC, time
         LIMIT ?
         """
