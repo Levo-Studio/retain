@@ -33,15 +33,16 @@ struct TransientAudioTests {
     private func lecture(
         in database: RetainDatabase,
         course: Course,
+        term: Term,
         directory: URL,
         filename: String,
         state: RecordingState = .done,
         transcript: [TranscriptLine] = []
     ) async throws -> Recording {
-        guard let courseID = course.id else { throw StoreFixtureError.unsavedRow }
+        guard let courseID = course.id, let termID = term.id else { throw StoreFixtureError.unsavedRow }
 
         var recording = try await LibraryRepository(database)
-            .startRecording(in: courseID, filename: filename)
+            .startRecording(in: courseID, during: termID, filename: filename)
         recording.state = state
         recording = try await LibraryRepository(database).save(recording)
 
@@ -76,6 +77,7 @@ struct TransientAudioTests {
             let recording = try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "lecture.caf",
                 transcript: finalTranscript
@@ -96,6 +98,7 @@ struct TransientAudioTests {
             let recording = try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "lecture.caf",
                 transcript: finalTranscript
@@ -123,6 +126,7 @@ struct TransientAudioTests {
             let recording = try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "lecture.caf",
                 transcript: finalTranscript
@@ -150,6 +154,7 @@ struct TransientAudioTests {
             let recording = try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "lecture.caf",
                 transcript: provisionalTranscript
@@ -172,6 +177,7 @@ struct TransientAudioTests {
             let recording = try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "lecture.caf"
             )
@@ -191,6 +197,7 @@ struct TransientAudioTests {
             let recording = try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "lecture.caf",
                 state: .recording,
@@ -214,6 +221,7 @@ struct TransientAudioTests {
             try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "transcribed.caf",
                 transcript: finalTranscript
@@ -221,6 +229,7 @@ struct TransientAudioTests {
             try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "failed.caf",
                 transcript: provisionalTranscript
@@ -244,6 +253,7 @@ struct TransientAudioTests {
             let recording = try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "lecture.caf",
                 transcript: finalTranscript
@@ -266,6 +276,7 @@ struct TransientAudioTests {
             let recording = try await lecture(
                 in: database,
                 course: library.course,
+                term: library.term,
                 directory: directory,
                 filename: "lecture.caf",
                 transcript: finalTranscript
@@ -298,6 +309,7 @@ struct TransientAudioTests {
             let recording = try await lecture(
                 in: database,
                 course: course,
+                term: term,
                 directory: directory,
                 filename: "silent.caf",
                 transcript: []
@@ -324,6 +336,7 @@ struct TransientAudioTests {
             try await lecture(
                 in: database,
                 course: course,
+                term: term,
                 directory: directory,
                 filename: "silent.caf",
                 transcript: []

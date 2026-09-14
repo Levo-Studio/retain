@@ -234,6 +234,25 @@ nonisolated struct LibraryRepository: Sendable {
         }
     }
 
+    /// Every recording that still names a file on disk.
+    ///
+    /// The launch sweep's whole question, asked once. It used to walk terms,
+    /// then each term's courses, then each course's recordings — a scan of the
+    /// entire library to find a set that on a settled install is empty or has
+    /// one row in it, and one that now needs both a course and a term to ask
+    /// for at all.
+    ///
+    /// The name is cleared when the audio goes, so this is exactly the
+    /// candidate set and nothing else.
+    func recordingsWithAudio() async throws -> [Recording] {
+        try await database.writer.read { db in
+            try Recording
+                .filter(Recording.Columns.filename != nil)
+                .order(Recording.Columns.startedAt)
+                .fetchAll(db)
+        }
+    }
+
     func recording(_ id: Int64) async throws -> Recording? {
         try await database.writer.read { try Recording.fetchOne($0, key: id) }
     }

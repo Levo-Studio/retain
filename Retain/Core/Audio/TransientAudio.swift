@@ -81,21 +81,14 @@ nonisolated struct TransientAudio: Sendable {
     /// - Returns: how many recordings lost their audio.
     @discardableResult
     func sweep() async -> Int {
-        guard let terms = try? await library.terms() else { return 0 }
+        // One query, not a walk of the whole library. The filename is cleared
+        // when the audio goes, so the rows that still name a file are exactly
+        // the rows worth looking at — on a settled install, none of them.
+        guard let candidates = try? await library.recordingsWithAudio() else { return 0 }
 
         var discarded = 0
-        for term in terms {
-            guard let termID = term.id,
-                  let courses = try? await library.courses(in: termID) else { continue }
-
-            for listing in courses {
-                guard let courseID = listing.course.id,
-                      let recordings = try? await library.recordings(in: courseID) else { continue }
-
-                for recording in recordings {
-                    if await discard(recording) { discarded += 1 }
-                }
-            }
+        for recording in candidates where await discard(recording) {
+            discarded += 1
         }
         return discarded
     }
