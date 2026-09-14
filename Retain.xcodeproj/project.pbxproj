@@ -184,7 +184,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FE02000000000000000100 /* XCRemoteSwiftPackageReference "FluidAudio" */,
-				FE02000000000000000101 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
+				FE02000000000000000101 /* XCRemoteSwiftPackageReference "GRDB" */,
 				FE02000000000000000102 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				FE02000000000000000103 /* XCRemoteSwiftPackageReference "Defaults" */,
 				FE02000000000000000104 /* XCRemoteSwiftPackageReference "Sparkle" */,
@@ -380,6 +380,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Retain/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Retain;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Levo Studio";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -410,6 +412,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Retain/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Retain;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Levo Studio";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -508,7 +512,7 @@
 				minimumVersion = 0.15.7;
 			};
 		};
-		FE02000000000000000101 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+		FE02000000000000000101 /* XCRemoteSwiftPackageReference "GRDB" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift";
 			requirement = {
@@ -550,7 +554,7 @@
 		};
 		FE02000000000000000092 /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FE02000000000000000101 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			package = FE02000000000000000101 /* XCRemoteSwiftPackageReference "GRDB" */;
 			productName = GRDB;
 		};
 		FE02000000000000000094 /* KeyboardShortcuts */ = {
