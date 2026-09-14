@@ -337,9 +337,20 @@ Commits. **Do not invent your own.** Where Fuel and Score disagree, Fuel is
 newer and wins — which is why this repository is English throughout, as Fuel is,
 and not German, as Score is.
 
-Retain departs from them in one place: **the licence is MIT**, not the
-source-available licence Fuel and Score carry. Nothing in this repository may
-suggest otherwise.
+Retain departs from them in one place: **the licence is PolyForm Noncommercial
+1.0.0**, not the bespoke source-available licence Fuel and Score carry. Retain
+is therefore source-available and **not open source** — do not describe it as
+open source anywhere, and do not add it to a listing that filters on OSI
+approval.
+
+Two consequences worth holding on to, because both get asked:
+
+- The licence binds licensees, not Levo Studio. Levo Studio holds the copyright
+  and keeps every right in Retain, including selling it. Nothing in the
+  repository may suggest Retain cannot be sold by its owner.
+- A contribution ships in a release only because the contributor grants Levo
+  Studio the rights for it. That grant is in `LICENSE`; do not remove it, and do
+  not merge a contribution from someone who has refused it.
 
 ## None of this happens without asking
 

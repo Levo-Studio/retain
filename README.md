@@ -142,6 +142,9 @@ the call site.
 | [Defaults](https://github.com/sindresorhus/Defaults) | 9.0.9 | MIT |
 | [Sparkle](https://github.com/sparkle-project/Sparkle) | 2.9.6 | MIT |
 
+All five are permissive, so Retain's own licence is free to be stricter. Their
+notices ship with the app.
+
 ## Design
 
 The interface is drawn before it is built. `docs/design/` holds the export —
@@ -165,6 +168,17 @@ website. It is not the app icon.
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+**Source-available, not open source.** PolyForm Noncommercial 1.0.0: read it,
+build it, change it, run it, pass it on — for any purpose that is not
+commercial. Private study, hobby projects, schools, universities, public
+research and government bodies are covered by name. Making money from it is
+what the licence rules out.
+
+The licence binds you, not Levo Studio, which holds the copyright and keeps
+every right in Retain including the right to sell it. Contributors keep
+authorship of what they wrote, are named in the credits, and grant Levo Studio
+the rights it needs to ship that contribution in a release.
+
+The full text, with both points spelled out, is in [`LICENSE`](LICENSE).
 
 © 2026 Levo Studio
