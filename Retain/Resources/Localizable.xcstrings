@@ -1,0 +1,18 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "About Retain" : {
+      "comment" : "Status bar menu item opening the about panel",
+      "extractionState" : "manual"
+    },
+    "Quit Retain" : {
+      "comment" : "Status bar menu item quitting the app",
+      "extractionState" : "manual"
+    },
+    "Retain" : {
+      "comment" : "Accessibility label of the status bar item",
+      "extractionState" : "manual"
+    }
+  },
+  "version" : "1.0"
+}

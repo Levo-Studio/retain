@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Everything Xcode can derive from build settings stays in the build
+	     settings; GENERATE_INFOPLIST_FILE merges those keys on top of this
+	     file. So this file holds only the keys that have no INFOPLIST_KEY_
+	     counterpart. -->
+
+	<!-- The single most effective power setting Retain has, and the reason it
+	     is already here in a build that records nothing yet: it is a bundle
+	     fact, not a code path, so putting it in now means no later phase can
+	     forget it.
+
+	     Core Audio reads this hint when it hands the process an input stream
+	     and sizes the IO buffer accordingly — 4096 frames instead of the 512
+	     it would otherwise pick. At 16 kHz that is a wakeup every 256 ms
+	     rather than every 32 ms: eight times fewer trips out of idle for the
+	     same audio. Retain is meant to run for a whole school day on battery,
+	     and this costs nothing but latency Retain does not need, because
+	     nothing here is monitored live through the speakers.
+
+	     Verify it survived into the bundle rather than assuming it:
+	         plutil -p "$BUILT_PRODUCTS_DIR/Retain.app/Contents/Info.plist" \
+	           | grep AudioHardwarePowerHint -->
+	<key>AudioHardwarePowerHint</key>
+	<string>Favor Saving Power</string>
+</dict>
+</plist>
