@@ -104,6 +104,13 @@ nonisolated struct NoteRepository: Sendable {
     /// The range is in UTF-8 bytes and half open, and it is read off the block
     /// that is actually stored — `block` carries its own id and recording, so a
     /// highlight cannot be filed against a block the user was not looking at.
+    ///
+    /// The marked text is cut out of the block here rather than passed in, so
+    /// that the stored text and the stored offsets cannot disagree with each
+    /// other on the day they are written. A range that does not land on
+    /// character boundaries, or runs off the end of the block, is refused
+    /// rather than clamped: a highlight over the wrong words is worse than one
+    /// that was not made.
     @discardableResult
     func highlight(
         _ block: StoredNoteBlock,
@@ -115,17 +122,38 @@ nonisolated struct NoteRepository: Sendable {
             throw RetainDatabaseError.unsavedRow
         }
 
+        let text = try markedText(in: block.markdown, from: startOffset, to: endOffset)
+
         return try await database.writer.write { db in
             var highlight = Highlight(
                 recordingID: block.recordingID,
                 noteBlockID: noteBlockID,
                 startOffset: startOffset,
                 endOffset: endOffset,
+                text: text,
                 createdAt: createdAt
             )
             try highlight.insert(db)
             return highlight
         }
+    }
+
+    /// The substring a pair of UTF-8 byte offsets covers.
+    ///
+    /// `samePosition(in:)` returns nil when an offset falls inside a character
+    /// rather than between two, which is the check that keeps half an umlaut
+    /// out of the stored text.
+    private func markedText(in markdown: String, from start: Int, to end: Int) throws -> String {
+        let utf8 = markdown.utf8
+
+        guard start >= 0, end >= start, end <= utf8.count,
+              let lower = utf8.index(utf8.startIndex, offsetBy: start).samePosition(in: markdown),
+              let upper = utf8.index(utf8.startIndex, offsetBy: end).samePosition(in: markdown)
+        else {
+            throw RetainDatabaseError.invalidHighlightRange
+        }
+
+        return String(markdown[lower..<upper])
     }
 
     /// Takes one highlight back off. The notes themselves are untouched.

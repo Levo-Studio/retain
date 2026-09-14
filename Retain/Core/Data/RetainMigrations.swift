@@ -199,6 +199,12 @@ nonisolated enum RetainMigrations {
                 // UTF-8 byte offsets, half open. See `Highlight`.
                 t.column("startOffset", .integer).notNull()
                 t.column("endOffset", .integer).notNull()
+                // What was marked, copied out of the block as it was marked.
+                // The offsets alone are unrecoverable once the model has
+                // written the block again; the text is what makes a highlight
+                // re-anchorable, or at the very least showable. It costs a
+                // column now and cannot be backfilled later.
+                t.column("text", .text).notNull()
                 t.column("createdAt", .datetime).notNull()
             }
 

@@ -131,6 +131,7 @@ nonisolated extension Highlight: FetchableRecord, MutablePersistableRecord {
         static let noteBlockID = Column("noteBlockID")
         static let startOffset = Column("startOffset")
         static let endOffset = Column("endOffset")
+        static let text = Column("text")
         static let createdAt = Column("createdAt")
     }
 

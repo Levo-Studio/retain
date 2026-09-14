@@ -217,6 +217,18 @@ nonisolated struct Highlight: Identifiable, Hashable, Sendable, Codable {
     var startOffset: Int
     var endOffset: Int
 
+    /// What was marked, copied out of the block at the moment of marking.
+    ///
+    /// Redundant while the notes stand still, and the only thing left when they
+    /// do not: a re-summarised block is new Markdown, and offsets into a text
+    /// that no longer exists cannot say what they once covered. With the text
+    /// beside them the passage can be searched for in the new notes and
+    /// re-anchored, and if it is not there at all it can still be shown to the
+    /// user as what they marked. What *should* happen to a highlight when the
+    /// summary is written again is not settled here; this only keeps the
+    /// question answerable.
+    var text: String
+
     var createdAt: Date
 
     init(
@@ -225,6 +237,7 @@ nonisolated struct Highlight: Identifiable, Hashable, Sendable, Codable {
         noteBlockID: Int64,
         startOffset: Int,
         endOffset: Int,
+        text: String,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -232,6 +245,7 @@ nonisolated struct Highlight: Identifiable, Hashable, Sendable, Codable {
         self.noteBlockID = noteBlockID
         self.startOffset = startOffset
         self.endOffset = endOffset
+        self.text = text
         self.createdAt = createdAt
     }
 }
