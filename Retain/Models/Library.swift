@@ -179,14 +179,15 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
 ///
 /// It goes to the model with the block it falls in and comes back out in the
 /// notes as "You · 00:52:10". `note` is the text; a marker set without any is
-/// still a point worth jumping to, so it stays optional.
+/// still a point in the lecture worth marking, so it stays optional.
 nonisolated struct Annotation: Identifiable, Hashable, Sendable, Codable {
 
     var id: Int64?
     var recordingID: Int64
 
     /// Seconds from the start of the recording, on the same timeline as
-    /// `TranscriptLine.start`, so an annotation is a seek target like any line.
+    /// `TranscriptLine.start`, so an annotation sits among the lines it was
+    /// typed between.
     var time: TimeInterval
 
     var note: String?

@@ -2,30 +2,53 @@ import SwiftUI
 
 /// Board 03's left column: the written-out notes, with the annotations the user
 /// typed during the lecture standing between them.
+///
+/// It is also where a chapter row and a chat citation land, which is why it
+/// scrolls: with no audio to start playing, pointing at a block means putting
+/// that block in front of the reader.
 struct DetailNotesPane: View {
 
     let model: RecordingDetailModel
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if model.blocks.isEmpty {
-                    Text(verbatim: DetailCopy.emptyNotes)
-                        .retainStyle(RetainTypography.noteParagraphDetail)
-                        .foregroundStyle(RetainPalette.inkDim)
-                } else {
-                    ForEach(Array(model.noteItems.enumerated()), id: \.element.id) { index, item in
-                        view(for: item)
-                            .padding(.top, topGap(for: item, at: index))
+        ScrollViewReader { scroll in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    if model.blocks.isEmpty {
+                        Text(verbatim: DetailCopy.emptyNotes)
+                            .retainStyle(RetainTypography.noteParagraphDetail)
+                            .foregroundStyle(RetainPalette.inkDim)
+                    } else {
+                        ForEach(Array(model.noteItems.enumerated()), id: \.element.id) { index, item in
+                            view(for: item)
+                                .padding(.top, topGap(for: item, at: index))
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(RetainMetrics.notesPaneDetail)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(RetainMetrics.notesPaneDetail)
+            .scrollContentBackground(.hidden)
+            // `task(id:)` and not `onChange`: a chat citation clicked on the
+            // transcript tab brings this tab forward, which builds this pane
+            // *after* the request was made — a change `onChange` was never
+            // there for. This fires on both, and the yield lets the pane lay
+            // itself out before it is asked to scroll inside itself.
+            .task(id: model.reveal) {
+                guard case let .block(number) = model.reveal?.target else { return }
+                await Task.yield()
+
+                // The top, not the centre: a card is a heading and the text
+                // under it, and it is read from its first line down.
+                withAnimation(RetainMotion.reveal(reduceMotion: reduceMotion)) {
+                    scroll.scrollTo(NoteItem.id(ofBlock: number), anchor: .top)
+                }
+            }
         }
-        .scrollContentBackground(.hidden)
         .background(RetainPalette.surfaceWindow)
     }
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @ViewBuilder
     private func view(for item: NoteItem) -> some View {

@@ -103,6 +103,23 @@ nonisolated enum RetainMotion {
         toFraction: 3.2
     )
 
+    // MARK: - Bringing something into view
+
+    /// How long a pane takes to scroll to the line or the card something
+    /// pointed at.
+    ///
+    /// **Not a drawn value.** The export animates four things and scrolling is
+    /// not one of them. It is the shortest move that still reads as a move
+    /// rather than as the list having been replaced, and it lives here rather
+    /// than in each pane so the transcript and the notes cannot drift apart.
+    static let revealDuration: Double = 0.3
+
+    /// The animation a pane scrolls with, or `nil` under Reduce Motion — where
+    /// the target simply appears, which is the whole point of the setting.
+    static func reveal(reduceMotion: Bool) -> Animation? {
+        resolve(.easeInOut(duration: revealDuration), reduceMotion: reduceMotion)
+    }
+
     // MARK: - The gate
 
     /// The one place an animation is allowed to become no animation.

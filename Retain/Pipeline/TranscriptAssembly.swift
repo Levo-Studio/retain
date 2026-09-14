@@ -24,8 +24,9 @@ nonisolated enum TranscriptAssembly {
 
     /// No line runs longer than this, whatever the pauses did.
     ///
-    /// Twenty seconds is about sixty words: a paragraph, and close enough to
-    /// the audio that clicking the line lands where the reader meant.
+    /// Twenty seconds is about sixty words: a paragraph, and short enough that
+    /// the timestamp beside a line is still a useful answer to when it was
+    /// said.
     static let maximumDuration: TimeInterval = 20
 
     /// Assembles lines from words and speaker segments.
