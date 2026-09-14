@@ -1,18 +1,6 @@
 import SwiftUI
 
 /// Which dialog the settings window has open over it.
-nonisolated enum SettingsSheet: Identifiable, Equatable, Sendable {
-
-    case nameTerm(Term?)
-    case newCourse(Int64?)
-
-    var id: String {
-        switch self {
-        case .nameTerm(let term): "term-\(term?.id ?? 0)"
-        case .newCourse(let termID): "course-\(termID ?? 0)"
-        }
-    }
-}
 
 // MARK: -
 
@@ -31,7 +19,7 @@ struct SettingsView: View {
     /// `false` inside a real window, where macOS draws the buttons itself.
     var drawsTrafficLights = true
 
-    @State private var sheet: SettingsSheet?
+    @State private var sheet: LibrarySheet?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -50,9 +38,12 @@ struct SettingsView: View {
             height: RetainMetrics.detailWindowSize.height
         )
         .background(RetainPalette.surfaceWindow)
-        .sheet(item: $sheet) { sheet in
-            dialog(for: sheet)
-        }
+        .libraryEditingSheet(
+            $sheet,
+            terms: model.terms,
+            library: model.library,
+            reload: { await model.loadLibrary() }
+        )
     }
 
     // MARK: - The pane
@@ -86,55 +77,4 @@ struct SettingsView: View {
     /// The export gives no duration for this, because it draws no scroll. It
     /// sits at the short end of the range the four drawn loops use.
     private var scrollDuration: Double { RetainMotion.sweep.duration / 4 }
-
-    // MARK: - Dialogs
-
-    @ViewBuilder
-    private func dialog(for sheet: SettingsSheet) -> some View {
-        switch sheet {
-        case .nameTerm(let term):
-            NameTermDialog(
-                terms: model.terms,
-                draft: term.map(TermDraft.init) ?? TermDraft(startsOn: .now, endsOn: .now),
-                save: { draft in
-                    self.sheet = nil
-                    Task { await save(draft) }
-                },
-                cancel: { self.sheet = nil }
-            )
-
-        case .newCourse(let termID):
-            NewCourseDialog(
-                terms: model.terms,
-                draft: CourseDraft(termID: termID ?? model.selectedTermID),
-                create: { draft in
-                    self.sheet = nil
-                    Task { await create(draft) }
-                },
-                cancel: { self.sheet = nil }
-            )
-        }
-    }
-
-    /// Saving a term is two statements, never one.
-    ///
-    /// The row is written with `isCurrent` cleared and the flag is then set
-    /// through `makeCurrent(_:)`, which clears the old one and sets the new one
-    /// inside a single transaction. Writing `isCurrent = true` directly would
-    /// hit the partial unique index and fail — which is the database doing its
-    /// job, and not something to work around by dropping the index.
-    private func save(_ draft: TermDraft) async {
-        guard let library = model.library else { return }
-        guard let saved = try? await library.save(draft.term()), let id = saved.id else { return }
-        if draft.isCurrent {
-            try? await library.makeCurrent(id)
-        }
-        await model.loadLibrary()
-    }
-
-    private func create(_ draft: CourseDraft) async {
-        guard let library = model.library, let course = draft.course() else { return }
-        _ = try? await library.save(course)
-        await model.loadCourses()
-    }
 }

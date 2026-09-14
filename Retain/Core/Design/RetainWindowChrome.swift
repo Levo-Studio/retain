@@ -26,22 +26,25 @@ struct RetainWindowFrame<Content: View>: View {
 
 // MARK: - Traffic lights
 
-/// The three 10px circles at the leading end of every title bar.
+/// The space `NSWindow`'s close, minimise and zoom buttons sit in.
 ///
-/// The export draws them flat and grey — they are a picture of a window, not
-/// the system's own buttons. A real window puts `NSWindow`'s buttons in the
-/// same place; this is what stands in for them wherever the board is drawn
-/// without one, and what keeps the title bar's spacing honest either way.
-struct RetainTrafficLights: View {
+/// **Empty on purpose.** The export draws three flat grey circles here, and
+/// they are a picture of a window rather than the system's own buttons — the
+/// board had no window to put real ones in. A real window does, macOS draws
+/// them in exactly this place, and drawing a second set underneath produced
+/// six dots where there should be three.
+///
+/// What is left is the width they occupy, so the title beside them starts where
+/// the board puts it.
+struct RetainTrafficLightSpace: View {
 
     var body: some View {
-        HStack(spacing: RetainMetrics.titleBarGap) {
-            ForEach(0..<3, id: \.self) { _ in
-                Circle()
-                    .fill(RetainPalette.lineTrafficLight)
-                    .frame(width: RetainMetrics.trafficLightDiameter, height: RetainMetrics.trafficLightDiameter)
-            }
-        }
+        Color.clear
+            .frame(
+                width: RetainMetrics.trafficLightDiameter * 3 + RetainMetrics.titleBarGap * 2,
+                height: RetainMetrics.trafficLightDiameter
+            )
+            .accessibilityHidden(true)
     }
 }
 
@@ -62,7 +65,7 @@ struct RetainTitleBar<Trailing: View>: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            RetainTrafficLights()
+            RetainTrafficLightSpace()
 
             Text(verbatim: title)
                 .retainStyle(RetainTypography.titleBarSubtitle)

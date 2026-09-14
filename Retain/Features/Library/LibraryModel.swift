@@ -43,13 +43,13 @@ final class LibraryModel {
 
     // MARK: - Seams
 
-    /// The new-course dialog is board 07 and belongs to the screen that owns
-    /// the dialogs. The sidebar draws the row and calls this; nothing here
-    /// knows what it opens.
-    var onNewCourse: (() -> Void)?
-
-    /// Renaming a term is board 07's "Name term" sheet, for the same reason.
-    var onRenameTerm: ((Term) -> Void)?
+    /// Which of board 07's editing dialogs is open over the window.
+    ///
+    /// Held here rather than passed in as a closure. It was a closure, and the
+    /// window controller never filled it in — so the sidebar's two buttons did
+    /// nothing at all, which is indistinguishable from a broken app and was
+    /// exactly how it was reported.
+    var sheet: LibrarySheet?
 
     /// Opening a recording, optionally at a second — which is what a search hit
     /// is: a recording and a place in it.
@@ -59,8 +59,17 @@ final class LibraryModel {
 
     private let database: RetainDatabase
 
+    /// For the editing dialogs, which write rather than read.
+    var libraryRepository: LibraryRepository { LibraryRepository(database) }
+
     init(database: RetainDatabase) {
         self.database = database
+    }
+
+    /// Reads everything back after a dialog wrote something. A sheet that
+    /// dismisses onto a stale sidebar is the same bug as one that did nothing.
+    func reloadAfterEditing() async {
+        await load()
     }
 
     // MARK: - Loading

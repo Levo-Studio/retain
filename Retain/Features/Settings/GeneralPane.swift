@@ -13,7 +13,7 @@ struct GeneralPane: View {
     @Bindable var model: SettingsModel
 
     /// Which dialog is open over the window, if any.
-    @Binding var sheet: SettingsSheet?
+    @Binding var sheet: LibrarySheet?
 
     var body: some View {
         SettingsPaneSection(

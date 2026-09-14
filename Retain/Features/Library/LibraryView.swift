@@ -23,6 +23,12 @@ struct LibraryView: View {
         }
         .background(RetainPalette.surfaceWindow)
         .task { await model.load() }
+        .libraryEditingSheet(
+            $model.sheet,
+            terms: model.terms,
+            library: model.libraryRepository,
+            reload: { await model.reloadAfterEditing() }
+        )
     }
 
     // MARK: - The term picker
@@ -123,11 +129,8 @@ struct LibrarySidebar: View {
 
             Spacer(minLength: 0)
 
-            // The seam to board 07's new-course sheet. That dialog and the
-            // `CourseDraft` behind it belong to the screen that owns the
-            // dialogs; the window fills this closure in with it.
             Button {
-                model.onNewCourse?()
+                model.sheet = .newCourse(model.selectedTerm?.id)
             } label: {
                 Text(verbatim: RetainGlyph.add + " " + LibraryCopy.newCourse)
                     .retainStyle(RetainTypography.librarySidebarNewCourse)
@@ -158,7 +161,7 @@ struct LibrarySidebar: View {
 
             if let term = model.selectedTerm {
                 Button {
-                    model.onRenameTerm?(term)
+                    model.sheet = .nameTerm(term)
                 } label: {
                     Text(verbatim: LibraryCopy.rename)
                         .retainStyle(RetainTypography.librarySidebarAction)
