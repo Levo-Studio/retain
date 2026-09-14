@@ -164,8 +164,13 @@ final class LectureSession {
             }
 
             lines = TranscriptAssembly.replacingProvisional(lines, with: output.lines)
-            // Written beside the recording until phase 5 gives it a database.
-            try? TranscriptSidecar.write(lines, for: url)
+            // The transcript is not written anywhere yet, and that is a gap
+            // rather than a design: `TranscriptRepository` stores it against a
+            // recording row, a recording belongs to a course, and nothing in
+            // the status bar can name a course until the picker on board 01
+            // exists. The session holds the lines in the meantime; whoever
+            // builds that picker wires `startRecording` here and the transcript
+            // stops living only in memory.
             phase = .done
         } catch {
             // The live transcript stays on screen: it is worse than the batch

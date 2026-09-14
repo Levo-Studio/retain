@@ -61,6 +61,10 @@
       "comment": "A lecture could not start because the models are missing",
       "extractionState": "manual"
     },
+    "Retain could not open its library.": {
+      "comment": "The database file could not be opened or created",
+      "extractionState": "manual"
+    },
     "Retain could not open that microphone.": {
       "comment": "Recording failed because the chosen input device could not be opened",
       "extractionState": "manual"

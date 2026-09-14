@@ -67,29 +67,3 @@ actor LectureTranscription {
         )
     }
 }
-
-// MARK: - Sidecar storage
-
-/// Writes the transcript beside the recording as JSON.
-///
-/// A stand-in for phase 5, which replaces it with GRDB and full-text search.
-/// It exists now for one reason: a transcript that only lives in memory cannot
-/// be looked at, and the phase 3 acceptance is somebody reading a German
-/// lecture back and saying whether it is right.
-nonisolated enum TranscriptSidecar {
-
-    static func url(for recording: URL) -> URL {
-        recording.deletingPathExtension().appendingPathExtension("transcript.json")
-    }
-
-    static func write(_ lines: [TranscriptLine], for recording: URL) throws {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try encoder.encode(lines).write(to: url(for: recording), options: .atomic)
-    }
-
-    static func read(for recording: URL) -> [TranscriptLine] {
-        guard let data = try? Data(contentsOf: url(for: recording)) else { return [] }
-        return (try? JSONDecoder().decode([TranscriptLine].self, from: data)) ?? []
-    }
-}
