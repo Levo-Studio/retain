@@ -10,8 +10,24 @@
       "comment": "Microphone level readout in settings",
       "extractionState": "manual"
     },
+    "%@ holds %lld recordings. Deleting the term deletes them all, with their transcripts, notes and annotations.": {
+      "comment": "Delete-term dialog body naming how many recordings would be lost",
+      "extractionState": "manual"
+    },
+    "%@ holds one recording. Deleting the term deletes it, with its transcript, notes and annotations.": {
+      "comment": "Delete-term dialog body naming the single recording that would be lost",
+      "extractionState": "manual"
+    },
     "%@ of %@": {
       "comment": "Byte counts on the speech model download card",
+      "extractionState": "manual"
+    },
+    "%@ run in no other term and are removed as well.": {
+      "comment": "Delete-term dialog sentence naming the courses that would be removed with the term",
+      "extractionState": "manual"
+    },
+    "%@ runs in no other term and is removed as well.": {
+      "comment": "Delete-term dialog sentence naming the one course that would be removed with the term",
       "extractionState": "manual"
     },
     "%@ stops being the current term.": {
@@ -394,6 +410,18 @@
       "comment": "Meta strip label above the day a recording was made",
       "extractionState": "manual"
     },
+    "Delete": {
+      "comment": "Button beside the term picker that opens the delete-term confirmation",
+      "extractionState": "manual"
+    },
+    "Delete term": {
+      "comment": "Delete-term dialog title, and the button that confirms it",
+      "extractionState": "manual"
+    },
+    "Delete term…": {
+      "comment": "Context menu item on the term picker that opens the delete-term confirmation",
+      "extractionState": "manual"
+    },
     "Download": {
       "comment": "Button that starts the one-time speech model download",
       "extractionState": "manual"
@@ -628,6 +656,10 @@
     },
     "Nothing in this term matches.": {
       "comment": "Full-text search that found nothing",
+      "extractionState": "manual"
+    },
+    "Nothing was recorded in %@. Deleting the term removes it and nothing else.": {
+      "comment": "Delete-term dialog body for a term that holds nothing",
       "extractionState": "manual"
     },
     "Open System Settings": {
@@ -902,10 +934,6 @@
       "comment": "Status bar menu item stopping a recording",
       "extractionState": "manual"
     },
-    "Stored in the Keychain — type to replace": {
-      "comment": "Placeholder of the API key field when a key is already stored",
-      "extractionState": "manual"
-    },
     "Summaries run on a model on this Mac. Nothing leaves the device.": {
       "comment": "Settings section description under the language model heading",
       "extractionState": "manual"
@@ -964,6 +992,10 @@
     },
     "The recording is processed only on this Mac. Nothing is uploaded, and only what you keep is stored.": {
       "comment": "Microphone permission dialog body",
+      "extractionState": "manual"
+    },
+    "This cannot be undone.": {
+      "comment": "Closing sentence of the delete-term dialog body",
       "extractionState": "manual"
     },
     "This recording has no transcript yet.": {

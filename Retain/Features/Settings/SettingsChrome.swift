@@ -19,33 +19,16 @@ struct SettingsTitleBar: View {
     /// the board.
     var drawsTrafficLights = true
 
-    /// Three 10-point circles with two 9-point gaps between them.
-    private var trafficLightWidth: CGFloat {
-        RetainMetrics.trafficLightDiameter * 3 + RetainMetrics.titleBarGap * 2
-    }
-
     var body: some View {
         HStack(spacing: 0) {
-            Group {
-                if drawsTrafficLights {
-                    HStack(spacing: RetainMetrics.titleBarGap) {
-                        ForEach(0..<3, id: \.self) { _ in
-                            Circle()
-                                .fill(RetainPalette.lineTrafficLight)
-                                .frame(
-                                    width: RetainMetrics.trafficLightDiameter,
-                                    height: RetainMetrics.trafficLightDiameter
-                                )
-                        }
-                    }
-                } else {
-                    Color.clear.frame(width: trafficLightWidth, height: RetainMetrics.trafficLightDiameter)
-                }
-            }
-            .accessibilityHidden(true)
+            // The same strip the other windows use, so all three agree on where
+            // a title bar's content begins — and so the width comes from the
+            // window's own buttons rather than from a second copy of the
+            // board's arithmetic.
+            RetainTrafficLightSpace(drawsButtons: drawsTrafficLights)
 
             RetainWindowMark()
-                .padding(.leading, RetainMetrics.titleBarTitleGap)
+                .padding(.leading, RetainMetrics.titleBarMarkGap)
 
             Text(title)
                 .retainStyle(RetainTypography.titleBarSubtitle)

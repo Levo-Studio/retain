@@ -37,15 +37,99 @@ struct RetainWindowFrame<Content: View>: View {
 ///
 /// What is left is the width they occupy, so the title beside them starts where
 /// the board puts it.
+/// The gap the window's own close, minimise and zoom buttons sit in.
+///
+/// **Measured, not assumed.** The export draws three 10-point circles with the
+/// bar's own gap between them, which reserves 48 points — but those circles are
+/// a drawing of the buttons, and macOS's real ones are wider and start further
+/// in. Reserving the drawn width put the logo under the zoom button; reserving
+/// a guess at the real width put it adrift in the middle of the bar, which is
+/// how it was reported.
+///
+/// So the strip asks the window where its buttons actually end. Everything
+/// after it then sits exactly one gap later, which is as far left as anything
+/// in a title bar can be, on this version of macOS and the next one.
+///
+/// The drawn width is the fallback, for previews and for the snapshot checked
+/// against the board — neither has a window, and both want the board's own
+/// geometry rather than the system's.
 struct RetainTrafficLightSpace: View {
 
+    /// Draw the circles as well, which only a preview or the board snapshot
+    /// wants: in a real window macOS paints its own in this space, and the
+    /// buttons that work are better than a picture of buttons that do not.
+    var drawsButtons = false
+
+    @State private var buttonsEndAt: CGFloat?
+
+    /// Three 10-point circles with two 9-point gaps, as the export draws them.
+    static var drawnWidth: CGFloat {
+        RetainMetrics.trafficLightDiameter * 3 + RetainMetrics.titleBarGap * 2
+    }
+
+    private var width: CGFloat {
+        // The measurement is in window coordinates and the bar has already
+        // spent its leading padding, so that much is taken off again.
+        guard let buttonsEndAt else { return Self.drawnWidth }
+        return max(0, buttonsEndAt - RetainMetrics.titleBarPadding.leading)
+    }
+
     var body: some View {
-        Color.clear
-            .frame(
-                width: RetainMetrics.trafficLightDiameter * 3 + RetainMetrics.titleBarGap * 2,
-                height: RetainMetrics.trafficLightDiameter
-            )
-            .accessibilityHidden(true)
+        Group {
+            if drawsButtons {
+                HStack(spacing: RetainMetrics.titleBarGap) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        Circle()
+                            .fill(RetainPalette.lineTrafficLight)
+                            .frame(
+                                width: RetainMetrics.trafficLightDiameter,
+                                height: RetainMetrics.trafficLightDiameter
+                            )
+                    }
+                }
+            } else {
+                Color.clear
+                    .frame(width: width, height: RetainMetrics.trafficLightDiameter)
+                    .background(WindowButtonExtent { buttonsEndAt = $0 })
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Reports where the window's standard buttons end, once the view is in a
+/// window.
+///
+/// An `NSView` because there is no other way to ask: the buttons belong to the
+/// `NSWindow`, and SwiftUI has no value that describes them.
+private struct WindowButtonExtent: NSViewRepresentable {
+
+    let report: (CGFloat) -> Void
+
+    func makeNSView(context: Context) -> NSView { Reader(report: report) }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    final class Reader: NSView {
+
+        private let report: (CGFloat) -> Void
+
+        init(report: @escaping (CGFloat) -> Void) {
+            self.report = report
+            super.init(frame: .zero)
+        }
+
+        required init?(coder: NSCoder) { nil }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard let button = window?.standardWindowButton(.zoomButton) else { return }
+            let extent = button.frame.maxX
+            // Out of the layout pass: this runs while the view is being placed,
+            // and writing to the `@State` that decides its width from inside it
+            // is a loop SwiftUI will complain about.
+            DispatchQueue.main.async { [report] in report(extent) }
+        }
     }
 }
 
@@ -69,7 +153,7 @@ struct RetainTitleBar<Trailing: View>: View {
             RetainTrafficLightSpace()
 
             RetainWindowMark()
-                .padding(.leading, RetainMetrics.titleBarGap + RetainMetrics.titleBarTitleGap)
+                .padding(.leading, RetainMetrics.titleBarMarkGap)
 
             Text(verbatim: title)
                 .retainStyle(RetainTypography.titleBarSubtitle)

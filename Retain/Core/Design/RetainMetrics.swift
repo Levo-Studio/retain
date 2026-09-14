@@ -132,7 +132,14 @@ nonisolated enum RetainMetrics {
     /// on instead of as a second thing in the bar.
     static let titleBarMark: CGFloat = 16
 
-    /// Between the mark and the title.
+    /// Between the traffic lights and the mark, and between the mark and the
+    /// title.
+    ///
+    /// The title bar's content cannot start where the sidebar's does, however
+    /// flush that would read: macOS draws close, minimise and zoom in the first
+    /// 62 points of the bar and they are the buttons that work. So the group
+    /// starts as soon as they end, with the bar's own gap and not the wider one
+    /// the export leaves before a title standing alone.
     static let titleBarMarkGap: CGFloat = 8
     /// The `Export` button.
     static let titleBarButtonPadding = edges(5, 10)
