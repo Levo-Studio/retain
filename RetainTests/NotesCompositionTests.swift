@@ -83,6 +83,25 @@ struct NotesCompositionTests {
     func noAnnotations() {
         #expect(NotesComposition.items(blocks: blocks, annotations: []).count == 2)
     }
+
+    /// `⌘⇧M` with nothing typed after it is a real marker — it counts in the
+    /// meta strip and puts the amber dot on its chapter — but board 03 draws an
+    /// annotation as a label above a sentence, and there is no sentence.
+    @Test("A marker with nothing typed after it draws no annotation")
+    func bareMarker() {
+        let bare = Annotation(id: 1, recordingID: 1, time: 3130, note: nil)
+        let blank = Annotation(id: 2, recordingID: 1, time: 3200, note: "   ")
+        let real = Annotation(id: 3, recordingID: 1, time: 3300, note: "etwas")
+
+        let items = NotesComposition.items(blocks: blocks, annotations: [bare, blank, real])
+
+        #expect(items.count == 3)
+        if case let .annotation(found) = items[2] {
+            #expect(found.id == 3)
+        } else {
+            Issue.record("only the marker that was written on should be drawn")
+        }
+    }
 }
 
 // MARK: - Anchoring a highlight

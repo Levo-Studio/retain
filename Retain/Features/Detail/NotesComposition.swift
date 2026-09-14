@@ -33,11 +33,19 @@ nonisolated enum NotesComposition {
     /// next one rather than after the previous, so a remark typed at the moment
     /// a new topic started introduces it.
     ///
-    /// Nothing is dropped. An annotation outside every block — typed in the
-    /// first seconds, or after the last card closed — still appears, because
-    /// the user wrote it and the notes are the only place it is ever shown.
+    /// An annotation outside every block — typed in the first seconds, or after
+    /// the last card closed — still appears, because the user wrote it and the
+    /// notes are the only place it is ever shown.
+    ///
+    /// The one thing that does not appear is a **bare marker**: `⌘⇧M` pressed
+    /// without anything typed after it. It is a real thing — it counts in the
+    /// meta strip and it puts the amber dot on its chapter — but it has no text,
+    /// and board 03 draws an annotation as a label above a sentence. A blue
+    /// rule with nothing beside it is not that.
     static func items(blocks: [NoteBlock], annotations: [Annotation]) -> [NoteItem] {
-        var pending = annotations.sorted { $0.time < $1.time }
+        var pending = annotations
+            .filter { !($0.note ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .sorted { $0.time < $1.time }
         var items: [NoteItem] = []
 
         func drain(while include: (Annotation) -> Bool) {
