@@ -520,12 +520,16 @@ struct LMStudioBackendTests {
         }
     }
 
+    /// A refusal for want of a token is the clearest example: asking again with
+    /// a looser response format is the same request without the token, and it
+    /// will be refused again. It surfaces as `.unauthorized` rather than
+    /// `.httpStatus(401)` so the message can name the field that fixes it.
     @Test("A status the ladder cannot fix is not retried")
     func fatalStatusStops() async throws {
         let transport = RecordedTransport([.init(401, "{\"error\":\"unauthorized\"}")])
         let backend = LMStudioBackend(endpoint: try endpoint(), transport: transport, apiKey: { nil })
 
-        await #expect(throws: SummarizationError.httpStatus(401)) {
+        await #expect(throws: SummarizationError.unauthorized) {
             try await backend.structuredReply(
                 to: ChatConversation([.user("x")]),
                 model: "qwen2.5-7b-instruct",
@@ -613,5 +617,83 @@ struct LMStudioBackendTests {
             )
         #expect(reply.stopReason == .endOfSequence)
         #expect(reply.contextLength == nil)
+    }
+}
+
+// MARK: -
+
+/// LM Studio can be told to require an API token, and then it answers every
+/// request — including the model list — with 401 and a body explaining itself.
+/// Reported as a bare status code, the message sent the reader looking at the
+/// endpoint and the address, which is where it was in fact looked for.
+@Suite("LM Studio authentication")
+struct LMStudioAuthenticationTests {
+
+    /// The body LM Studio actually returns, kept close to verbatim.
+    private let refusal = """
+        {"error":{"type":"invalid_request","code":"invalid_api_key",\
+        "message":"An LM Studio API token is required to make requests to this server, \
+        but none was provided using the Authorization header using the 'Bearer' scheme."}}
+        """
+
+    @Test("A refusal says a token is needed, not that something went wrong")
+    func unauthorizedHasItsOwnMessage() {
+        let message = SummarizationError.unauthorized.errorDescription ?? ""
+
+        #expect(message.contains("token"))
+        #expect(message.contains("API key"), "the message has to name the field that fixes it")
+        #expect(!message.contains("401"), "a status code is not a remedy")
+    }
+
+    @Test("401 and 403 are both that refusal")
+    func bothRefusalsMapToIt() async throws {
+        for status in [401, 403] {
+            let backend = LMStudioBackend(
+                endpoint: try endpoint(),
+                transport: RecordedTransport([.init(status, refusal)]),
+                apiKey: { nil }
+            )
+            await #expect(throws: SummarizationError.unauthorized) {
+                try await backend.availableModels()
+            }
+        }
+    }
+
+    @Test("A connection test reports it the same way")
+    func connectionTestReportsIt() async throws {
+        let backend = LMStudioBackend(
+            endpoint: try endpoint(),
+            transport: RecordedTransport([.init(401, refusal)]),
+            apiKey: { nil }
+        )
+        await #expect(throws: SummarizationError.unauthorized) {
+            try await backend.checkConnection()
+        }
+    }
+
+    @Test("A key that is set is sent as a bearer token")
+    func keyIsSent() async throws {
+        let transport = RecordedTransport([.init(200, #"{"data":[]}"#)])
+        let backend = LMStudioBackend(
+            endpoint: try endpoint(),
+            transport: transport,
+            apiKey: { "lms-abc123" }
+        )
+        _ = try await backend.availableModels()
+
+        let header = transport.requests.first?.value(forHTTPHeaderField: "Authorization")
+        #expect(header == "Bearer lms-abc123")
+    }
+
+    @Test("Other statuses keep their code")
+    func otherStatusesAreUnchanged() async throws {
+        let backend = LMStudioBackend(
+            endpoint: try endpoint(),
+            transport: RecordedTransport([.init(503, "")]),
+            apiKey: { nil }
+        )
+        await #expect(throws: SummarizationError.httpStatus(503)) {
+            try await backend.availableModels()
+        }
     }
 }

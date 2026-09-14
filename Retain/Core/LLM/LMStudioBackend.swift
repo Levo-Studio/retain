@@ -277,6 +277,13 @@ nonisolated final class LMStudioBackend: SummarizationBackend {
 
     private func check(_ response: HTTPURLResponse) throws {
         guard (200..<300).contains(response.statusCode) else {
+            // 401 and 403 are the same thing to a reader — the server will not
+            // talk to you without a token — and the remedy is one field in
+            // Settings. Left as a bare status code, the message sends them
+            // looking at the address and the endpoint instead.
+            if response.statusCode == 401 || response.statusCode == 403 {
+                throw SummarizationError.unauthorized
+            }
             throw SummarizationError.httpStatus(response.statusCode)
         }
     }

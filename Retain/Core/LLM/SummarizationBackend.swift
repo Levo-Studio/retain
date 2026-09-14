@@ -178,6 +178,16 @@ nonisolated enum SummarizationError: Error, Equatable, LocalizedError {
 
     case httpStatus(Int)
 
+    /// The server refused the request for want of a token.
+    ///
+    /// Its own case rather than an `httpStatus(401)` because the remedy is
+    /// specific and the generic message hides it completely: "LM Studio
+    /// answered with an error. (401)" is true and sends the reader looking at
+    /// the address and the endpoint, which is where this was in fact looked
+    /// for. LM Studio can be told to require a token, and then it wants one on
+    /// every request including the model list.
+    case unauthorized
+
     /// A reply with no choices in it.
     case emptyReply
 
@@ -209,6 +219,9 @@ nonisolated enum SummarizationError: Error, Equatable, LocalizedError {
         case .unreachable:
             String(localized: "LM Studio is not responding.",
                    comment: "No server answered at the configured address")
+        case .unauthorized:
+            String(localized: "LM Studio requires an API token. Put it in the API key field above.",
+                   comment: "The language model server refused the request for want of a token")
         case .httpStatus(let code):
             String(localized: "LM Studio answered with an error. (\(code))",
                    comment: "The language model server returned an HTTP error status")
