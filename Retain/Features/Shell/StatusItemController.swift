@@ -143,6 +143,11 @@ final class StatusItemController {
     }
 
     @objc private func showLibrary() {
+        showLibraryWindow()
+    }
+
+    /// Also the answer to a click on the Dock tile with nothing open.
+    func showLibraryWindow() {
         libraryWindow?.show()
     }
 

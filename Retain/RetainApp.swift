@@ -46,11 +46,18 @@ final class RetainApp: NSObject, NSApplicationDelegate {
     private var statusItem: StatusItemController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Accessory, not regular: no Dock tile while Retain is only sitting in
-        // the status bar. `WindowPresence` raises it to `.regular` for as long
-        // as a real window is open, so a recording or the library behaves like
-        // an ordinary app, and drops it back when the last one closes.
-        NSApp.setActivationPolicy(.accessory)
+        // An ordinary app with a Dock tile, not an accessory.
+        //
+        // Retain started as an accessory — it is a status-bar app, and an app
+        // with nothing but a status item has no business in the Dock. The
+        // trouble is that it does not have nothing but a status item: there is
+        // a recording window, a library, a detail window per recording, and
+        // Settings. An accessory's windows cannot be reached with ⌘-Tab, do not
+        // appear in Mission Control, and once something covers them there is no
+        // way back except through the status item. Raising the policy only
+        // while a window happened to be open made all of that conditional on
+        // state the user cannot see, which is worse than either answer alone.
+        NSApp.setActivationPolicy(.regular)
 
         // A database that will not open is not a reason to have no status item:
         // the microphone, the live transcript and the window all work without
@@ -64,6 +71,18 @@ final class RetainApp: NSObject, NSApplicationDelegate {
     /// the ordinary case rather than an edge one.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
+    }
+
+    /// Clicking the Dock tile with no window open.
+    ///
+    /// Without this the click does nothing at all, which reads as a hang. The
+    /// library is the right answer rather than the recording window: it is
+    /// where everything already recorded is, and starting a recording is what
+    /// the status item is for.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        guard !hasVisibleWindows else { return true }
+        statusItem?.showLibraryWindow()
+        return true
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {

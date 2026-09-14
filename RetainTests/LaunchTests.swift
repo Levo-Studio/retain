@@ -81,10 +81,13 @@ struct LaunchTests {
         #expect(quit.keyEquivalent == "q")
     }
 
-    @Test("Retain runs without a Dock tile")
-    func runsAsAnAccessory() {
+    @Test("Retain is an ordinary app, with a Dock tile")
+    func runsAsARegularApp() {
         // Set in applicationDidFinishLaunching, so this is also a second
         // witness that the delegate actually ran.
-        #expect(NSApp.activationPolicy() == .accessory)
+        //
+        // It was `.accessory` until the owner pointed out that an app you
+        // cannot ⌘-Tab to is an app you lose behind a browser.
+        #expect(NSApp.activationPolicy() == .regular)
     }
 }

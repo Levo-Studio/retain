@@ -18,10 +18,11 @@ struct BundleTests {
         #expect(hint == "Favor Saving Power")
     }
 
-    @Test("Retain launches without a Dock tile")
-    func runsAsAnAccessory() throws {
+    @Test("Retain is not an agent — it has a Dock tile")
+    func isNotAnAgent() throws {
+        // LSUIElement hides an app from the Dock and from ⌘-Tab. Retain has
+        // four windows; it does not want that.
         let bundle = Bundle(for: RetainApp.self)
-        let isAgent = bundle.object(forInfoDictionaryKey: "LSUIElement") as? Bool
-        #expect(isAgent == true)
+        #expect(bundle.object(forInfoDictionaryKey: "LSUIElement") == nil)
     }
 }

@@ -34,18 +34,23 @@ nonisolated struct WindowTally: Equatable, Sendable {
 
 // MARK: - Applying it
 
-/// Raises Retain to an ordinary app while it has a window open, and drops it
-/// back to the status bar when the last one closes.
+/// Brings Retain forward when its first window opens, and keeps count of how
+/// many are open.
 ///
-/// Retain launches as an accessory: no Dock tile, no menu bar, nothing but the
-/// status item. That is right while it is only sitting there, and wrong the
-/// moment a real window is on screen — an accessory app's windows cannot be
-/// reached with ⌘-Tab, have no menu bar to hold Copy or Close, and cannot be
-/// brought forward once something covers them.
+/// This used to switch the activation policy as well: Retain launched as an
+/// accessory and became an ordinary app only while a window happened to be
+/// open. That is gone — Retain is a regular app now, because an accessory's
+/// windows cannot be reached with ⌘-Tab, do not appear in Mission Control, and
+/// once something covers them there is no way back except through the status
+/// item. Making all of that depend on state the user cannot see was worse than
+/// either answer on its own.
 ///
-/// Counted rather than toggled, because there will be more than one window —
-/// the recording, the lesson detail, the library, Settings — and the last one
-/// to close is the one that decides.
+/// What is left is the part that was always needed: opening a window does not
+/// bring the app forward on its own, and a window that appears behind the
+/// browser somebody was reading is a window they will not find.
+///
+/// Counted rather than toggled, because there is more than one window — the
+/// recording, a recording's detail, the library, Settings.
 @MainActor
 enum WindowPresence {
 
@@ -56,16 +61,11 @@ enum WindowPresence {
     /// Call from a window controller as it shows a window.
     static func opened() {
         guard tally.opened() else { return }
-        NSApp.setActivationPolicy(.regular)
-        // Raising the policy does not bring the app forward on its own, and a
-        // window that opens behind the browser the user was reading is a window
-        // they will not find.
         NSApp.activate(ignoringOtherApps: true)
     }
 
     /// Call from `windowWillClose`.
     static func closed() {
-        guard tally.closed() else { return }
-        NSApp.setActivationPolicy(.accessory)
+        _ = tally.closed()
     }
 }
