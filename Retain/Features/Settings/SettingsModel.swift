@@ -42,31 +42,47 @@ final class SettingsModel {
 
     private(set) var isTesting = false
 
-    /// What is typed into the API key field. **Never what is stored.** A key in
-    /// the Keychain is reported through `hasStoredKey` and reaches the field
-    /// only as a placeholder saying that it exists.
+    /// What is in the API key field — and, as soon as it changes, what is in
+    /// the Keychain.
+    ///
+    /// It used to be a draft that was written on Return, on losing focus, or
+    /// when the window closed, and cleared afterwards so that no secret sat in
+    /// an observable property. That was wrong twice over: a key pasted and then
+    /// tested went out as no key at all, and a field that empties itself the
+    /// moment you look away is indistinguishable from one that threw your input
+    /// away.
+    ///
+    /// So the field is the item. Typing or pasting writes through to the
+    /// Keychain immediately, clearing it removes the item, and what is stored
+    /// is loaded back in when the window opens — as dots, in a `SecureField`.
+    /// Hard rule 10 is about where the key is **kept**, and it still is: the
+    /// Keychain, never `UserDefaults`.
     var apiKeyDraft: String {
         get { apiKeyText }
         set {
+            guard newValue != apiKeyText else { return }
+            // Typing into the field counts as having read it: whatever was
+            // stored is being replaced by this, so there is nothing left to
+            // load over the top of it.
+            hasLoadedAPIKey = true
             apiKeyText = newValue
-            apiKeyWasEdited = true
+            storeAPIKey()
         }
     }
 
-    /// Written through rather than set directly, so that clearing the draft
-    /// after a commit does not count as an edit and re-arm the removal.
     private var apiKeyText = ""
-
-    private(set) var apiKeyWasEdited = false
 
     private(set) var hasStoredKey = false
 
-    /// Why the last attempt to store the key failed, drawn under the field.
+    /// Whether the Keychain has been read yet. See `init` — it deliberately
+    /// has not been at launch.
+    private var hasLoadedAPIKey = false
+
+    /// Why the last write to the Keychain failed, drawn under the field.
     ///
     /// The write used to be `try?` with `hasStoredKey = true` after it
-    /// regardless, so a keychain that refused the item still flipped the
-    /// placeholder to "Stored in the Keychain" — the field then said the key
-    /// was saved while every request went out without it.
+    /// regardless, so a Keychain that refused the item still reported the key
+    /// as stored while every request went out without it.
     private(set) var apiKeyProblem: String?
 
     // MARK: - Handed in
@@ -83,6 +99,11 @@ final class SettingsModel {
     /// a test process has its own keychain and should not be writing to the
     /// user's.
     private let keychain: KeychainItem
+
+    /// What the backend reads the key out of. `nil` in a test with its own
+    /// keychain item, so a test never writes into the process-wide cache the
+    /// real app shares.
+    private let keyCache: LanguageModelKey?
 
     // MARK: - General
 
@@ -101,18 +122,28 @@ final class SettingsModel {
         recorder: RecordingEngine? = nil,
         library: LibraryRepository? = nil,
         keychain: KeychainItem = RetainKeychain.languageModelAPIKey,
+        keyCache: LanguageModelKey? = .shared,
         makeBackend: @escaping @MainActor (LMStudioEndpoint) -> any SummarizationBackend = { LMStudioBackend(endpoint: $0) }
     ) {
         self.speechModels = speechModels
         self.recorder = recorder
         self.library = library
         self.keychain = keychain
+        self.keyCache = keychain == RetainKeychain.languageModelAPIKey ? keyCache : nil
         self.makeBackend = makeBackend
 
         section = Defaults[.settingsSection]
         address = Defaults[.languageModelAddress]
         selectedModel = Defaults[.languageModelName]
-        hasStoredKey = (try? keychain.read()) != nil
+        // **The Keychain is not read here.** This model is built while the app
+        // is launching, and a Keychain read from a build whose signature the
+        // item does not know puts a system password sheet on screen — which,
+        // during launch, is a sheet in front of an app that has not finished
+        // starting. It hung the test host for five minutes before it was
+        // traced back to here.
+        //
+        // Nothing needs the key until the pane that shows it is open, so the
+        // read waits for `loadAPIKey()`.
     }
 
     // MARK: - The connection test
@@ -122,12 +153,10 @@ final class SettingsModel {
     func testConnection() async {
         guard !isTesting else { return }
 
-        // The key is stored before the request rather than after the window
-        // closes. Somebody who pastes a token and presses Test has said what
-        // they want the test to use; without this the field was still a draft,
-        // the request went out with no `Authorization` header, and the server
-        // answered 401 — which reads as "the key is wrong" when the key had
-        // simply never been sent.
+        // A write that had failed gets one more attempt before the request,
+        // so a test does not go out without a key the user believes is stored.
+        // The field itself is already in the Keychain by now — it is written
+        // as it is typed.
         commitAPIKey()
 
         isTesting = true
@@ -185,44 +214,62 @@ final class SettingsModel {
 
     // MARK: - The API key
 
-    /// Writes what was typed, or removes the item if the field was cleared.
+    /// Writes the field to the Keychain, or removes the item when it is empty.
     ///
-    /// Called when the field loses focus or the pane closes. An untouched field
-    /// changes nothing: it is empty because a stored key is never loaded into
-    /// it, not because there is no key.
-    func commitAPIKey() {
-        switch APIKeyField.outcome(draft: apiKeyDraft, wasEdited: apiKeyWasEdited) {
-        case .keep:
-            return
-        case .store(let key):
-            do {
-                try keychain.write(key)
-            } catch {
-                // Kept in the field on purpose. Dropping a draft that was
-                // never stored loses what the user typed and leaves the pane
-                // claiming a key that is not there.
-                apiKeyProblem = Self.message(for: error)
-                return
-            }
-            hasStoredKey = true
+    /// Runs on every change to the field, so pasting a token stores it there
+    /// and then. Nothing is deferred to Return, to losing focus or to the
+    /// window closing — each of those was a moment the user had no reason to
+    /// expect, and the connection test in between went out with no key.
+    /// Reads the stored key into the field, once, when the pane opens.
+    ///
+    /// The stored key is loaded rather than hidden behind a placeholder: it is
+    /// drawn as dots by a `SecureField`, and a field that shows nothing while a
+    /// key exists cannot be told apart from one that lost it.
+    func loadAPIKey() {
+        guard !hasLoadedAPIKey else { return }
+        hasLoadedAPIKey = true
+
+        do {
+            apiKeyText = try keychain.read() ?? ""
+            hasStoredKey = !apiKeyText.isEmpty
+            // One read, shared: the pane and the backend now ask the same
+            // cache, so opening Settings does not cost a second prompt.
+            keyCache?.replace(with: apiKeyText.isEmpty ? nil : apiKeyText)
             apiKeyProblem = nil
-        case .remove:
-            do {
-                try keychain.delete()
-            } catch {
-                apiKeyProblem = Self.message(for: error)
-                return
-            }
-            hasStoredKey = false
-            apiKeyProblem = nil
+        } catch {
+            apiKeyProblem = Self.message(for: error)
         }
-        // The draft is dropped the moment it has been stored, so the secret is
-        // not sitting in an observable property for the rest of the session.
-        apiKeyText = ""
-        apiKeyWasEdited = false
     }
 
-    var apiKeyPlaceholder: String { APIKeyField.placeholder(hasStoredKey: hasStoredKey) }
+    private func storeAPIKey() {
+        let trimmed = apiKeyText.trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            if trimmed.isEmpty {
+                try keychain.delete()
+                hasStoredKey = false
+            } else {
+                try keychain.write(trimmed)
+                hasStoredKey = true
+            }
+            // The backend reads the key once per launch and holds it, so a key
+            // changed here has to be handed over rather than left for a read
+            // that will not happen again.
+            keyCache?.replace(with: trimmed.isEmpty ? nil : trimmed)
+            apiKeyProblem = nil
+        } catch {
+            apiKeyProblem = Self.message(for: error)
+        }
+    }
+
+    /// Kept for the places that used to commit a draft — the window closing,
+    /// Return in the field. The field is already stored by then, so this only
+    /// catches a write that had failed.
+    func commitAPIKey() {
+        guard apiKeyProblem != nil else { return }
+        storeAPIKey()
+    }
+
+    var apiKeyPlaceholder: String { APIKeyField.placeholder }
 
     // MARK: - Microphone
 

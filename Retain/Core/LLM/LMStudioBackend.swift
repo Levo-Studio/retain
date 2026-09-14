@@ -21,17 +21,18 @@ nonisolated final class LMStudioBackend: SummarizationBackend {
     private let endpoint: LMStudioEndpoint
     private let transport: any HTTPTransport
 
-    /// Read on every request rather than held.
+    /// Where the API key comes from.
     ///
-    /// The key is a secret with a lifetime of one request. Keeping it in a
-    /// property would put it in every memory dump for as long as the app is
-    /// running, to save a keychain read that costs microseconds.
+    /// Not the Keychain directly, and not on every request: see
+    /// `LanguageModelKey`. macOS asks the user before letting a process read an
+    /// item its signature does not match, so a per-request read turned one
+    /// lecture into a queue of password sheets.
     private let apiKey: @Sendable () -> String?
 
     init(
         endpoint: LMStudioEndpoint,
         transport: any HTTPTransport = URLSessionTransport(),
-        apiKey: @escaping @Sendable () -> String? = { try? RetainKeychain.languageModelAPIKey.read() }
+        apiKey: @escaping @Sendable () -> String? = { LanguageModelKey.shared.value() }
     ) {
         self.endpoint = endpoint
         self.transport = transport

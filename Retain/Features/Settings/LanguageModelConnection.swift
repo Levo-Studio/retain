@@ -160,45 +160,22 @@ nonisolated enum ModelPicker {
 
 // MARK: - The API key field
 
-/// What the API key row does with what was typed.
+/// What the API key row says when it is empty.
 ///
-/// The key lives in the Keychain and is read exactly once per request, deep in
-/// `LMStudioBackend`. It is **never** loaded into the field: a stored key is
-/// reported as a placeholder that says a key is stored, and the field itself
-/// stays empty until somebody types into it. That is the difference between a
-/// secret that exists and a secret that is on screen.
+/// The field **is** the Keychain item: what is stored is loaded into it when
+/// the window opens and drawn as dots by a `SecureField`, and every change to
+/// it is written straight back. So an empty field means one thing only — there
+/// is no key — and the placeholder says exactly that.
+///
+/// It used to mean two things. A stored key was never loaded in, so an empty
+/// field was either "no key" or "a key you cannot see", and the placeholder had
+/// to explain which. That cost more than it bought: a key pasted into the field
+/// was still a draft when the connection was tested, so the request went out
+/// without it and LM Studio answered 401.
 nonisolated enum APIKeyField {
 
-    /// What the empty field says.
-    ///
-    /// The export draws one placeholder, for the case where nothing is stored.
-    /// The other is invented, because the export has no state for it.
-    static func placeholder(hasStoredKey: Bool) -> String {
-        hasStoredKey
-            ? String(localized: "Stored in the Keychain — type to replace",
-                     comment: "Placeholder of the API key field when a key is already stored")
-            : String(localized: "leave empty for LM Studio",
-                     comment: "Placeholder of the optional API key field")
-    }
-
-    /// What committing the field should do.
-    enum Outcome: Equatable, Sendable {
-        /// The field was not touched. Whatever is stored stays stored.
-        case keep
-        /// Store this, replacing anything already there.
-        case store(String)
-        /// The field was cleared. Remove the item.
-        case remove
-    }
-
-    /// - Parameters:
-    ///   - draft: exactly what is in the field.
-    ///   - wasEdited: whether the user has typed into it since the pane opened.
-    ///     An untouched empty field must not delete a stored key — the field is
-    ///     empty because a stored key is never loaded into it.
-    static func outcome(draft: String, wasEdited: Bool) -> Outcome {
-        guard wasEdited else { return .keep }
-        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? .remove : .store(trimmed)
+    static var placeholder: String {
+        String(localized: "leave empty for LM Studio",
+               comment: "Placeholder of the optional API key field")
     }
 }

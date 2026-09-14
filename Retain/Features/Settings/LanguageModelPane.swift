@@ -53,7 +53,14 @@ struct LanguageModelPane: View {
                 }
             }
         }
-        .task { await model.refreshModels() }
+        .task {
+            // The Keychain is read here and not at launch — a read from a build
+            // the stored item does not recognise raises a system password
+            // sheet, and during launch that lands in front of an app that has
+            // not finished starting.
+            model.loadAPIKey()
+            await model.refreshModels()
+        }
         .onDisappear { model.commitAPIKey() }
     }
 
@@ -81,13 +88,17 @@ struct LanguageModelPane: View {
         }
     }
 
-    /// The key field plus, when the keychain refused the item, the reason
+    /// The key field plus, when the Keychain refused the item, the reason
     /// under it.
     ///
-    /// Not drawn in the export, which has no failure state for this row. It is
-    /// here because the alternative is what Retain used to do: swallow the
-    /// error, flip the placeholder to "Stored in the Keychain", and send every
-    /// request without the key.
+    /// The field writes through to the Keychain as it is typed — see
+    /// `SettingsModel.apiKeyDraft` — so nothing here commits anything; Return
+    /// and losing focus only retry a write that failed.
+    ///
+    /// The reason is not drawn in the export, which has no failure state for
+    /// this row. It is here because the alternative is what Retain used to do:
+    /// swallow the error and report the key as stored while every request went
+    /// out without it.
     private var apiKeyField: some View {
         VStack(alignment: .leading, spacing: RetainMetrics.settingsHeadingDescriptionGap) {
             RetainTextField(

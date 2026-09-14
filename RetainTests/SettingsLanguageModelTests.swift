@@ -244,49 +244,51 @@ struct SettingsLanguageModelTests {
 
     // MARK: - The API key
 
-    @Test("An untouched field changes nothing, because a stored key is never in it")
-    func untouchedFieldKeepsTheKey() {
-        #expect(APIKeyField.outcome(draft: "", wasEdited: false) == .keep)
-        #expect(APIKeyField.outcome(draft: "whatever", wasEdited: false) == .keep)
+    @Test("The placeholder is only ever the empty state, and never a key")
+    func placeholderNeverShowsAKey() {
+        #expect(APIKeyField.placeholder == "leave empty for LM Studio")
+        #expect(!APIKeyField.placeholder.contains("sk-"))
     }
 
-    @Test("A cleared field removes the item")
-    func clearedFieldRemoves() {
-        #expect(APIKeyField.outcome(draft: "", wasEdited: true) == .remove)
-        #expect(APIKeyField.outcome(draft: "   ", wasEdited: true) == .remove)
-    }
-
-    @Test("A typed key is stored trimmed")
-    func typedKeyIsStored() {
-        #expect(APIKeyField.outcome(draft: "  sk-abc  ", wasEdited: true) == .store("sk-abc"))
-    }
-
-    @Test("The placeholder says a key exists without saying what it is")
-    func placeholderNeverShowsTheKey() {
-        #expect(APIKeyField.placeholder(hasStoredKey: false) == "leave empty for LM Studio")
-        let stored = APIKeyField.placeholder(hasStoredKey: true)
-        #expect(stored == "Stored in the Keychain — type to replace")
-        #expect(!stored.contains("sk-"))
-    }
-
-    /// The whole point of the field: the model reports *that* there is a key
-    /// and never *what* it is.
-    @Test("A stored key is never loaded back into the field")
-    func storedKeyIsNeverEchoed() {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-echo")
+    /// The bug this exists for, reported from the app: a token was pasted into
+    /// the field, "Test connection" was pressed, and LM Studio answered that it
+    /// requires an API token — the field was still a draft, so the request had
+    /// gone out with no `Authorization` header at all, and nothing on screen
+    /// said the key had not been taken.
+    @Test("Pasting a key stores it there and then")
+    func typingStoresImmediately() {
+        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-immediate")
         defer { try? item.delete() }
-        try? item.write("sk-live-should-never-be-drawn")
+        try? item.delete()
 
         let model = SettingsModel(keychain: item)
+        model.apiKeyDraft = "sk-pasted"
 
+        // No commit, no Return, no closing the window.
+        #expect((try? item.read()) == "sk-pasted")
         #expect(model.hasStoredKey)
-        #expect(model.apiKeyDraft.isEmpty)
-        #expect(!model.apiKeyPlaceholder.contains("sk-live"))
+        #expect(model.apiKeyProblem == nil)
     }
 
-    @Test("Committing a typed key stores it and drops the draft")
-    func committingStoresAndForgets() {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-commit")
+    @Test("A stored key is in the field when the window opens")
+    func theStoredKeyIsLoaded() {
+        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-loaded")
+        defer { try? item.delete() }
+        try? item.write("sk-stored")
+
+        let model = SettingsModel(keychain: item)
+        model.loadAPIKey()
+
+        // It is drawn as dots by a `SecureField`. A field that shows nothing
+        // while a key exists cannot be told apart from one that lost it, which
+        // is exactly how the old behaviour was reported.
+        #expect(model.apiKeyDraft == "sk-stored")
+        #expect(model.hasStoredKey)
+    }
+
+    @Test("The field keeps what was typed rather than emptying itself")
+    func theFieldIsNotCleared() {
+        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-keeps")
         defer { try? item.delete() }
         try? item.delete()
 
@@ -294,23 +296,39 @@ struct SettingsLanguageModelTests {
         model.apiKeyDraft = "sk-typed"
         model.commitAPIKey()
 
-        #expect((try? item.read()) == "sk-typed")
-        #expect(model.apiKeyDraft.isEmpty)
-        #expect(model.hasStoredKey)
-
-        // And committing again with the now-empty draft must not delete it.
-        model.commitAPIKey()
+        #expect(model.apiKeyDraft == "sk-typed")
         #expect((try? item.read()) == "sk-typed")
     }
 
-    /// The bug this exists for, reported from the app: a token was pasted into
-    /// the field, "Test connection" was pressed, and LM Studio answered that it
-    /// requires an API token — because the field was still a draft and the
-    /// request had gone out with no `Authorization` header at all. Nothing on
-    /// screen said the key had not been taken.
-    @Test("Testing the connection stores what is in the key field first")
-    func testingCommitsTheKey() async {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-test-commits")
+    @Test("A key is stored trimmed")
+    func theKeyIsTrimmed() {
+        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-trimmed")
+        defer { try? item.delete() }
+        try? item.delete()
+
+        let model = SettingsModel(keychain: item)
+        model.apiKeyDraft = "  sk-abc  "
+
+        #expect((try? item.read()) == "sk-abc")
+    }
+
+    @Test("Clearing the field removes the item")
+    func clearingRemovesTheItem() {
+        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-cleared")
+        defer { try? item.delete() }
+        try? item.write("sk-stored")
+
+        let model = SettingsModel(keychain: item)
+        model.loadAPIKey()
+        model.apiKeyDraft = ""
+
+        #expect((try? item.read()) == nil)
+        #expect(!model.hasStoredKey)
+    }
+
+    @Test("A key pasted before the test is the one the test uses")
+    func testingUsesThePastedKey() async {
+        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-test-uses")
         defer { try? item.delete() }
         try? item.delete()
 
@@ -325,7 +343,28 @@ struct SettingsLanguageModelTests {
         #expect(model.hasStoredKey)
     }
 
-    @Test("An untouched key field is not cleared by testing the connection")
+    /// The bug that hung the test host for five and a half minutes: the model
+    /// is built while the app is launching, and it used to read the Keychain
+    /// right there. A build whose signature the stored item does not recognise
+    /// gets a system password sheet for that read — in front of an app that has
+    /// not finished starting, which is a hang with nothing on screen to explain
+    /// it.
+    @Test("Building the model does not touch the Keychain")
+    func theKeychainIsNotReadAtLaunch() {
+        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-not-at-launch")
+        defer { try? item.delete() }
+        try? item.write("sk-stored")
+
+        let model = SettingsModel(keychain: item)
+
+        #expect(model.apiKeyDraft.isEmpty)
+        #expect(!model.hasStoredKey)
+
+        model.loadAPIKey()
+        #expect(model.apiKeyDraft == "sk-stored")
+    }
+
+    @Test("Testing the connection does not disturb a stored key")
     func testingLeavesAStoredKeyAlone() async {
         let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-test-keeps")
         defer { try? item.delete() }
@@ -335,11 +374,9 @@ struct SettingsLanguageModelTests {
             keychain: item,
             makeBackend: { _ in SettingsStubBackend(models: []) }
         )
+        model.loadAPIKey()
         await model.testConnection()
 
-        // The field is empty because a stored key is never loaded into it, not
-        // because there is no key. Committing an untouched field must not read
-        // that emptiness as "remove it".
         #expect((try? item.read()) == "sk-stored")
         #expect(model.hasStoredKey)
     }
