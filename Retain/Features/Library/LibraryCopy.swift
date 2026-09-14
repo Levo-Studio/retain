@@ -89,9 +89,11 @@ nonisolated enum LibraryCopy {
         String(localized: "Today", comment: "The Started column for a recording made today — the export's Heute")
     }
 
-    /// "Today, 10:15" and "7 Sep, 10:15".
+    /// "Today · 10:15" and "7 Sep · 10:15" — the export's own separator, since
+    /// the column now carries two values where it used to carry one.
     static func startedAt(day: String, time: String) -> String {
-        String(localized: "\(day), \(time)", comment: "A recording's start: which day, then the time of day")
+        String(localized: "\(day) · \(time)",
+               comment: "Two values side by side, separated by the export's middle dot")
     }
 
     // MARK: - Where a recording has got to
@@ -100,8 +102,13 @@ nonisolated enum LibraryCopy {
         String(localized: "recording", comment: "A recording that is running right now — the export's läuft")
     }
 
+    /// The batch pass over the audio, after the microphone stopped. "Re-",
+    /// because the live transcript already exists and this is the authoritative
+    /// pass being made over the same recording — and because the status-bar
+    /// menu already owns the word "Transcribing" on its own.
     static var stateTranscribing: String {
-        String(localized: "transcribing", comment: "A recording whose audio is being read through again after it stopped")
+        String(localized: "re-transcribing",
+               comment: "A recording whose audio is being read through again after it stopped")
     }
 
     static var stateSummarizing: String {
@@ -135,14 +142,15 @@ nonisolated enum LibraryCopy {
     /// Board 05 draws the search field and no result state. A hit is shown
     /// under the recording it is in, and these label where it came from.
     static var hitInTranscript: String {
-        String(localized: "transcript", comment: "A search hit that is a line somebody said")
+        String(localized: "in the transcript", comment: "A search hit that is a line somebody said")
     }
 
     static var hitInNotes: String {
-        String(localized: "notes", comment: "A search hit that is in a note block")
+        String(localized: "in the notes", comment: "A search hit that is in a note block")
     }
 
     static var hitInAnnotation: String {
-        String(localized: "your note", comment: "A search hit that is in something the user typed during the recording")
+        String(localized: "in your note",
+               comment: "A search hit that is in something the user typed during the recording")
     }
 }

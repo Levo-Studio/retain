@@ -34,11 +34,14 @@ nonisolated enum DetailCopy {
         String(localized: "Transcript", comment: "Tab showing the full transcript — the export's Transkript")
     }
 
-    /// The window's own title: which course, and when the recording started.
-    /// A recording is identified by its date *and* its time of day.
-    static func windowTitle(course: String, started: String) -> String {
-        String(localized: "\(course) · \(started)",
-               comment: "Title of the recording detail window: the course, then the date and time the recording started")
+    /// Two values with the export's middle dot between them.
+    ///
+    /// One string rather than three: the window's title, the Course cell and
+    /// the Duration cell are all a pair joined this way, and three separate
+    /// calls would collapse to this one key in the catalog anyway.
+    static func joined(_ left: String, _ right: String) -> String {
+        String(localized: "\(left) · \(right)",
+               comment: "Two values side by side, separated by the export's middle dot")
     }
 
     static func minutes(_ count: Int) -> String {
@@ -47,17 +50,6 @@ nonisolated enum DetailCopy {
 
     static func markers(_ count: Int) -> String {
         String(localized: "\(count) markers", comment: "How many points the user marked during the recording")
-    }
-
-    /// "92 min · 3 markers" in the meta strip.
-    static func durationValue(minutes: String, markers: String) -> String {
-        String(localized: "\(minutes) · \(markers)",
-               comment: "Meta-strip value: a recording's length, then how many markers are in it")
-    }
-
-    /// "Computer science · Third year, winter" in the meta strip.
-    static func courseValue(course: String, term: String) -> String {
-        String(localized: "\(course) · \(term)", comment: "Meta-strip value: the course, then the term it belongs to")
     }
 
     // MARK: - The rail
@@ -149,15 +141,14 @@ nonisolated enum DetailCopy {
 
     /// Not in the export: boards 03 and 04 draw the chat only once it can be
     /// used. The owner's decision is that it cannot be until the recording has
-    /// stopped and the summary is written, and the rail has to say which.
-    static var chatStillRecording: String {
-        String(localized: "Questions can be asked once this recording has stopped.",
-               comment: "Chat rail while the recording is still running")
-    }
-
-    static var chatSummaryPending: String {
-        String(localized: "Questions can be asked once the summary has finished.",
-               comment: "Chat rail after the recording stopped, while the notes are still being written")
+    /// stopped *and* the summary is written, so the rail has to say which of
+    /// the two is still outstanding.
+    ///
+    /// The words come from `SummarizationError`, which already has to say the
+    /// same two things when a question is sent anyway. One sentence in one
+    /// place: the rail and the failure can never word it differently.
+    static func chatNotReady(_ availability: ChatAvailability) -> String {
+        SummarizationError.chatNotReady(availability).errorDescription ?? ""
     }
 
     static var askPlaceholder: String {

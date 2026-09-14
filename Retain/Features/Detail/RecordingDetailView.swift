@@ -34,7 +34,7 @@ struct RecordingDetailView: View {
     // MARK: - Chrome
 
     private var titleBar: some View {
-        RetainTitleBar(title: DetailCopy.windowTitle(course: courseName, started: started)) {
+        RetainTitleBar(title: DetailCopy.joined(courseName, started)) {
             Button {
                 NotesExport.run(markdown: model.notes.markdown, recording: model.recording, course: courseName)
             } label: {
@@ -155,24 +155,22 @@ struct RecordingMetaStrip: View {
     // MARK: Values
 
     /// A recording the model never got a topic out of shows when it happened
-    /// instead. Not a placeholder: the date and the time of day are what a
-    /// recording is identified by anyway.
+    /// instead — the same answer the library table gives, from the same place,
+    /// so the two screens can never disagree about what a recording is called.
     private var topic: String {
-        model.recording.topic ?? model.recording.startedAt.formatted(
-            .dateTime.day().month(.wide).year().hour().minute()
-        )
+        RecordingPresentation.title(of: model.recording)
     }
 
     private var course: String {
         guard let course = model.course else { return "" }
         guard let term = model.term else { return course.name }
-        return DetailCopy.courseValue(course: course.name, term: term.title)
+        return DetailCopy.joined(course.name, term.title)
     }
 
     private var duration: String {
-        DetailCopy.durationValue(
-            minutes: DetailCopy.minutes(RetainTimeFormat.wholeMinutes(model.recording.duration)),
-            markers: DetailCopy.markers(model.markerCount)
+        DetailCopy.joined(
+            DetailCopy.minutes(RetainTimeFormat.wholeMinutes(model.recording.duration)),
+            DetailCopy.markers(model.markerCount)
         )
     }
 }

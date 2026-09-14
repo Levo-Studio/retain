@@ -1,6 +1,50 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ · %@": {
+      "comment": "Two values side by side, separated by the export's middle dot",
+      "extractionState": "manual"
+    },
+    "%@ · %@ · %@": {
+      "comment": "Under a course heading: its term, how many recordings it has, and how long they run to",
+      "extractionState": "manual"
+    },
+    "%@ · Marker": {
+      "comment": "Label of a transcript line the user marked while it was being said",
+      "extractionState": "manual"
+    },
+    "%@ – %@ · %@": {
+      "comment": "A term's period and how many courses are in it, in the library sidebar",
+      "extractionState": "manual"
+    },
+    "%lld courses": {
+      "comment": "How many courses are in a term",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld course"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld courses"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld h %lld min": {
+      "comment": "A total length in hours and minutes, in the library's course header",
+      "extractionState": "manual"
+    },
     "%lld lines": {
       "comment": "Number of transcript lines so far",
       "extractionState": "manual",
@@ -25,12 +69,124 @@
         }
       }
     },
+    "%lld markers": {
+      "comment": "How many points the user marked during the recording",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld marker"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld markers"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld min": {
+      "comment": "A recording's length in whole minutes",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld min"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld min"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld of %lld": {
+      "comment": "Which find match is current, out of how many — the export's 3 von 11",
+      "extractionState": "manual"
+    },
+    "%lld recordings": {
+      "comment": "How many recordings are in a course",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld recording"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld recordings"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "+ New course": {
+      "comment": "Action at the foot of the library sidebar — the export's + Kurs anlegen",
+      "extractionState": "manual"
+    },
     "About Retain": {
       "comment": "Status bar menu item opening the about panel",
       "extractionState": "manual"
     },
+    "Ask a question …": {
+      "comment": "Placeholder of the chat composer — the export's Frage stellen …",
+      "extractionState": "manual"
+    },
+    "Audience": {
+      "comment": "Who a transcript line belongs to: the room — the export's Publikum",
+      "extractionState": "manual"
+    },
+    "Chapters": {
+      "comment": "Rail segment showing the chapters — the export's Kapitel",
+      "extractionState": "manual"
+    },
+    "Chat": {
+      "comment": "Rail segment showing the conversation about this recording",
+      "extractionState": "manual"
+    },
+    "Course": {
+      "comment": "Meta-strip label above the course and term — the export's FACH",
+      "extractionState": "manual"
+    },
     "Downloading speech models": {
       "comment": "Status bar menu header during the one-time model download",
+      "extractionState": "manual"
+    },
+    "Duration": {
+      "comment": "Label above how long a recording ran: the detail meta strip and the library table column",
+      "extractionState": "manual"
+    },
+    "Export": {
+      "comment": "Title-bar button on the recording detail window — the export's Exportieren",
+      "extractionState": "manual"
+    },
+    "Find in transcript …": {
+      "comment": "Placeholder of the find bar over the transcript",
       "extractionState": "manual"
     },
     "LM Studio answered with an error. (%lld)": {
@@ -49,12 +205,64 @@
       "comment": "Status bar menu header after a lecture",
       "extractionState": "manual"
     },
+    "Library": {
+      "comment": "Title of the library window — the export's Bibliothek",
+      "extractionState": "manual"
+    },
+    "Next match": {
+      "comment": "Accessibility label of the find bar's down arrow",
+      "extractionState": "manual"
+    },
+    "No chapters yet.": {
+      "comment": "Chapters rail with nothing in it, because no note block has been written",
+      "extractionState": "manual"
+    },
+    "No courses in this term yet.": {
+      "comment": "The library sidebar for a term with no courses",
+      "extractionState": "manual"
+    },
     "No language model is selected.": {
       "comment": "Summarizing was asked for before a model was chosen in settings",
       "extractionState": "manual"
     },
+    "No recordings in this course yet.": {
+      "comment": "The library table for a course with no recordings",
+      "extractionState": "manual"
+    },
+    "No terms yet.": {
+      "comment": "The library before the first term has been named",
+      "extractionState": "manual"
+    },
     "Not recording": {
       "comment": "Status bar menu header while idle",
+      "extractionState": "manual"
+    },
+    "Note %lld": {
+      "comment": "Chat source chip citing a note block — the export's Notiz 1",
+      "extractionState": "manual"
+    },
+    "Notes": {
+      "comment": "Tab showing the written-out notes — the export's Notizen",
+      "extractionState": "manual"
+    },
+    "Nothing in this term matches.": {
+      "comment": "Full-text search that found nothing",
+      "extractionState": "manual"
+    },
+    "Previous match": {
+      "comment": "Accessibility label of the find bar's up arrow",
+      "extractionState": "manual"
+    },
+    "Questions about this recording. The model sees the notes and the transcript.": {
+      "comment": "Standing note at the top of the chat rail, saying what the model is given",
+      "extractionState": "manual"
+    },
+    "Questions can be asked once the recording has stopped.": {
+      "comment": "The chat was used while the recording was still running",
+      "extractionState": "manual"
+    },
+    "Questions can be asked once the summary is finished.": {
+      "comment": "The chat was used before the notes had been written",
       "extractionState": "manual"
     },
     "Quit Retain": {
@@ -63,6 +271,10 @@
     },
     "Recording · %@": {
       "comment": "Status bar menu header while recording, with elapsed time",
+      "extractionState": "manual"
+    },
+    "Rename": {
+      "comment": "Action beside the term's name in the library sidebar",
       "extractionState": "manual"
     },
     "Retain": {
@@ -133,20 +345,36 @@
       "comment": "Status bar menu item opening the recordings folder",
       "extractionState": "manual"
     },
-    "Questions can be asked once the recording has stopped.": {
-      "comment": "The chat was used while the recording was still running",
+    "Search every recording in this term …": {
+      "comment": "Placeholder of the library's full-text search field",
       "extractionState": "manual"
     },
-    "Questions can be asked once the summary is finished.": {
-      "comment": "The chat was used before the notes had been written",
+    "Search notes and transcript …": {
+      "comment": "Placeholder of the field above the chapters rail, searching inside one recording",
+      "extractionState": "manual"
+    },
+    "Send": {
+      "comment": "Accessibility label of the chat composer's return key",
       "extractionState": "manual"
     },
     "Separating speakers": {
       "comment": "Status bar menu header during diarization",
       "extractionState": "manual"
     },
+    "Speaker": {
+      "comment": "Who a transcript line belongs to: the person teaching — the export's Lehrerin",
+      "extractionState": "manual"
+    },
     "Start Recording": {
       "comment": "Status bar menu item starting a recording",
+      "extractionState": "manual"
+    },
+    "Started": {
+      "comment": "Library table column showing the date and time a recording started",
+      "extractionState": "manual"
+    },
+    "Status": {
+      "comment": "Library table column showing where a recording has got to",
       "extractionState": "manual"
     },
     "Stop Recording": {
@@ -161,6 +389,10 @@
       "comment": "Recording failed because the input format was unusable",
       "extractionState": "manual"
     },
+    "The model could not answer.": {
+      "comment": "Shown in the chat rail when a question failed for a reason with no message of its own",
+      "extractionState": "manual"
+    },
     "The model did not answer in a shape Retain could read.": {
       "comment": "None of the three structured-output attempts produced a usable answer",
       "extractionState": "manual"
@@ -173,12 +405,80 @@
       "comment": "The model stopped for a reason other than finishing",
       "extractionState": "manual"
     },
+    "The notes for this recording have not been written yet.": {
+      "comment": "Notes tab of a recording the model has not summarised",
+      "extractionState": "manual"
+    },
+    "This recording has no transcript yet.": {
+      "comment": "Transcript tab of a recording that has not been transcribed",
+      "extractionState": "manual"
+    },
     "This recording needs about %lld tokens and the model has room for %lld. Load the model with a larger context.": {
       "comment": "The prompt is too large for the loaded context length, measured before sending",
       "extractionState": "manual"
     },
+    "Today": {
+      "comment": "The Started column for a recording made today — the export's Heute",
+      "extractionState": "manual"
+    },
+    "Topic": {
+      "comment": "Label above the topic the model derived: the detail meta strip and the library table column",
+      "extractionState": "manual"
+    },
     "Transcribing": {
       "comment": "Status bar menu header during the batch pass",
+      "extractionState": "manual"
+    },
+    "Transcript": {
+      "comment": "Tab showing the full transcript — the export's Transkript",
+      "extractionState": "manual"
+    },
+    "Writing an answer": {
+      "comment": "Accessibility label of the three-dot typing indicator",
+      "extractionState": "manual"
+    },
+    "You · %@": {
+      "comment": "Label above a note the user typed during the recording, with the second they typed it at",
+      "extractionState": "manual"
+    },
+    "by date": {
+      "comment": "The library's sort order — the export's chronologisch",
+      "extractionState": "manual"
+    },
+    "done": {
+      "comment": "A recording with finished notes — the export's fertig",
+      "extractionState": "manual"
+    },
+    "exam relevant": {
+      "comment": "Footer of the chapters rail — the export's klausurrelevant",
+      "extractionState": "manual"
+    },
+    "in the notes": {
+      "comment": "A search hit that is in a note block",
+      "extractionState": "manual"
+    },
+    "in the transcript": {
+      "comment": "A search hit that is a line somebody said",
+      "extractionState": "manual"
+    },
+    "in your note": {
+      "comment": "A search hit that is in something the user typed during the recording",
+      "extractionState": "manual"
+    },
+    "no matches": {
+      "comment": "The find bar with a query that matches nothing",
+      "extractionState": "manual"
+    },
+    "re-transcribing": {
+      "comment": "A recording whose audio is being read through again after it stopped",
+      "extractionState": "manual"
+    },
+    "recording": {
+      "comment": "A recording that is running right now — the export's läuft",
+      "extractionState": "manual"
+    },
+    "summarizing": {
+      "comment": "A recording whose notes are being written — the export's wird zusammengefasst",
       "extractionState": "manual"
     }
   },

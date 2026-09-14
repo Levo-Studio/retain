@@ -58,11 +58,9 @@ struct ChatList: View {
     /// says which of the two is still outstanding rather than failing when a
     /// question is sent.
     private var intro: String {
-        switch model.chatAvailability {
-        case .stillRecording: DetailCopy.chatStillRecording
-        case .summaryPending: DetailCopy.chatSummaryPending
-        case .ready: DetailCopy.chatIntro
-        }
+        model.chatAvailability == .ready
+            ? DetailCopy.chatIntro
+            : DetailCopy.chatNotReady(model.chatAvailability)
     }
 
     private var isReady: Bool { model.chatAvailability == .ready }
