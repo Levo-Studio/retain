@@ -206,3 +206,47 @@ struct RetainWeightedColumns: Layout {
         return used.map { total * $0 / sum }
     }
 }
+
+/// A row of columns where some have a width and one does not — the library
+/// table's `1fr 120px 96px 84px`.
+///
+/// `nil` is the `1fr`: it takes whatever the fixed columns leave. Using a
+/// layout rather than a frame on each cell is what keeps the header row and the
+/// body rows on the same column edges, since both are built from this and
+/// neither can drift.
+struct RetainFixedColumns: Layout {
+
+    /// One entry per column. `nil` takes the remaining width.
+    let columns: [CGFloat?]
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let total = proposal.width ?? 0
+        let heights = widths(in: total, count: subviews.count).enumerated().map { index, width in
+            subviews[index].sizeThatFits(ProposedViewSize(width: width, height: proposal.height)).height
+        }
+        return CGSize(width: total, height: heights.max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        for (index, width) in widths(in: bounds.width, count: subviews.count).enumerated() {
+            subviews[index].place(
+                at: CGPoint(x: x, y: bounds.midY),
+                anchor: .leading,
+                proposal: ProposedViewSize(width: width, height: bounds.height)
+            )
+            x += width + spacing
+        }
+    }
+
+    private func widths(in total: CGFloat, count: Int) -> [CGFloat] {
+        let used = Array(columns.prefix(count))
+        let gaps = spacing * CGFloat(max(0, count - 1))
+        let fixed = used.compactMap { $0 }.reduce(0, +)
+        let flexibleCount = used.filter { $0 == nil }.count
+        let remaining = max(0, total - gaps - fixed)
+        let each = flexibleCount > 0 ? remaining / CGFloat(flexibleCount) : 0
+        return used.map { $0 ?? each }
+    }
+}
