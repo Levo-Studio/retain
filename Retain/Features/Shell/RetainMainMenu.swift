@@ -3,10 +3,9 @@ import AppKit
 /// Retain's menu bar.
 ///
 /// Built in code because there is no nib — see `RetainMain`. It is short on
-/// purpose: an accessory app's menu bar is only visible while one of its
-/// windows is frontmost, so this is not a place to put features. What it has to
-/// carry is the set of things macOS users reach for without looking, and that
-/// every `NSTextField` silently depends on.
+/// purpose: Retain's features live in the status item and its windows, not up
+/// here. What this has to carry is the set of things macOS users reach for
+/// without looking, and the ones every `NSTextField` silently depends on.
 ///
 /// **The Edit menu is the one that matters.** `NSTextField` does not implement
 /// copy, paste, cut or select-all itself — it inherits them from the responder
@@ -35,6 +34,30 @@ enum RetainMainMenu {
             action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
             keyEquivalent: ""
         )
+
+        menu.addItem(.separator())
+
+        // Where every macOS user looks for Settings, and the shortcut they try
+        // before looking anywhere. It was only in the status item's
+        // right-click menu, which is a place nobody finds by accident.
+        //
+        // Nil target on purpose: the action goes down the responder chain to
+        // the application delegate, so the menu does not have to know which
+        // object is currently holding the window.
+        let settings = menu.addItem(
+            withTitle: String(localized: "Settings…", comment: "Status bar menu item opening the settings window"),
+            action: #selector(RetainApp.openSettings(_:)),
+            keyEquivalent: ","
+        )
+        settings.keyEquivalentModifierMask = [.command]
+
+        let library = menu.addItem(
+            withTitle: String(localized: "Library…", comment: "Status bar menu item opening the library window"),
+            action: #selector(RetainApp.openLibrary(_:)),
+            keyEquivalent: "l"
+        )
+        library.keyEquivalentModifierMask = [.command, .shift]
+
         menu.addItem(.separator())
 
         let hide = menu.addItem(

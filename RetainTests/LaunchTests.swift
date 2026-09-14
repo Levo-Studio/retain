@@ -91,3 +91,48 @@ struct LaunchTests {
         #expect(NSApp.activationPolicy() == .regular)
     }
 }
+
+// MARK: -
+
+/// The menu bar is where a macOS user looks first, and both of these were only
+/// in the status item's right-click menu — a place nobody finds by accident.
+/// The owner asked where terms are created; the answer was four clicks behind a
+/// gesture that was never mentioned.
+@Suite("Application menu")
+@MainActor
+struct ApplicationMenuTests {
+
+    private func applicationMenu() throws -> NSMenu {
+        try #require(RetainMainMenu.make().items.first?.submenu)
+    }
+
+    @Test("Settings is in the application menu, on ⌘,")
+    func settingsIsReachable() throws {
+        let item = try #require(
+            applicationMenu().items.first { $0.action == #selector(RetainApp.openSettings(_:)) }
+        )
+        #expect(item.keyEquivalent == ",")
+        #expect(item.keyEquivalentModifierMask == [.command])
+        // A nil target sends it down the responder chain to the delegate, which
+        // is what lets the menu work without knowing where the status item is.
+        #expect(item.target == nil)
+    }
+
+    @Test("So is the library")
+    func libraryIsReachable() throws {
+        let item = try #require(
+            applicationMenu().items.first { $0.action == #selector(RetainApp.openLibrary(_:)) }
+        )
+        #expect(item.keyEquivalent == "l")
+        #expect(item.target == nil)
+    }
+
+    /// Both are handled by the delegate. A selector the delegate does not
+    /// implement leaves the item permanently greyed out, which looks exactly
+    /// like the bug this replaced.
+    @Test("The delegate answers both")
+    func delegateImplementsThem() {
+        #expect(RetainApp.instancesRespond(to: #selector(RetainApp.openSettings(_:))))
+        #expect(RetainApp.instancesRespond(to: #selector(RetainApp.openLibrary(_:))))
+    }
+}

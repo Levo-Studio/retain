@@ -85,6 +85,19 @@ final class RetainApp: NSObject, NSApplicationDelegate {
         return true
     }
 
+    // MARK: - Menu bar
+
+    // Reached through the responder chain from the application menu, so the
+    // menu does not have to know where the status item lives.
+
+    @objc func openSettings(_ sender: Any?) {
+        statusItem?.showSettingsWindow()
+    }
+
+    @objc func openLibrary(_ sender: Any?) {
+        statusItem?.showLibraryWindow()
+    }
+
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         true
     }

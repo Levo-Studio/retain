@@ -152,6 +152,11 @@ final class StatusItemController {
     }
 
     @objc private func showSettings() {
+        showSettingsWindow()
+    }
+
+    /// Also the answer to ⌘, from the application menu.
+    func showSettingsWindow() {
         settingsWindow.show()
     }
 
