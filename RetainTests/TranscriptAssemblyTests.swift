@@ -89,14 +89,41 @@ struct SpeakerRolesTests {
         #expect(roles["B"] == nil)
     }
 
-    @Test("A gap between segments belongs to nobody, not to the nearest voice")
-    func gapsAreUnknown() {
+    @Test("A long gap between segments belongs to nobody")
+    func longGapsAreUnknown() {
         let segments = [segment("A", 0, 10), segment("B", 20, 30)]
         let roles = SpeakerRoles.assign(segments)
 
         #expect(SpeakerRoles.role(at: 5, in: segments, roles: roles) == .lecturer)
         #expect(SpeakerRoles.role(at: 15, in: segments, roles: roles) == .unknown)
         #expect(SpeakerRoles.role(at: 25, in: segments, roles: roles) == .audience)
+    }
+
+    /// Diarization does not tile the recording. A real transcript came back
+    /// with `Ein`, `Was` and `Dann` as one-word lines attributed to nobody,
+    /// each sitting in an 80-millisecond hole at the start of the sentence it
+    /// belonged to.
+    @Test("A word in a hole between segments goes to the nearer speaker")
+    func shortGapsSnapToTheNearestSegment() {
+        let segments = [segment("A", 0, 30.40), segment("B", 30.64, 36.64), segment("A", 37.44, 57.20)]
+        let roles = SpeakerRoles.assign(segments)
+
+        // The 240 ms hole before the question.
+        #expect(SpeakerRoles.role(at: 30.50, in: segments, roles: roles) == .lecturer)
+        #expect(SpeakerRoles.role(at: 30.60, in: segments, roles: roles) == .audience)
+
+        // The 800 ms hole before the lecturer answers.
+        #expect(SpeakerRoles.role(at: 37.20, in: segments, roles: roles) == .lecturer)
+    }
+
+    @Test("Exactly at the tolerance still snaps, beyond it does not")
+    func toleranceBoundary() {
+        let segments = [segment("A", 0, 10)]
+        let roles = SpeakerRoles.assign(segments)
+        let edge = 10 + SpeakerRoles.snapTolerance
+
+        #expect(SpeakerRoles.role(at: edge, in: segments, roles: roles) == .lecturer)
+        #expect(SpeakerRoles.role(at: edge + 0.01, in: segments, roles: roles) == .unknown)
     }
 }
 
