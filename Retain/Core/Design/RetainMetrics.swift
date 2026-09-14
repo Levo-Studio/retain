@@ -16,6 +16,14 @@ nonisolated struct RetainShadow: Sendable, Equatable {
     var color: Color { Color.black.opacity(opacity) }
 
     var radius: CGFloat { blur / 2 }
+
+    /// How far the shadow reaches past the box it falls from.
+    ///
+    /// A borderless window has to be this much larger than the card it draws,
+    /// or the shadow is clipped at the window's edge and the card looks stuck
+    /// to the screen. Offset plus the full blur, which is as far as any of it
+    /// can land.
+    var extent: CGFloat { blur + offsetY }
 }
 
 // MARK: - Grids

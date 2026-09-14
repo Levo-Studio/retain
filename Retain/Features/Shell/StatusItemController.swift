@@ -1,28 +1,31 @@
 import AppKit
+import KeyboardShortcuts
 import Observation
+import SwiftUI
 
-/// Owns Retain's entry in the status bar.
+/// Owns Retain's entry in the status bar and the popover that hangs off it.
 ///
 /// `NSStatusItem` rather than SwiftUI's `MenuBarExtra`: a `MenuBarExtra` still
 /// cannot be opened programmatically, so it cannot be opened by a keyboard
 /// shortcut, and Retain's whole point is that you reach it without taking your
 /// hands off the keyboard in the middle of a lecture.
 ///
-/// The menu here is scaffolding. Design board 02 draws a popover with five
-/// states, and that is what replaces this in phase 6; what a plain menu buys in
-/// the meantime is that the lecture path can be exercised at all.
+/// The button's own action is a click; `KeyboardShortcuts` is the other way in.
+/// Both end in `toggle`, so there is one path and one state.
 @MainActor
 final class StatusItemController {
 
     private let item: NSStatusItem
-    private let session = LectureSession()
-    private var stateTracking: Task<Void, Never>?
+    private let shell: ShellModel
+    private let recordingWindow: RecordingWindowController
 
-    private var headerRow: NSMenuItem?
-    private var detailRow: NSMenuItem?
-    private var recordRow: NSMenuItem?
+    private var panel: PopoverPanel?
+    private var resignObserver: (any NSObjectProtocol)?
+    private var phaseTracking: Task<Void, Never>?
 
-    init() {
+    init(store: LectureStore?) {
+        shell = ShellModel(store: store)
+        recordingWindow = RecordingWindowController(shell: shell)
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         // The mark from the repository, not an SF Symbol: the owner settled
@@ -38,48 +41,63 @@ final class StatusItemController {
             comment: "Accessibility label of the status bar item"
         )
         item.button?.image = image
+        item.button?.target = self
+        item.button?.action = #selector(toggle)
+        item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
 
-        item.menu = makeMenu()
-        observeSession()
+        registerShortcuts()
+        followPhase()
     }
 
     deinit {
         MainActor.assumeIsolated {
-            stateTracking?.cancel()
+            phaseTracking?.cancel()
+            if let resignObserver {
+                NotificationCenter.default.removeObserver(resignObserver)
+            }
             NSStatusBar.system.removeStatusItem(item)
         }
     }
 
-    // MARK: - Menu
+    // MARK: - Opening and closing
 
-    private func makeMenu() -> NSMenu {
+    @objc func toggle() {
+        // A right-click gets the housekeeping menu instead of the popover.
+        // Board 02 draws no Quit, and an accessory app with no window open has
+        // no menu bar to put one in, so without this there is no way out of
+        // Retain but Force Quit.
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            showContextMenu()
+            return
+        }
+
+        if panel?.isVisible == true {
+            close()
+        } else {
+            open()
+        }
+    }
+
+    private func showContextMenu() {
         let menu = NSMenu()
 
-        let header = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        header.isEnabled = false
-        menu.addItem(header)
-        headerRow = header
-
-        let detail = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        detail.isEnabled = false
-        menu.addItem(detail)
-        detailRow = detail
-
-        menu.addItem(.separator())
-
-        let record = menu.addItem(
-            withTitle: "",
-            action: #selector(toggleRecording),
-            keyEquivalent: "r"
-        )
-        record.target = self
-        recordRow = record
-
         menu.addItem(
-            withTitle: String(localized: "Reveal Recordings in Finder", comment: "Status bar menu item opening the recordings folder"),
+            withTitle: String(localized: "Reveal Recordings in Finder",
+                              comment: "Status bar menu item opening the recordings folder"),
             action: #selector(revealRecordings),
             keyEquivalent: ""
         ).target = self
+
+        // Settings is board 06 and lives on another branch. `SettingsWindowController`
+        // is the type, `show()` is the call, and this item is where it goes;
+        // with no action the item is drawn unavailable rather than silently
+        // doing nothing.
+        let settings = menu.addItem(
+            withTitle: String(localized: "Settings…", comment: "Status bar menu item opening the settings window"),
+            action: nil,
+            keyEquivalent: ","
+        )
+        settings.keyEquivalentModifierMask = [.command]
 
         menu.addItem(.separator())
 
@@ -95,122 +113,11 @@ final class StatusItemController {
             keyEquivalent: "q"
         ).target = self
 
-        updateMenu()
-        return menu
-    }
-
-    /// Follows the session's observable state.
-    ///
-    /// `withObservationTracking` fires once per change, so it re-arms itself
-    /// after every one. A timer reading the same values would be the wrong
-    /// shape twice over: it would tick while nothing is recording, and it would
-    /// still miss a change that happened between two ticks.
-    private func observeSession() {
-        stateTracking?.cancel()
-        stateTracking = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                let changed: Void? = await withCheckedContinuation { continuation in
-                    withObservationTracking {
-                        self?.updateMenu()
-                    } onChange: {
-                        continuation.resume()
-                    }
-                }
-                guard changed != nil else { return }
-            }
-        }
-    }
-
-    private func updateMenu() {
-        let start = String(localized: "Start Recording", comment: "Status bar menu item starting a recording")
-        let stop = String(localized: "Stop Recording", comment: "Status bar menu item stopping a recording")
-
-        switch session.phase {
-        case .idle:
-            headerRow?.title = String(localized: "Not recording", comment: "Status bar menu header while idle")
-            detailRow?.isHidden = true
-            recordRow?.title = start
-            recordRow?.isEnabled = true
-
-        case .preparingModels:
-            headerRow?.title = String(localized: "Downloading speech models",
-                                      comment: "Status bar menu header during the one-time model download")
-            detailRow?.isHidden = false
-            detailRow?.title = Self.percentage(session.downloadFraction)
-            recordRow?.title = start
-            recordRow?.isEnabled = false
-
-        case .recording:
-            headerRow?.title = String(
-                localized: "Recording · \(Self.elapsed(session.recorder.duration))",
-                comment: "Status bar menu header while recording, with elapsed time"
-            )
-            detailRow?.isHidden = false
-            detailRow?.title = session.partial.isEmpty
-                ? String(localized: "\(session.lines.count) lines", comment: "Number of transcript lines so far")
-                : Self.trimmed(session.partial)
-            recordRow?.title = stop
-            recordRow?.isEnabled = true
-
-        case .transcribing(let fraction):
-            headerRow?.title = String(localized: "Transcribing", comment: "Status bar menu header during the batch pass")
-            detailRow?.isHidden = false
-            detailRow?.title = Self.percentage(fraction)
-            recordRow?.title = start
-            recordRow?.isEnabled = false
-
-        case .separatingSpeakers(let fraction):
-            headerRow?.title = String(localized: "Separating speakers",
-                                      comment: "Status bar menu header during diarization")
-            detailRow?.isHidden = false
-            detailRow?.title = Self.percentage(fraction)
-            recordRow?.title = start
-            recordRow?.isEnabled = false
-
-        case .done:
-            headerRow?.title = String(localized: "Lecture finished", comment: "Status bar menu header after a lecture")
-            detailRow?.isHidden = false
-            detailRow?.title = String(localized: "\(session.lines.count) lines", comment: "Number of transcript lines so far")
-            recordRow?.title = start
-            recordRow?.isEnabled = true
-
-        case .failed(let message):
-            headerRow?.title = message
-            detailRow?.isHidden = true
-            recordRow?.title = start
-            recordRow?.isEnabled = true
-        }
-    }
-
-    private static func elapsed(_ seconds: TimeInterval) -> String {
-        let whole = Int(seconds)
-        return String(format: "%02d:%02d:%02d", whole / 3600, (whole % 3600) / 60, whole % 60)
-    }
-
-    /// A progress fraction as a percentage. `.percent` rather than a number and
-    /// a literal sign so the sign, where it sits and the digits themselves come
-    /// from the reader's locale, and so no user-visible text is assembled here.
-    private static func percentage(_ fraction: Double) -> String {
-        fraction.formatted(.percent.precision(.fractionLength(0)))
-    }
-
-    /// The tail of the line being spoken. A menu row cannot grow, so what is
-    /// shown is the end of the sentence rather than its beginning — the end is
-    /// what is being said right now.
-    private static func trimmed(_ text: String, limit: Int = 60) -> String {
-        text.count <= limit ? text : "…" + String(text.suffix(limit))
-    }
-
-    // MARK: - Actions
-
-    @objc private func toggleRecording() {
-        Task { @MainActor in
-            if session.phase == .recording {
-                await session.stop()
-            } else {
-                await session.start()
-            }
-        }
+        // Assigned, popped up, and taken away again: an item that keeps a menu
+        // has no click action left for the popover.
+        item.menu = menu
+        item.button?.performClick(nil)
+        item.menu = nil
     }
 
     @objc private func revealRecordings() {
@@ -229,5 +136,165 @@ final class StatusItemController {
 
     @objc private func quit() {
         NSApp.terminate(nil)
+    }
+
+    func open() {
+        guard let button = item.button else { return }
+
+        // The courses are re-read every time rather than once at launch: a
+        // course created in the library while the popover was shut has to be in
+        // the list the next time it opens.
+        Task { await shell.courses.reload() }
+
+        let panel = panel ?? makePanel()
+        self.panel = panel
+        panel.present(under: button)
+    }
+
+    func close() {
+        shell.isConfirmingStop = false
+        panel?.orderOut(nil)
+    }
+
+    private func makePanel() -> PopoverPanel {
+        let root = PopoverRoot(shell: shell, actions: actions)
+        let host = NSHostingView(rootView: root)
+        host.sizingOptions = [.intrinsicContentSize]
+
+        let panel = PopoverPanel(content: host)
+
+        // A popover that outlives the click that opened it is a popover in the
+        // way. Closing on resign is what every menu-bar window on this platform
+        // does, and it is also what makes Escape and a click elsewhere behave
+        // the same.
+        resignObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResignKeyNotification,
+            object: panel,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.close() }
+        }
+
+        return panel
+    }
+
+    private var actions: PopoverActions {
+        PopoverActions(
+            record: { [weak self] in
+                self?.shell.record()
+            },
+            pause: { [weak self] in
+                self?.shell.pause()
+            },
+            resume: { [weak self] in
+                self?.shell.resume()
+            },
+            requestStop: { [weak self] in
+                self?.shell.requestStop()
+            },
+            finish: { [weak self] in
+                self?.shell.finish()
+            },
+            annotate: { [weak self] text in
+                self?.shell.annotate(text)
+            },
+            openRecordingWindow: { [weak self] in
+                self?.close()
+                self?.recordingWindow.show()
+            },
+            dismiss: { [weak self] in
+                self?.close()
+            }
+        )
+    }
+
+    // MARK: - Shortcuts
+
+    private func registerShortcuts() {
+        KeyboardShortcuts.onKeyUp(for: .togglePopover) { [weak self] in
+            self?.toggle()
+        }
+
+        KeyboardShortcuts.onKeyUp(for: .annotate) { [weak self] in
+            guard let self else { return }
+            // The window if it is open, the popover otherwise: `⌘⇧M` is meant
+            // to put the caret somewhere the user can type, and which of the
+            // two that is depends on what is already on screen.
+            if recordingWindow.isOpen {
+                recordingWindow.show()
+            } else {
+                open()
+            }
+            shell.focusAnnotation()
+        }
+
+        KeyboardShortcuts.onKeyUp(for: .resumeRecording) { [weak self] in
+            self?.shell.resume()
+        }
+    }
+
+    // MARK: - Following the lecture
+
+    /// Keeps the status item's accessibility label and the power sampling in
+    /// step with the lecture.
+    ///
+    /// `withObservationTracking` fires once per change, so it re-arms itself
+    /// after every one. A timer reading the same values would be the wrong
+    /// shape twice over: it would tick while nothing is recording, and it would
+    /// still miss a change that happened between two ticks.
+    private func followPhase() {
+        phaseTracking?.cancel()
+        phaseTracking = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                let changed: Void? = await withCheckedContinuation { continuation in
+                    withObservationTracking {
+                        self?.applyPhase()
+                    } onChange: {
+                        continuation.resume()
+                    }
+                }
+                guard changed != nil else { return }
+            }
+        }
+    }
+
+    private func applyPhase() {
+        shell.followPower()
+
+        item.button?.toolTip = switch shell.session.phase {
+        case .idle, .done, .failed:
+            String(localized: "Retain", comment: "Accessibility label of the status bar item")
+        case .preparingModels:
+            String(localized: "Downloading speech models",
+                   comment: "Status bar tooltip during the one-time model download")
+        case .recording:
+            shell.session.isPaused
+                ? String(localized: "Paused", comment: "Status bar tooltip while a recording is paused")
+                : String(localized: "Recording · \(ElapsedTime.clock(shell.session.recorder.duration))",
+                         comment: "Status bar tooltip while recording, with elapsed time")
+        case .transcribing, .separatingSpeakers:
+            String(localized: "Summarizing", comment: "Status bar tooltip while the passes after a recording run")
+        }
+    }
+}
+
+// MARK: - The popover's root
+
+/// Re-reads the shell every time anything it holds changes.
+///
+/// `PopoverView` takes values rather than the model so the five cards can be
+/// looked at without one; this is the one place that turns the model into those
+/// values, and it is what makes SwiftUI observe them.
+struct PopoverRoot: View {
+
+    let shell: ShellModel
+    let actions: PopoverActions
+
+    var body: some View {
+        PopoverView(
+            snapshot: PopoverSnapshot(shell: shell),
+            courses: shell.courses,
+            actions: actions
+        )
     }
 }
