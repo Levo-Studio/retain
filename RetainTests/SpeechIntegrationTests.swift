@@ -86,15 +86,50 @@ struct SpeechIntegrationTests {
             #expect(output.hasSpeakers, "diarization produced no segments")
         }
 
-        try TranscriptSidecar.write(output.lines, for: url)
+        // Through the store the app uses, which is where a transcript lives
+        // now — and a check that a real lecture's worth of lines, with real
+        // German in them, survives the round trip and is findable afterwards.
+        let database = try RetainDatabase.inMemory()
+        let library = try await StoreFixture.library(in: database)
+        let recordingID = try #require(library.recording.id)
+        let transcript = TranscriptRepository(database)
+        try await transcript.replaceLines(output.lines, for: recordingID)
+
+        let stored = try await transcript.lines(for: recordingID)
+        #expect(stored.map(\.text) == output.lines.map(\.text))
+
+        let termID = try #require(library.term.id)
+        let firstWord = try #require(
+            output.lines.lazy.flatMap { $0.text.split(separator: " ") }.first { $0.count > 5 }
+        )
+        #expect(
+            try await SearchRepository(database).search(String(firstWord), in: termID).isEmpty == false,
+            "a word out of the transcript was not findable"
+        )
+
+        let transcriptURL = try writeTranscript(output.lines, beside: url)
         print("""
 
             \(output.lines.count) lines, \(output.text.split(separator: " ").count) words, \
             \(String(format: "%.1f", output.realTimeFactor))× real time
             speakers: \(output.hasSpeakers ? "separated" : "not separated")
-            transcript: \(TranscriptSidecar.url(for: url).path)
+            transcript: \(transcriptURL.path)
 
             """)
+    }
+
+    /// Writes the transcript beside the audio as JSON.
+    ///
+    /// Test-only, and deliberately not part of the app: the app keeps
+    /// transcripts in the database. This exists because the phase 3 acceptance
+    /// is a person reading a German lecture back and saying whether it is
+    /// right, which needs a file they can open.
+    private func writeTranscript(_ lines: [TranscriptLine], beside recording: URL) throws -> URL {
+        let url = recording.deletingPathExtension().appendingPathExtension("transcript.json")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(lines).write(to: url, options: .atomic)
+        return url
     }
 
     @Test("Audio loads as 16 kHz mono float whatever it was")
