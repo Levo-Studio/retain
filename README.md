@@ -30,7 +30,7 @@ interface are the phases after this one.
 | | |
 |---|---|
 | **While the lecture runs** | Live transcript, note blocks that close every few minutes, speaker separation between the lecturer and a question from the room, an annotation hotkey, elapsed time |
-| **Afterwards** | The lecture re-transcribed in batch for an authoritative transcript, diarization, written-out notes, click a line to jump to that point in the audio |
+| **Afterwards** | The lecture re-transcribed in batch for an authoritative transcript, diarization, written-out notes with timestamps, chapters and a chat about the lesson |
 | **Library** | Courses and terms, full-text search across a whole term |
 | **Settings** | The LM Studio connection, the speech model, the microphone |
 
@@ -43,6 +43,9 @@ interface are the phases after this one.
 - No sync and no export to a service.
 - No system-audio capture. Retain records the microphone. It does not tap other
   applications' audio.
+- No archive of recordings. The audio is deleted once it has been transcribed,
+  and there is no playback anywhere in the app. What Retain keeps is the
+  transcript, the notes and what you marked.
 
 ## How it works
 
@@ -56,6 +59,12 @@ When the lecture ends, the raw recording is transcribed again in one batch pass,
 which is roughly twice as accurate as the streaming pass, and the block
 summaries are reduced into the final notes against that transcript. **The live
 transcript is feedback, not the record.**
+
+**The audio is not kept.** Once the batch pass and the speaker separation have
+both read the file and the transcript has been written, the recording is
+deleted. Ninety minutes of 16 kHz mono is about 173 MB, and a school year of it
+is tens of gigabytes of files you cannot read. A recording whose transcription
+failed keeps its audio, so nothing is lost because a model was.
 
 Battery is treated as a constraint rather than an afterthought: the audio buffer
 is sized for fewer wakeups, the speech models stay on the Neural Engine, batch
