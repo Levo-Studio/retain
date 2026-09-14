@@ -17,6 +17,98 @@
       "comment": "Note in the name-term dialog when switching the current term away from another one",
       "extractionState": "manual"
     },
+    "%@ · %@": {
+      "comment": "Two values side by side, separated by the export's middle dot",
+      "extractionState": "manual"
+    },
+    "%@ · %@ · %@": {
+      "comment": "Under a course heading: its term, how many recordings it has, and how long they run to",
+      "extractionState": "manual"
+    },
+    "%@ · Marker": {
+      "comment": "Label of a transcript line the user marked while it was being said",
+      "extractionState": "manual"
+    },
+    "%@ – %@ · %@": {
+      "comment": "A term's period and how many courses are in it, in the library sidebar",
+      "extractionState": "manual"
+    },
+    "%lld courses": {
+      "comment": "How many courses are in a term",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld course"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld courses"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld h %lld min": {
+      "comment": "A total length in hours and minutes, in the library's course header",
+      "extractionState": "manual"
+    },
+    "%lld lines": {
+      "comment": "Number of transcript lines so far",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld line"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld lines"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld markers": {
+      "comment": "How many points the user marked during the recording",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld marker"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld markers"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld markers · %lld sections": {
       "comment": "What the finished summary contains, under the Open summary card",
       "extractionState": "manual",
@@ -64,6 +156,30 @@
                       "value": "%lld sections"
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld min": {
+      "comment": "A recording's length in whole minutes",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld min"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld min"
                 }
               }
             }
@@ -153,6 +269,34 @@
         }
       }
     },
+    "%lld of %lld": {
+      "comment": "Which find match is current, out of how many — the export's 3 von 11",
+      "extractionState": "manual"
+    },
+    "%lld recordings": {
+      "comment": "How many recordings are in a course",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld recording"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld recordings"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "A term is the stretch of time the library is filtered by. Pick what yours are called and which courses they hold.": {
       "comment": "Settings section description under the general heading",
       "extractionState": "manual"
@@ -173,8 +317,12 @@
       "comment": "Name of the third course colour",
       "extractionState": "manual"
     },
+    "Ask a question …": {
+      "comment": "Placeholder of the chat composer — the export's Frage stellen …",
+      "extractionState": "manual"
+    },
     "Audience": {
-      "comment": "Speaker of a transcript line that came from the room",
+      "comment": "Who a transcript line belongs to: the room — the export's Publikum",
       "extractionState": "manual"
     },
     "Base URL": {
@@ -191,6 +339,14 @@
     },
     "Cancel": {
       "comment": "Dialog button that closes without saving",
+      "extractionState": "manual"
+    },
+    "Chapters": {
+      "comment": "Rail segment showing the chapters — the export's Kapitel",
+      "extractionState": "manual"
+    },
+    "Chat": {
+      "comment": "Rail segment showing the conversation about this recording",
       "extractionState": "manual"
     },
     "Choose a model": {
@@ -214,7 +370,7 @@
       "extractionState": "manual"
     },
     "Course": {
-      "comment": "Meta strip label above the course a recording belongs to",
+      "comment": "Meta-strip label above the course and term — the export's FACH",
       "extractionState": "manual"
     },
     "Courses": {
@@ -245,8 +401,20 @@
       "comment": "Status bar menu header and tooltip during the one-time model download",
       "extractionState": "manual"
     },
+    "Duration": {
+      "comment": "Label above how long a recording ran: the detail meta strip and the library table column",
+      "extractionState": "manual"
+    },
     "Edit": {
       "comment": "Edit menu title",
+      "extractionState": "manual"
+    },
+    "Export": {
+      "comment": "Title-bar button on the recording detail window — the export's Exportieren",
+      "extractionState": "manual"
+    },
+    "Find in transcript …": {
+      "comment": "Placeholder of the find bar over the transcript",
       "extractionState": "manual"
     },
     "Finish": {
@@ -305,8 +473,16 @@
       "comment": "Microphone permission dialog button that postpones the ask",
       "extractionState": "manual"
     },
+    "Lecture finished": {
+      "comment": "Status bar menu header after a lecture",
+      "extractionState": "manual"
+    },
     "Level": {
       "comment": "Settings field label for the microphone level meter",
+      "extractionState": "manual"
+    },
+    "Library": {
+      "comment": "Title of the library window — the export's Bibliothek",
       "extractionState": "manual"
     },
     "Live transcript": {
@@ -350,11 +526,19 @@
       "extractionState": "manual"
     },
     "New course": {
-      "comment": "New-course dialog title, and the button that opens it",
+      "comment": "Creating a course: the library sidebar's action and the dialog that opens",
       "extractionState": "manual"
     },
     "New term": {
       "comment": "Button that creates the first term",
+      "extractionState": "manual"
+    },
+    "Next match": {
+      "comment": "Accessibility label of the find bar's down arrow",
+      "extractionState": "manual"
+    },
+    "No chapters yet.": {
+      "comment": "Chapters rail with nothing in it, because no note block has been written",
       "extractionState": "manual"
     },
     "No connection": {
@@ -363,6 +547,10 @@
     },
     "No course": {
       "comment": "The course field when the current term has no courses",
+      "extractionState": "manual"
+    },
+    "No courses in this term yet.": {
+      "comment": "The library sidebar for a term with no courses",
       "extractionState": "manual"
     },
     "No language model is selected.": {
@@ -381,6 +569,10 @@
       "comment": "Model picker label when the server listed nothing",
       "extractionState": "manual"
     },
+    "No recordings in this course yet.": {
+      "comment": "The library table for a course with no recordings",
+      "extractionState": "manual"
+    },
     "No server was reachable at %@. Recording continues; summaries are caught up once the connection is back.": {
       "comment": "LM Studio failure dialog body, naming the configured address",
       "extractionState": "manual"
@@ -389,12 +581,32 @@
       "comment": "Term picker label before the first term has been named",
       "extractionState": "manual"
     },
+    "No terms yet.": {
+      "comment": "The library before the first term has been named",
+      "extractionState": "manual"
+    },
+    "Not recording": {
+      "comment": "Status bar menu header while idle",
+      "extractionState": "manual"
+    },
     "Note": {
       "comment": "Settings field label for the annotation hotkey",
       "extractionState": "manual"
     },
+    "Note %lld": {
+      "comment": "Chat source chip citing a note block — the export's Notiz 1",
+      "extractionState": "manual"
+    },
     "Note — goes to the model": {
       "comment": "Placeholder of the annotation composer, which sends what is typed to the language model",
+      "extractionState": "manual"
+    },
+    "Notes": {
+      "comment": "Tab showing the written-out notes — the export's Notizen",
+      "extractionState": "manual"
+    },
+    "Nothing in this term matches.": {
+      "comment": "Full-text search that found nothing",
       "extractionState": "manual"
     },
     "Open System Settings": {
@@ -429,8 +641,16 @@
       "comment": "Settings field label for the microphone permission",
       "extractionState": "manual"
     },
+    "Previous match": {
+      "comment": "Accessibility label of the find bar's up arrow",
+      "extractionState": "manual"
+    },
     "Purple": {
       "comment": "Name of the fourth course colour",
+      "extractionState": "manual"
+    },
+    "Questions about this recording. The model sees the notes and the transcript.": {
+      "comment": "Standing note at the top of the chat rail, saying what the model is given",
       "extractionState": "manual"
     },
     "Questions can be asked once the recording has stopped.": {
@@ -577,12 +797,28 @@
       "comment": "Name-term dialog button that saves the term",
       "extractionState": "manual"
     },
+    "Search every recording in this term …": {
+      "comment": "Placeholder of the library's full-text search field",
+      "extractionState": "manual"
+    },
+    "Search notes and transcript …": {
+      "comment": "Placeholder of the field above the chapters rail, searching inside one recording",
+      "extractionState": "manual"
+    },
     "Select All": {
       "comment": "Edit menu item",
       "extractionState": "manual"
     },
     "Semester": {
       "comment": "One of the two kinds a term can be",
+      "extractionState": "manual"
+    },
+    "Send": {
+      "comment": "Accessibility label of the chat composer's return key",
+      "extractionState": "manual"
+    },
+    "Separating speakers": {
+      "comment": "Status bar menu header during diarization",
       "extractionState": "manual"
     },
     "Settings": {
@@ -606,7 +842,7 @@
       "extractionState": "manual"
     },
     "Speaker": {
-      "comment": "Speaker of a transcript line, the person teaching",
+      "comment": "Who a transcript line belongs to: the person teaching — the export's Lehrerin",
       "extractionState": "manual"
     },
     "Speaker detected": {
@@ -621,8 +857,24 @@
       "comment": "Settings section heading\nSettings sidebar row",
       "extractionState": "manual"
     },
+    "Start Recording": {
+      "comment": "Status bar menu item starting a recording",
+      "extractionState": "manual"
+    },
+    "Started": {
+      "comment": "Library table column showing the date and time a recording started",
+      "extractionState": "manual"
+    },
+    "Status": {
+      "comment": "Library table column showing where a recording has got to",
+      "extractionState": "manual"
+    },
     "Stop": {
       "comment": "Button that asks to end a recording",
+      "extractionState": "manual"
+    },
+    "Stop Recording": {
+      "comment": "Status bar menu item stopping a recording",
       "extractionState": "manual"
     },
     "Stored in the Keychain — type to replace": {
@@ -661,6 +913,10 @@
       "comment": "Recording failed because the input format was unusable",
       "extractionState": "manual"
     },
+    "The model could not answer.": {
+      "comment": "Shown in the chat rail when a question failed for a reason with no message of its own",
+      "extractionState": "manual"
+    },
     "The model did not answer in a shape Retain could read.": {
       "comment": "None of the three structured-output attempts produced a usable answer",
       "extractionState": "manual"
@@ -673,8 +929,16 @@
       "comment": "The model stopped for a reason other than finishing",
       "extractionState": "manual"
     },
+    "The notes for this recording have not been written yet.": {
+      "comment": "Notes tab of a recording the model has not summarised",
+      "extractionState": "manual"
+    },
     "The recording is processed only on this Mac. Nothing is uploaded, and only what you keep is stored.": {
       "comment": "Microphone permission dialog body",
+      "extractionState": "manual"
+    },
+    "This recording has no transcript yet.": {
+      "comment": "Transcript tab of a recording that has not been transcribed",
       "extractionState": "manual"
     },
     "This recording needs about %lld tokens and the model has room for %lld. Load the model with a larger context.": {
@@ -685,12 +949,24 @@
       "comment": "Name-term dialog field label",
       "extractionState": "manual"
     },
+    "Today": {
+      "comment": "The Started column for a recording made today — the export's Heute",
+      "extractionState": "manual"
+    },
+    "Topic": {
+      "comment": "Label above the topic the model derived: the detail meta strip and the library table column",
+      "extractionState": "manual"
+    },
     "Topic · detected": {
       "comment": "Meta strip label above the topic the model reads out of the transcript",
       "extractionState": "manual"
     },
+    "Transcribing": {
+      "comment": "Status bar menu header during the batch pass",
+      "extractionState": "manual"
+    },
     "Transcript": {
-      "comment": "Header of the recording window's transcript rail",
+      "comment": "Tab showing the full transcript — the export's Transkript",
       "extractionState": "manual"
     },
     "Try again": {
@@ -705,12 +981,24 @@
       "comment": "Window menu title",
       "extractionState": "manual"
     },
+    "Writing an answer": {
+      "comment": "Accessibility label of the three-dot typing indicator",
+      "extractionState": "manual"
+    },
     "You · %@": {
       "comment": "Label above an annotation the user typed during the lecture, with the moment they typed it",
       "extractionState": "manual"
     },
+    "by date": {
+      "comment": "The library's sort order — the export's chronologisch",
+      "extractionState": "manual"
+    },
     "denied": {
       "comment": "Microphone permission state in settings, after the user refused",
+      "extractionState": "manual"
+    },
+    "done": {
+      "comment": "A recording with finished notes — the export's fertig",
       "extractionState": "manual"
     },
     "downloaded · used offline": {
@@ -725,8 +1013,24 @@
       "comment": "Speech model card caption with a time estimate",
       "extractionState": "manual"
     },
+    "exam relevant": {
+      "comment": "Footer of the chapters rail — the export's klausurrelevant",
+      "extractionState": "manual"
+    },
     "granted": {
       "comment": "Microphone permission state in settings",
+      "extractionState": "manual"
+    },
+    "in the notes": {
+      "comment": "A search hit that is in a note block",
+      "extractionState": "manual"
+    },
+    "in the transcript": {
+      "comment": "A search hit that is a line somebody said",
+      "extractionState": "manual"
+    },
+    "in your note": {
+      "comment": "A search hit that is in something the user typed during the recording",
       "extractionState": "manual"
     },
     "keep running in the background": {
@@ -741,6 +1045,10 @@
       "comment": "Note in the transcript rail header saying the transcript is running",
       "extractionState": "manual"
     },
+    "no matches": {
+      "comment": "The find bar with a query that matches nothing",
+      "extractionState": "manual"
+    },
     "not asked for yet": {
       "comment": "Microphone permission state in settings, before the system dialog has been shown",
       "extractionState": "manual"
@@ -753,8 +1061,20 @@
       "comment": "Note beside the API key field label",
       "extractionState": "manual"
     },
+    "re-transcribing": {
+      "comment": "A recording whose audio is being read through again after it stopped",
+      "extractionState": "manual"
+    },
+    "recording": {
+      "comment": "A recording that is running right now — the export's läuft",
+      "extractionState": "manual"
+    },
     "shown as selected at the top": {
       "comment": "Caption beside the current-term toggle",
+      "extractionState": "manual"
+    },
+    "summarizing": {
+      "comment": "A recording whose notes are being written — the export's wird zusammengefasst",
       "extractionState": "manual"
     },
     "writing …": {

@@ -86,6 +86,16 @@ struct RetainTextField: View {
     /// A field whose content must never be drawn as characters — the API key.
     var isSecure = false
 
+    /// The search fields are not form fields: the export draws them rounder
+    /// (9 rather than 8) and, in a rail, tighter. The chrome is otherwise the
+    /// same box.
+    var cornerRadius: CGFloat = RetainMetrics.radiusTextField
+    var padding: EdgeInsets = RetainMetrics.fieldPadding
+
+    /// The find bar and the library search read what is typed as it is typed,
+    /// so they set their own text style rather than the form's.
+    var textStyle: RetainTextStyle = RetainTypography.fieldText
+
     var onSubmit: () -> Void = {}
 
     @FocusState private var focused: Bool
@@ -94,21 +104,21 @@ struct RetainTextField: View {
         ZStack(alignment: .leading) {
             if text.isEmpty {
                 Text(placeholder)
-                    .retainStyle(RetainTypography.fieldText)
+                    .retainStyle(textStyle)
                     .foregroundStyle(RetainPalette.inkLabel)
                     .allowsHitTesting(false)
             }
 
             field
                 .textFieldStyle(.plain)
-                .retainStyle(RetainTypography.fieldText)
+                .retainStyle(textStyle)
                 .foregroundStyle(RetainPalette.inkPrimary)
                 .tint(RetainPalette.accent)
                 .focused($focused)
                 .onSubmit(onSubmit)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .retainFieldChrome(isFocused: focused)
+        .retainFieldChrome(isFocused: focused, cornerRadius: cornerRadius, padding: padding)
         .contentShape(.rect)
         .onTapGesture { focused = true }
     }
@@ -200,6 +210,11 @@ struct RetainStatusDot: View {
     /// breathing, so the curve is a parameter and not a flag per curve.
     var loop: RetainMotion.Curve?
 
+    /// How far into the loop this dot starts. Board 04's chat rail is three of
+    /// these circles on `typingIndicator` at 0, .2 and .4 — the same curve,
+    /// staggered, which is what makes it read as a wave rather than a blink.
+    var loopDelay: Double = 0
+
     private var curve: RetainMotion.Curve? {
         loop ?? (breathes ? .breathe : nil)
     }
@@ -207,7 +222,7 @@ struct RetainStatusDot: View {
     var body: some View {
         Group {
             if let curve {
-                circle.retainLoop(curve)
+                circle.retainLoop(curve, delay: loopDelay)
             } else {
                 circle
             }

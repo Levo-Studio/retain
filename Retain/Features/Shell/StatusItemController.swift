@@ -270,7 +270,7 @@ final class StatusItemController {
         case .recording:
             shell.session.isPaused
                 ? String(localized: "Paused", comment: "Status bar tooltip while a recording is paused")
-                : String(localized: "Recording · \(ElapsedTime.clock(shell.session.recorder.duration))",
+                : String(localized: "Recording · \(RetainTimeFormat.clock(shell.session.recorder.duration))",
                          comment: "Status bar tooltip while recording, with elapsed time")
         case .transcribing, .separatingSpeakers:
             String(localized: "Summarizing", comment: "Status bar tooltip while the passes after a recording run")

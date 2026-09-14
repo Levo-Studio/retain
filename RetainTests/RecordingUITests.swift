@@ -17,28 +17,28 @@ struct ElapsedTimeTests {
         (36_000.0, "10:00:00"),
     ])
     func clockIsPadded(seconds: TimeInterval, expected: String) {
-        #expect(ElapsedTime.clock(seconds) == expected)
+        #expect(RetainTimeFormat.clock(seconds) == expected)
     }
 
     @Test("A second is only over when it is over")
     func clockTruncates() {
         // Rounding up would show 00:00:01 for the first frame of a recording,
         // which is a timer that is wrong the moment it appears.
-        #expect(ElapsedTime.clock(0.9) == "00:00:00")
-        #expect(ElapsedTime.clock(1.999) == "00:00:01")
+        #expect(RetainTimeFormat.clock(0.9) == "00:00:00")
+        #expect(RetainTimeFormat.clock(1.999) == "00:00:01")
     }
 
     @Test("Nothing negative reaches the screen")
     func clockClampsAtZero() {
-        #expect(ElapsedTime.clock(-5) == "00:00:00")
-        #expect(ElapsedTime.wholeMinutes(-5) == 0)
+        #expect(RetainTimeFormat.clock(-5) == "00:00:00")
+        #expect(RetainTimeFormat.minutesElapsed(-5) == 0)
     }
 
     @Test("The hours never disappear")
     func clockKeepsItsWidth() {
         // A timer that loses its hours below an hour changes width, and
         // everything beside it in the title bar moves with it.
-        #expect(ElapsedTime.clock(59).count == ElapsedTime.clock(7200).count)
+        #expect(RetainTimeFormat.clock(59).count == RetainTimeFormat.clock(7200).count)
     }
 
     @Test("Whole minutes round down", arguments: [
@@ -49,7 +49,7 @@ struct ElapsedTimeTests {
         (2_819.9, 46),
     ])
     func minutesRoundDown(seconds: TimeInterval, expected: Int) {
-        #expect(ElapsedTime.wholeMinutes(seconds) == expected)
+        #expect(RetainTimeFormat.minutesElapsed(seconds) == expected)
     }
 }
 

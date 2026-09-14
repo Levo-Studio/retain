@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The left half of board 01: note blocks as they are written, and the
 /// annotation composer along the bottom.
-struct NotesPane: View {
+struct RecordingNotesPane: View {
 
     let shell: ShellModel
 
@@ -49,7 +49,11 @@ struct NotesList: View {
             // difference between a pane that shows the user's own notes and a
             // pane that is empty for an hour.
             ForEach(NoteBlockLayout.loose(markers, blocks: notes)) { marker in
-                AnnotationCard(marker: marker)
+                RetainAnnotationCard(
+                    label: RecordingAnnotationLabel.text(at: marker.time),
+                    text: marker.text,
+                    layout: .recording
+                )
                     .padding(.top, RetainMetrics.noteAnnotationGap)
             }
         }
@@ -100,7 +104,11 @@ struct NoteBlockView: View {
             }
 
             ForEach(markers) { marker in
-                AnnotationCard(marker: marker)
+                RetainAnnotationCard(
+                    label: RecordingAnnotationLabel.text(at: marker.time),
+                    text: marker.text,
+                    layout: .recording
+                )
                     .padding(.top, RetainMetrics.noteAnnotationGap)
                     .padding(.leading, RetainMetrics.noteBodyIndentRecording)
             }
@@ -113,43 +121,21 @@ struct NoteBlockView: View {
 
 /// "You · 00:46:41" with a blue rule down its left — what `⌘⇧M` leaves in the
 /// notes.
-struct AnnotationCard: View {
+/// "You · 00:46:41", the label above an annotation in the notes column.
+///
+/// The card itself is `RetainAnnotationCard` in the design layer — the export
+/// draws the same one here and on board 03. Only the wording is a feature's,
+/// because it is a catalog key.
+enum RecordingAnnotationLabel {
 
-    let marker: RecordingMarker
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: RetainMetrics.noteAnnotationLabelGap) {
-            Text(verbatim: AnnotationCard.label(at: marker.time))
-                .retainStyle(RetainTypography.uppercaseLabel)
-                .foregroundStyle(RetainPalette.blue)
-
-            Text(verbatim: marker.text)
-                .retainStyle(RetainTypography.annotationBody)
-                .foregroundStyle(RetainPalette.inkBodyStrong)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.leading, RetainMetrics.leftRuleGapMain)
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(RetainPalette.blue)
-                .frame(width: RetainMetrics.leftRuleWidth)
-        }
-        .frame(maxWidth: NoteBlockLayout.paragraphWidth, alignment: .leading)
-    }
-
-    /// "You · 00:46:41", assembled from the catalog key and the elapsed time.
-    static func label(at time: TimeInterval) -> String {
+    static func text(at time: TimeInterval) -> String {
         String(
-            localized: "You · \(ElapsedTime.clock(time))",
+            localized: "You · \(RetainTimeFormat.clock(time))",
             comment: "Label above an annotation the user typed during the lecture, with the moment they typed it"
         )
     }
 }
 
-// MARK: - The composer
-
-/// `⌘⇧M`. Not a bare marker: what is typed goes to the model with the block it
-/// falls in, and comes back out in the notes.
 struct AnnotationComposer: View {
 
     let shell: ShellModel

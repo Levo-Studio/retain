@@ -172,7 +172,7 @@ struct PopoverRunningCard: View {
             HStack(alignment: .bottom, spacing: 0) {
                 PopoverTitleBlock(courseName: snapshot.courseName, noteBlocks: snapshot.noteBlocks)
                 Spacer(minLength: 0)
-                Text(verbatim: ElapsedTime.clock(snapshot.duration))
+                Text(verbatim: RetainTimeFormat.clock(snapshot.duration))
                     .retainStyle(RetainTypography.timerLarge)
                     .foregroundStyle(RetainPalette.inkPrimary)
             }
@@ -314,12 +314,3 @@ struct PopoverTitleBlock: View {
 }
 
 /// A one-pixel rule in the divider colour. The export's `border-bottom`.
-struct RetainDivider: View {
-    var colour: Color = RetainPalette.lineDivider
-
-    var body: some View {
-        Rectangle()
-            .fill(colour)
-            .frame(height: RetainMetrics.borderWidth)
-    }
-}

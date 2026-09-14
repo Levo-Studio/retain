@@ -192,12 +192,13 @@ nonisolated enum RetainPalette {
 
     static let courseSwatches: [RetainColor] = [accentBase, blueValue, amberValue, purpleValue]
 
-    // MARK: - Lines as values
+    // MARK: - Colours as values
 
-    // On the OKLCH axes rather than as a `Color`, for the same reason
-    // `accentValue` is: `RetainInteraction` steps lightness, and lightness
-    // cannot be read back out of a SwiftUI `Color`. Only the two outlines a
-    // button is ever drawn with are here; everything else is read as a colour.
+    // On the OKLCH axes rather than as a SwiftUI `Color`, because
+    // `RetainInteraction` steps lightness for hover and pressed and lightness
+    // cannot be read back out of a `Color`. Only the tokens a control is
+    // actually drawn with are here; everything else is read as a colour, and
+    // the `Color` accessors above are what a view uses at rest.
 
     /// The outline of "Stop" and "Finish".
     static var redBorderSwatch: RetainColor { redBorderValue }
@@ -205,6 +206,13 @@ nonisolated enum RetainPalette {
     /// The outline of "Pause" in the recording window's rail, which the export
     /// draws a step stronger than every other control border.
     static var controlBorderEmphasisedSwatch: RetainColor { controlBorderEmphasised }
+
+    /// The surfaces a control sits on: a field and a secondary button, a
+    /// selected sidebar row or segment, and the strip a table's current row is
+    /// filled with.
+    static var insetControlSwatch: RetainColor { insetControl }
+    static var selectedRowSwatch: RetainColor { selectedRow }
+    static var metaStripSwatch: RetainColor { metaStrip }
 
     // MARK: - Values
 

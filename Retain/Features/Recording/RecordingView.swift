@@ -14,7 +14,7 @@ struct RecordingRoot: View {
             RecordingMetaStrip(session: shell.session, courses: shell.courses)
 
             HStack(spacing: 0) {
-                NotesPane(shell: shell)
+                RecordingNotesPane(shell: shell)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 TranscriptRail(shell: shell)
@@ -74,7 +74,7 @@ struct RecordingTitleBar: View {
                 diameter: RetainMetrics.statusDotTimerPill,
                 loop: session.isPaused ? nil : .recordingPulse
             )
-            Text(verbatim: ElapsedTime.clock(session.recorder.duration))
+            Text(verbatim: RetainTimeFormat.clock(session.recorder.duration))
                 .retainStyle(RetainTypography.titleBarTimer)
                 .foregroundStyle(RetainPalette.inkPrimary)
         }

@@ -165,7 +165,7 @@ struct PopoverStopConfirmationCard: View {
 
     static func runningFor(_ duration: TimeInterval) -> String {
         String(
-            localized: "Recording for \(ElapsedTime.wholeMinutes(duration)) minutes",
+            localized: "Recording for \(RetainTimeFormat.minutesElapsed(duration)) minutes",
             comment: "Label above the stop confirmation, saying how long the recording has run"
         )
     }
@@ -208,7 +208,7 @@ struct PopoverPausedCard: View {
             HStack(alignment: .bottom, spacing: 0) {
                 PopoverTitleBlock(courseName: snapshot.courseName, noteBlocks: snapshot.noteBlocks)
                 Spacer(minLength: 0)
-                Text(verbatim: ElapsedTime.clock(snapshot.duration))
+                Text(verbatim: RetainTimeFormat.clock(snapshot.duration))
                     .retainStyle(RetainTypography.timerLarge)
                     .foregroundStyle(RetainPalette.inkDim)
             }
@@ -254,7 +254,7 @@ struct PopoverPausedCard: View {
                         )
                     )
                     Spacer(minLength: 0)
-                    Text(verbatim: ElapsedTime.clock(line.start))
+                    Text(verbatim: RetainTimeFormat.clock(line.start))
                         .retainStyle(RetainTypography.railHeaderNote)
                         .foregroundStyle(RetainPalette.inkLabel)
                 }
@@ -388,7 +388,7 @@ struct PopoverSummarizingCard: View {
     /// shown and the estimate is left out.
     static func subtitle(duration: TimeInterval, noteBlocks: Int) -> String {
         String(
-            localized: "\(ElapsedTime.wholeMinutes(duration)) min recorded · \(noteBlocks) note blocks",
+            localized: "\(RetainTimeFormat.wholeMinutes(duration)) min recorded · \(noteBlocks) note blocks",
             comment: "The line under the title while a recording is being summarised"
         )
     }

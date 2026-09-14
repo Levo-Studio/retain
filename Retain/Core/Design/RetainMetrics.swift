@@ -71,7 +71,12 @@ nonisolated enum RetainMetrics {
     static let radiusSidebarRow: CGFloat = 8
     static let radiusSegment: CGFloat = 8
     static let radiusExportButton: CGFloat = 8
-    static let radiusStatusPill: CGFloat = 8
+
+    /// The term picker in the library title bar.
+    ///
+    /// The README's radius table files this under 8. The board draws
+    /// `border-radius:9px`, and where the two disagree the export wins.
+    static let radiusStatusPill: CGFloat = 9
 
     static let radiusButton: CGFloat = 9
     static let radiusSearchField: CGFloat = 9
@@ -116,6 +121,17 @@ nonisolated enum RetainMetrics {
     static let titleBarPadding = horizontal(14)
     static let titleBarGap: CGFloat = 9
 
+    // `titleBarTitleGap` is in `RetainMetrics+Boards0607.swift`, which board 06
+    // needs for the same bar.
+
+    /// Between the controls at the trailing end of the title bar.
+    static let titleBarTrailingGap: CGFloat = 8
+    /// The `Export` button.
+    static let titleBarButtonPadding = edges(5, 10)
+    /// The term picker in the library title bar, and the gap inside it.
+    static let titleBarPillPadding = edges(5, 11)
+    static let titleBarPillGap: CGFloat = 8
+
     static let transcriptRailWidth: CGFloat = 320
     static let chaptersRailWidth: CGFloat = 330
     static let librarySidebarWidth: CGFloat = 238
@@ -137,6 +153,15 @@ nonisolated enum RetainMetrics {
     static let libraryBody = edges(6, 30, 0)
     static let libraryCourseHeading = edges(20, 30, 10)
     static let libraryCourseHeadingGap: CGFloat = 12
+    /// Between the search field and the sort control beside it.
+    static let libraryHeaderGap: CGFloat = 14
+
+    /// The term's name and period, above the courses in the sidebar.
+    static let librarySidebarTermHeader = edges(0, 8, 12)
+    static let librarySidebarTermSubtitleGap: CGFloat = 2
+    /// Between a course's colour rail, its name and its count.
+    static let librarySidebarRowGap: CGFloat = 10
+    static let librarySidebarNewCoursePadding = edges(9, 9)
 
     static let settingsPane = edges(26, 34, 0)
     static let settingsSectionGap: CGFloat = 24
@@ -186,6 +211,11 @@ nonisolated enum RetainMetrics {
     static let segmentPadding = edges(7, 0)
     static let segmentGap: CGFloat = 3
 
+    /// The Chapters/Chat segment sits under the rail's search field on board
+    /// 03 and at the top of the rail on board 04, which draws no field.
+    static let railSegmentUnderSearch = edges(0, 18, 12)
+    static let railSegmentAtTop = edges(14, 18, 12)
+
     static let annotationBarRecordingPadding = edges(11, 15)
     static let annotationBarRecordingMargin = edges(14, 34, 20)
     static let annotationBarGap: CGFloat = 12
@@ -195,6 +225,24 @@ nonisolated enum RetainMetrics {
     static let chatComposerPadding = edges(9, 12)
     static let chatComposerGap: CGFloat = 10
     static let chatBubblePadding = edges(9, 12)
+
+    /// Around the composer, inside the rail.
+    static let chatComposerMargin = edges(12, 18, 14)
+    /// The rail's scrolling body, between the segment and the composer.
+    static let chatRailBody = edges(4, 18, 0)
+
+    /// `max-width:86%` on a question, `92%` on an answer. A question is a
+    /// bubble and reads as a shape; an answer is prose and takes the measure.
+    static let chatBubbleMaxWidthFraction: CGFloat = 0.86
+    static let chatAnswerMaxWidthFraction: CGFloat = 0.92
+
+    static let chatSourceChipPadding = edges(2, 6)
+    static let chatSourceChipGap: CGFloat = 6
+    /// Between the answer and the chips under it.
+    static let chatSourceChipTopGap: CGFloat = 7
+
+    /// Between the three dots of the typing indicator.
+    static let typingDotGap: CGFloat = 5
 
     // MARK: - Gaps between repeated rows
 
@@ -206,6 +254,14 @@ nonisolated enum RetainMetrics {
     static let transcriptMainLineGap: CGFloat = 15
     /// Between rows of the chapter rail.
     static let chapterRowGap: CGFloat = 4
+    /// A chapter row's own padding: the first row in the rail, and every one
+    /// after it, which the export gives more air above.
+    static let chapterRowFirst = edges(6, 0)
+    static let chapterRowLater = edges(10, 0, 6)
+    static let chapterRowLaterTopGap: CGFloat = 6
+    /// Between a chapter's time and its title.
+    static let chapterRowGapToTitle: CGFloat = 10
+    static let chaptersFooterPadding = edges(12, 18)
     /// Between chat messages.
     static let chatMessageGap: CGFloat = 12
 
@@ -238,6 +294,10 @@ nonisolated enum RetainMetrics {
     /// `74px 1fr`, gap 16 — timestamp, then the line.
     static let transcriptTimestampColumn: CGFloat = 74
     static let transcriptLineGap: CGFloat = 16
+
+    /// A line the user marked hangs its rule out into the pane's padding —
+    /// `margin-left:-16px` — and pads the text back in by `leftRuleGapMain`.
+    static let transcriptMarkerRuleInset: CGFloat = 16
 
     // MARK: - Small parts
 

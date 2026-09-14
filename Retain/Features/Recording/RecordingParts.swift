@@ -101,7 +101,7 @@ struct TranscriptLineRow: View {
     /// "00:46:03 · Speaker". Assembled from two catalog keys and the separator
     /// the export draws between them.
     private var label: String {
-        "\(ElapsedTime.clock(line.start)) · \(Self.speakerName(line.speaker))"
+        "\(RetainTimeFormat.clock(line.start)) · \(Self.speakerName(line.speaker))"
     }
 
     static func speakerName(_ speaker: SpeakerRole) -> String {
