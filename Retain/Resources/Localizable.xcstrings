@@ -1,16 +1,44 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%lld lines": {
+      "comment": "Number of transcript lines so far",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld line"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld lines"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "About Retain": {
       "comment": "Status bar menu item opening the about panel",
       "extractionState": "manual"
     },
-    "Not recording": {
-      "comment": "Status bar menu header while idle",
+    "Downloading speech models": {
+      "comment": "Status bar menu header during the one-time model download",
       "extractionState": "manual"
     },
-    "Paused": {
-      "comment": "Status bar menu header while paused",
+    "Lecture finished": {
+      "comment": "Status bar menu header after a lecture",
+      "extractionState": "manual"
+    },
+    "Not recording": {
+      "comment": "Status bar menu header while idle",
       "extractionState": "manual"
     },
     "Quit Retain": {
@@ -29,6 +57,10 @@
       "comment": "Recording failed because the output file could not be opened",
       "extractionState": "manual"
     },
+    "Retain could not load the speech models.": {
+      "comment": "A lecture could not start because the models are missing",
+      "extractionState": "manual"
+    },
     "Retain could not open that microphone.": {
       "comment": "Recording failed because the chosen input device could not be opened",
       "extractionState": "manual"
@@ -43,6 +75,10 @@
     },
     "Retain could not start the audio engine.": {
       "comment": "Recording failed because AVAudioEngine refused to start",
+      "extractionState": "manual"
+    },
+    "Retain could not transcribe the recording.": {
+      "comment": "The batch transcription pass failed",
       "extractionState": "manual"
     },
     "Retain could not write to the recording file.": {
@@ -61,6 +97,10 @@
       "comment": "Status bar menu item opening the recordings folder",
       "extractionState": "manual"
     },
+    "Separating speakers": {
+      "comment": "Status bar menu header during diarization",
+      "extractionState": "manual"
+    },
     "Start Recording": {
       "comment": "Status bar menu item starting a recording",
       "extractionState": "manual"
@@ -71,6 +111,10 @@
     },
     "The microphone reported a format Retain cannot read.": {
       "comment": "Recording failed because the input format was unusable",
+      "extractionState": "manual"
+    },
+    "Transcribing": {
+      "comment": "Status bar menu header during the batch pass",
       "extractionState": "manual"
     }
   },

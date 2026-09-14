@@ -10,14 +10,17 @@ import Observation
 ///
 /// The menu here is scaffolding. Design board 02 draws a popover with five
 /// states, and that is what replaces this in phase 6; what a plain menu buys in
-/// the meantime is that the recording path can be exercised at all.
+/// the meantime is that the lecture path can be exercised at all.
 @MainActor
 final class StatusItemController {
 
     private let item: NSStatusItem
-    private let engine = RecordingEngine()
-    private var observation: NSObjectProtocol?
+    private let session = LectureSession()
     private var stateTracking: Task<Void, Never>?
+
+    private var headerRow: NSMenuItem?
+    private var detailRow: NSMenuItem?
+    private var recordRow: NSMenuItem?
 
     init() {
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -36,7 +39,7 @@ final class StatusItemController {
         item.button?.image = image
 
         item.menu = makeMenu()
-        observeEngine()
+        observeSession()
     }
 
     deinit {
@@ -48,26 +51,28 @@ final class StatusItemController {
 
     // MARK: - Menu
 
-    private var recordItem: NSMenuItem?
-    private var statusItemRow: NSMenuItem?
-
     private func makeMenu() -> NSMenu {
         let menu = NSMenu()
 
-        let status = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        status.isEnabled = false
-        menu.addItem(status)
-        statusItemRow = status
+        let header = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        header.isEnabled = false
+        menu.addItem(header)
+        headerRow = header
+
+        let detail = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        detail.isEnabled = false
+        menu.addItem(detail)
+        detailRow = detail
 
         menu.addItem(.separator())
 
         let record = menu.addItem(
-            withTitle: String(localized: "Start Recording", comment: "Status bar menu item starting a recording"),
+            withTitle: "",
             action: #selector(toggleRecording),
             keyEquivalent: "r"
         )
         record.target = self
-        recordItem = record
+        recordRow = record
 
         menu.addItem(
             withTitle: String(localized: "Reveal Recordings in Finder", comment: "Status bar menu item opening the recordings folder"),
@@ -93,13 +98,13 @@ final class StatusItemController {
         return menu
     }
 
-    /// Follows the engine's observable state.
+    /// Follows the session's observable state.
     ///
     /// `withObservationTracking` fires once per change, so it re-arms itself
     /// after every one. A timer reading the same values would be the wrong
     /// shape twice over: it would tick while nothing is recording, and it would
     /// still miss a change that happened between two ticks.
-    private func observeEngine() {
+    private func observeSession() {
         stateTracking?.cancel()
         stateTracking = Task { @MainActor [weak self] in
             while !Task.isCancelled {
@@ -116,30 +121,63 @@ final class StatusItemController {
     }
 
     private func updateMenu() {
-        switch engine.state {
+        let start = String(localized: "Start Recording", comment: "Status bar menu item starting a recording")
+        let stop = String(localized: "Stop Recording", comment: "Status bar menu item stopping a recording")
+
+        switch session.phase {
         case .idle:
-            statusItemRow?.title = String(localized: "Not recording",
-                                          comment: "Status bar menu header while idle")
-            recordItem?.title = String(localized: "Start Recording",
-                                       comment: "Status bar menu item starting a recording")
+            headerRow?.title = String(localized: "Not recording", comment: "Status bar menu header while idle")
+            detailRow?.isHidden = true
+            recordRow?.title = start
+            recordRow?.isEnabled = true
+
+        case .preparingModels:
+            headerRow?.title = String(localized: "Downloading speech models",
+                                      comment: "Status bar menu header during the one-time model download")
+            detailRow?.isHidden = false
+            detailRow?.title = Self.percentage(session.downloadFraction)
+            recordRow?.title = start
+            recordRow?.isEnabled = false
 
         case .recording:
-            statusItemRow?.title = String(
-                localized: "Recording · \(Self.elapsed(engine.duration))",
+            headerRow?.title = String(
+                localized: "Recording · \(Self.elapsed(session.recorder.duration))",
                 comment: "Status bar menu header while recording, with elapsed time"
             )
-            recordItem?.title = String(localized: "Stop Recording",
-                                       comment: "Status bar menu item stopping a recording")
+            detailRow?.isHidden = false
+            detailRow?.title = session.partial.isEmpty
+                ? String(localized: "\(session.lines.count) lines", comment: "Number of transcript lines so far")
+                : Self.trimmed(session.partial)
+            recordRow?.title = stop
+            recordRow?.isEnabled = true
 
-        case .paused:
-            statusItemRow?.title = String(localized: "Paused", comment: "Status bar menu header while paused")
-            recordItem?.title = String(localized: "Stop Recording",
-                                       comment: "Status bar menu item stopping a recording")
+        case .transcribing(let fraction):
+            headerRow?.title = String(localized: "Transcribing", comment: "Status bar menu header during the batch pass")
+            detailRow?.isHidden = false
+            detailRow?.title = Self.percentage(fraction)
+            recordRow?.title = start
+            recordRow?.isEnabled = false
+
+        case .separatingSpeakers(let fraction):
+            headerRow?.title = String(localized: "Separating speakers",
+                                      comment: "Status bar menu header during diarization")
+            detailRow?.isHidden = false
+            detailRow?.title = Self.percentage(fraction)
+            recordRow?.title = start
+            recordRow?.isEnabled = false
+
+        case .done:
+            headerRow?.title = String(localized: "Lecture finished", comment: "Status bar menu header after a lecture")
+            detailRow?.isHidden = false
+            detailRow?.title = String(localized: "\(session.lines.count) lines", comment: "Number of transcript lines so far")
+            recordRow?.title = start
+            recordRow?.isEnabled = true
 
         case .failed(let message):
-            statusItemRow?.title = message
-            recordItem?.title = String(localized: "Start Recording",
-                                       comment: "Status bar menu item starting a recording")
+            headerRow?.title = message
+            detailRow?.isHidden = true
+            recordRow?.title = start
+            recordRow?.isEnabled = true
         }
     }
 
@@ -148,14 +186,28 @@ final class StatusItemController {
         return String(format: "%02d:%02d:%02d", whole / 3600, (whole % 3600) / 60, whole % 60)
     }
 
+    /// A progress fraction as a percentage. `.percent` rather than a number and
+    /// a literal sign so the sign, where it sits and the digits themselves come
+    /// from the reader's locale, and so no user-visible text is assembled here.
+    private static func percentage(_ fraction: Double) -> String {
+        fraction.formatted(.percent.precision(.fractionLength(0)))
+    }
+
+    /// The tail of the line being spoken. A menu row cannot grow, so what is
+    /// shown is the end of the sentence rather than its beginning — the end is
+    /// what is being said right now.
+    private static func trimmed(_ text: String, limit: Int = 60) -> String {
+        text.count <= limit ? text : "…" + String(text.suffix(limit))
+    }
+
     // MARK: - Actions
 
     @objc private func toggleRecording() {
         Task { @MainActor in
-            if engine.state == .recording || engine.state == .paused {
-                await engine.finish()
+            if session.phase == .recording {
+                await session.stop()
             } else {
-                await engine.start(writingTo: RecordingStore.newRecordingURL())
+                await session.start()
             }
         }
     }
