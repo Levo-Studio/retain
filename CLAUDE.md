@@ -195,6 +195,21 @@ group, so every `Security` call returns `errSecMissingEntitlement` (-34018)
 before it reaches any Retain code, and the keychain tests would pass by never
 running. Do not "simplify" this back to `CODE_SIGNING_ALLOWED=NO`.
 
+**An app built without a real signing identity has to have its embedded
+frameworks re-signed too.** Sparkle ships signed by its own team, and a dyld
+that finds a framework whose Team ID differs from the process's refuses to map
+it — the app then dies at launch with `Library not loaded`, before any of our
+code runs. Sign inside out:
+
+```bash
+for f in Retain.app/Contents/Frameworks/*.framework; do
+    codesign --force --sign - --timestamp=none "$f"
+done
+codesign --force --sign - --timestamp=none Retain.app
+```
+
+Phase 7 replaces the `-` with the Developer ID, in that order.
+
 `DEVELOPMENT_TEAM` is not stored in the project. It goes in `Local.xcconfig`,
 which is gitignored; `Base.xcconfig` includes it optionally so a clone without
 it still builds.
