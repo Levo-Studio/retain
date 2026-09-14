@@ -33,8 +33,24 @@
       "comment": "Status bar menu header during the one-time model download",
       "extractionState": "manual"
     },
+    "LM Studio answered with an error. (%lld)": {
+      "comment": "The language model server returned an HTTP error status",
+      "extractionState": "manual"
+    },
+    "LM Studio is not responding.": {
+      "comment": "No server answered at the configured address",
+      "extractionState": "manual"
+    },
+    "LM Studio returned an empty answer.": {
+      "comment": "The chat completion had no choices in it",
+      "extractionState": "manual"
+    },
     "Lecture finished": {
       "comment": "Status bar menu header after a lecture",
+      "extractionState": "manual"
+    },
+    "No language model is selected.": {
+      "comment": "Summarizing was asked for before a model was chosen in settings",
       "extractionState": "manual"
     },
     "Not recording": {
@@ -81,6 +97,10 @@
       "comment": "The batch transcription pass failed",
       "extractionState": "manual"
     },
+    "Retain could not use the keychain. (%d)": {
+      "comment": "Keychain failed with an OSStatus Retain has no specific message for",
+      "extractionState": "manual"
+    },
     "Retain could not write to the recording file.": {
       "comment": "Recording failed while writing audio to disk",
       "extractionState": "manual"
@@ -89,12 +109,32 @@
       "comment": "Recording failed because permission was refused",
       "extractionState": "manual"
     },
+    "Retain is not allowed to use the keychain. Reinstalling Retain fixes this.": {
+      "comment": "Keychain refused the app because it is not signed correctly",
+      "extractionState": "manual"
+    },
     "Retain lost the microphone and could not reopen it.": {
       "comment": "Recording failed after the input device changed",
       "extractionState": "manual"
     },
+    "Retain only talks to a language model on this Mac.": {
+      "comment": "The configured LM Studio address is not on localhost",
+      "extractionState": "manual"
+    },
+    "Retain was refused access to the keychain.": {
+      "comment": "Keychain is locked or the user denied the access dialog",
+      "extractionState": "manual"
+    },
     "Reveal Recordings in Finder": {
       "comment": "Status bar menu item opening the recordings folder",
+      "extractionState": "manual"
+    },
+    "Questions can be asked once the recording has stopped.": {
+      "comment": "The chat was used while the recording was still running",
+      "extractionState": "manual"
+    },
+    "Questions can be asked once the summary is finished.": {
+      "comment": "The chat was used before the notes had been written",
       "extractionState": "manual"
     },
     "Separating speakers": {
@@ -109,8 +149,28 @@
       "comment": "Status bar menu item stopping a recording",
       "extractionState": "manual"
     },
+    "The keychain holds something Retain cannot read as an API key.": {
+      "comment": "Keychain item exists but is not text",
+      "extractionState": "manual"
+    },
     "The microphone reported a format Retain cannot read.": {
       "comment": "Recording failed because the input format was unusable",
+      "extractionState": "manual"
+    },
+    "The model did not answer in a shape Retain could read.": {
+      "comment": "None of the three structured-output attempts produced a usable answer",
+      "extractionState": "manual"
+    },
+    "The model ran out of context before it finished the notes.": {
+      "comment": "The prompt plus the answer exceeded the loaded context length",
+      "extractionState": "manual"
+    },
+    "The model stopped before it finished the notes.": {
+      "comment": "The model stopped for a reason other than finishing",
+      "extractionState": "manual"
+    },
+    "This recording needs about %lld tokens and the model has room for %lld. Load the model with a larger context.": {
+      "comment": "The prompt is too large for the loaded context length, measured before sending",
       "extractionState": "manual"
     },
     "Transcribing": {
