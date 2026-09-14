@@ -194,6 +194,130 @@ struct RetainPickerField<Value: Hashable, Label: View>: View {
     }
 }
 
+// MARK: - Segment
+
+/// One of board 03's segments, on its own.
+///
+/// `500 · 12px` centred in an 8-point rounded rectangle: selected on the
+/// selected-row fill in primary ink, unselected in label ink with no fill at
+/// all. The export draws them in pairs, and the pair is the only thing about
+/// them that is a pair — one segment is this, however many of them sit beside
+/// it and however many can be on at once.
+///
+/// The export's segments are `flex: 1` inside a 330-point rail, which is how
+/// they get their width. In a form the value column is far wider and segments
+/// filling it would read as headings rather than as a set, so each one takes
+/// the field's own horizontal padding instead and the row hugs the left edge.
+struct RetainSegment: View {
+
+    let title: String
+    let isSelected: Bool
+    let select: () -> Void
+
+    var body: some View {
+        Button(action: select) {
+            Text(title)
+                .retainStyle(RetainTypography.segment)
+                .foregroundStyle(isSelected ? RetainPalette.inkPrimary : RetainPalette.inkLabel)
+                .padding(.vertical, RetainMetrics.segmentPadding.top)
+                .padding(.horizontal, RetainMetrics.fieldPadding.leading)
+                .background(
+                    isSelected ? RetainPalette.surfaceSelectedRow : .clear,
+                    in: RoundedRectangle(cornerRadius: RetainMetrics.radiusSegment)
+                )
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+}
+
+// MARK: - A row that wraps
+
+/// Lays its subviews out left to right and starts a new line when the next one
+/// would not fit.
+///
+/// Geometry only — it decides nothing about how anything is drawn, which is why
+/// it can sit in the design layer beside the controls that use it. It exists
+/// because a set of segments whose number comes from the user's own data has no
+/// fixed width: five terms fit on one line inside a 430-point dialog and nine
+/// do not, and the alternatives are a horizontal scroller inside a modal sheet
+/// or titles cut off mid-word.
+///
+/// `SwiftUI` has no wrapping stack on macOS 15, so this is the `Layout` for it
+/// and not a re-implementation of one that exists.
+struct RetainWrappingRow: Layout {
+
+    var spacing: CGFloat
+    var rowSpacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = rows(within: proposal.width ?? .infinity, subviews: subviews)
+        let width = rows.map(\.width).max() ?? 0
+        let height = rows.map(\.height).reduce(0, +)
+            + rowSpacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) {
+        var y = bounds.minY
+        for row in rows(within: bounds.width, subviews: subviews) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(
+                    at: CGPoint(x: x, y: y),
+                    anchor: .topLeading,
+                    proposal: ProposedViewSize(size)
+                )
+                x += size.width + spacing
+            }
+            y += row.height + rowSpacing
+        }
+    }
+
+    // MARK: -
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    /// Breaks the subviews into lines at their own ideal widths.
+    ///
+    /// A subview wider than the whole line still gets its own line rather than
+    /// being dropped or squeezed: the caller's job is to keep titles short, and
+    /// a layout that silently loses a term would be worse than one that
+    /// overflows visibly.
+    private func rows(within width: CGFloat, subviews: Subviews) -> [Row] {
+        var rows: [Row] = []
+        var row = Row()
+
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let needed = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+
+            if needed > width, !row.indices.isEmpty {
+                rows.append(row)
+                row = Row()
+            }
+
+            row.width = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            row.height = max(row.height, size.height)
+            row.indices.append(index)
+        }
+
+        if !row.indices.isEmpty { rows.append(row) }
+        return rows
+    }
+}
+
 // MARK: - Status dot
 
 /// The filled circle in front of a status line.
