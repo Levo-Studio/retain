@@ -108,12 +108,14 @@ nonisolated enum StoreFixture {
     static func noteBlock(
         _ markdown: String,
         position: Int = 0,
-        startTime: TimeInterval = 0
+        startTime: TimeInterval = 0,
+        endTime: TimeInterval? = nil
     ) -> StoredNoteBlock {
         StoredNoteBlock(
             recordingID: 0,
             position: position,
             startTime: startTime,
+            endTime: endTime ?? startTime + 180,
             markdown: markdown
         )
     }

@@ -171,6 +171,10 @@ nonisolated enum RetainMigrations {
                 // Where the block starts in the recording. The chapters rail
                 // draws this as its timestamp and seeks to it.
                 t.column("startTime", .double).notNull()
+                // And where it ends, so a moment in the audio can be answered
+                // with the note that covers it. The start alone only answers
+                // the reverse question.
+                t.column("endTime", .double).notNull()
                 t.column("markdown", .text).notNull()
             }
 

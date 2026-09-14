@@ -232,6 +232,11 @@ nonisolated struct StoredNoteBlock: Identifiable, Hashable, Sendable, Codable {
     /// `TranscriptLine.start`. The chapters rail draws this and seeks to it.
     var startTime: TimeInterval
 
+    /// Where it ends. Kept so a moment in the audio can be answered with the
+    /// note covering it — playing the recording back and following along needs
+    /// that direction, and `startTime` alone only answers the other one.
+    var endTime: TimeInterval
+
     var markdown: String
 
     init(
@@ -239,12 +244,14 @@ nonisolated struct StoredNoteBlock: Identifiable, Hashable, Sendable, Codable {
         recordingID: Int64,
         position: Int,
         startTime: TimeInterval,
+        endTime: TimeInterval,
         markdown: String
     ) {
         self.id = id
         self.recordingID = recordingID
         self.position = position
         self.startTime = startTime
+        self.endTime = endTime
         self.markdown = markdown
     }
 }
@@ -258,6 +265,7 @@ nonisolated extension StoredNoteBlock: FetchableRecord, MutablePersistableRecord
         static let recordingID = Column("recordingID")
         static let position = Column("position")
         static let startTime = Column("startTime")
+        static let endTime = Column("endTime")
         static let markdown = Column("markdown")
     }
 
