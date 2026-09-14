@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0eee9;font-family:system-ui,sans-serif}
+a{color:#2a78d6}a:hover{color:#1b5aa8}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.4 system-ui,sans-serif;color:rgba(0,0,0,.55);max-width:1120px}
+.dv-olabel b{font:600 12.5px system-ui,sans-serif;color:#1a1a1a}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.09);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:26px 0 0;font:12px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+</style></helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Fünf Richtungen · Aufnahme-Screen während der Vorlesung — Notizen groß, Transkript schmal rechts</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a><b>Hörsaal</b>Will, dass sich die Mitschrift wie ein Skript liest, das jemand für dich tippt — ruhige Serifen, fließender Text, kein Karten-Rahmen. Gibt dafür Dichte und Telemetrie auf.</div>
+<div class="dv-card" style="width:1120px">
+<div style="height:720px;display:flex;flex-direction:column;background:#f6f3ec;color:#241f1a;font-family:'Lora',Georgia,serif">
+<div style="height:38px;flex:none;display:flex;align-items:center;gap:9px;padding:0 14px;background:#efeade;border-bottom:1px solid #e0d7c6">
+<div style="width:11px;height:11px;border-radius:50%;background:#d6c8af"></div><div style="width:11px;height:11px;border-radius:50%;background:#d6c8af"></div><div style="width:11px;height:11px;border-radius:50%;background:#d6c8af"></div>
+<div style="margin-left:14px;font:500 11.5px 'DM Sans',sans-serif;color:#8a7e6a;letter-spacing:.02em">Betriebssysteme 09 — Aufnahme läuft</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:#8a3b2a;animation:recpulse 2s ease-in-out infinite"></div><span style="font:500 12px 'DM Sans',sans-serif;font-variant-numeric:tabular-nums;color:#6b6153">00:47:12</span></div>
+</div>
+<div style="flex:1;display:grid;grid-template-columns:1fr 318px;min-height:0">
+
+<div style="display:flex;flex-direction:column;min-height:0">
+<div style="flex:none;padding:28px 56px 18px;border-bottom:1px solid #e6ddcc">
+<div style="font:500 10.5px 'DM Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#a2957e">Betriebssysteme · WS 25/26 · Prof. Dr. Almut Reinhardt</div>
+<div style="font:600 27px/1.25 'Lora',serif;margin-top:8px">09 — Virtueller Speicher und Paging</div>
+</div>
+<div style="flex:1;padding:24px 56px 0;overflow:hidden;display:flex;flex-direction:column">
+<h3 style="margin:0;font:600 19px/1.3 'Lora',serif">Adressräume sind eine Abmachung</h3>
+<p style="margin:9px 0 0;font:400 15.5px/1.68 'Lora',serif;color:#3c342a">Jeder Prozess sieht einen eigenen, lückenlosen Adressraum. Real existiert der nicht — die <strong style="font-weight:600">Seitentabelle</strong> bildet virtuelle Seiten auf physische Kacheln ab, und erst diese Abbildung macht aus der Abmachung Speicher.</p>
+<ul style="margin:11px 0 0;padding-left:19px;font:400 15px/1.62 'Lora',serif;color:#3c342a">
+<li>Seitengröße üblicherweise 4 KiB, Huge Pages 2 MiB</li>
+</ul>
+
+<h3 style="margin:26px 0 0;font:600 19px/1.3 'Lora',serif">Der TLB als Cache der Übersetzung</h3>
+<p style="margin:9px 0 0;font:400 15.5px/1.68 'Lora',serif;color:#3c342a">Ohne Puffer kostet jeder Zugriff zwei Speicherzugriffe: einen für die Tabelle, einen für die Nutzdaten. Der <strong style="font-weight:600">TLB</strong> hält die letzten Übersetzungen und verdrängt nach <em>pseudo-LRU</em> — das ist Hardware, das Betriebssystem hat darauf keinen Einfluss.</p>
+<div style="margin:14px 0 0;padding-left:16px;border-left:2px solid #c9b894;font:400 14.5px/1.6 'Lora',serif;color:#5e5548">
+<span style="font:500 10px 'DM Sans',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#a2957e;display:block;margin-bottom:5px">Deine Notiz · 00:46:41</span>
+Reinhardt sagt jedes Jahr, TLB-Größe kommt in der Klausur.
+</div>
+
+<div style="margin:20px 0 0;display:flex;align-items:baseline;gap:10px"><h3 style="margin:0;font:600 19px/1.3 'Lora',serif;color:#6b6153">Page Faults und Thrashing</h3><span style="font:400 11px 'DM Sans',sans-serif;color:#a2957e">wird geschrieben …</span></div>
+<p style="margin:9px 0 0;font:400 15.5px/1.68 'Lora',serif;color:#6b6153">Ein Page Fault ist kein Fehler, sondern der normale Weg, eine Seite nachzuladen. Kritisch wird es erst, wenn das System mehr Zeit mit Ein- und Auslagern verbringt als mit<span style="display:inline-block;width:2px;height:16px;background:#8a3b2a;margin-left:4px;vertical-align:-3px;animation:caret 1.1s step-end infinite"></span></p>
+</div>
+<div style="flex:none;padding:14px 56px 18px;border-top:1px solid #e6ddcc;background:#f1ece1">
+<div style="display:flex;align-items:center;gap:12px;background:#fdfbf6;border:1px solid #e0d7c6;border-radius:4px;padding:11px 14px">
+<span style="font:500 10.5px 'DM Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#a2957e">Einwurf</span>
+<span style="flex:1;font:italic 400 15px 'Lora',serif;color:#9c8f79">Was ich dazuschreibe, nimmt die KI in die nächste Zusammenfassung auf …</span>
+<span style="font:400 11px 'DM Sans',sans-serif;color:#b0a48d">⌘⇧M markiert</span>
+</div>
+</div>
+</div>
+
+<div style="border-left:1px solid #e6ddcc;background:#f1ece1;display:flex;flex-direction:column;min-height:0">
+<div style="flex:none;padding:16px 22px 10px;display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10px 'DM Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#a2957e">Transkript</span><span style="font:400 10.5px 'DM Sans',sans-serif;color:#b0a48d">Netzteil · großes Modell</span></div>
+<div style="flex:1;padding:0 22px;overflow:hidden;display:flex;flex-direction:column;gap:12px">
+<div style="opacity:.45"><div style="font:500 10px 'DM Sans',sans-serif;color:#a2957e;font-variant-numeric:tabular-nums">00:44:02 · Dozentin</div><div style="font:400 13px/1.55 'Lora',serif;color:#4a4136;margin-top:3px">Der virtuelle Adressraum ist zunächst nur eine Abmachung.</div></div>
+<div style="opacity:.7"><div style="font:500 10px 'DM Sans',sans-serif;color:#a2957e;font-variant-numeric:tabular-nums">00:45:10 · Dozentin</div><div style="font:400 13px/1.55 'Lora',serif;color:#4a4136;margin-top:3px">Deshalb brauchen wir den TLB. Sonst kostet jeder Zugriff auf die Seitentabelle einen zusätzlichen Speicherzugriff.</div></div>
+<div><div style="font:500 10px 'DM Sans',sans-serif;color:#8a3b2a;font-variant-numeric:tabular-nums">00:46:03 · Publikum</div><div style="font:italic 400 13px/1.55 'Lora',serif;color:#5e5548;margin-top:3px">Was passiert, wenn der TLB voll ist?</div></div>
+<div><div style="font:500 10px 'DM Sans',sans-serif;color:#a2957e;font-variant-numeric:tabular-nums">00:46:20 · Dozentin</div><div style="font:400 13px/1.55 'Lora',serif;color:#3c342a;margin-top:3px">Dann wird verdrängt, üblicherweise pseudo-LRU.</div></div>
+<div><div style="font:500 10px 'DM Sans',sans-serif;color:#a2957e;font-variant-numeric:tabular-nums">00:47:05 · Dozentin</div><div style="font:400 13px/1.55 'Lora',serif;color:#241f1a;margin-top:3px">Wenn der Anteil der Page Faults zu hoch wird, verbringt das System mehr Zeit mit Ein- und Auslagern als mit<span style="display:inline-block;width:2px;height:13px;background:#8a3b2a;margin-left:3px;vertical-align:-2px;animation:caret 1.1s step-end infinite"></span></div></div>
+</div>
+<div style="flex:none;padding:12px 22px;border-top:1px solid #e6ddcc;display:flex;align-items:center;gap:9px">
+<div style="display:flex;align-items:flex-end;gap:2px;height:14px"><div style="width:3px;height:6px;background:#c2b193"></div><div style="width:3px;height:11px;background:#c2b193"></div><div style="width:3px;height:14px;background:#8a7e6a"></div><div style="width:3px;height:8px;background:#c2b193"></div><div style="width:3px;height:12px;background:#c2b193"></div></div>
+<span style="font:400 11px 'DM Sans',sans-serif;color:#8a7e6a">spricht · 2 Marker</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a><b>Cockpit</b>Will, dass du der Maschine beim Denken zusiehst: Notizen als Markdown-Quelltext, Transkript als Log, überall Telemetrie. Gibt dafür Ruhe und Lesekomfort auf.</div>
+<div class="dv-card" style="width:1120px;border-color:#000">
+<div style="height:720px;display:flex;flex-direction:column;background:#0a0c0b;color:#cfd9cb;font-family:'JetBrains Mono',ui-monospace,monospace">
+<div style="height:32px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;background:#111413;border-bottom:1px solid #1e2320">
+<div style="width:10px;height:10px;border-radius:50%;background:#2a302c"></div><div style="width:10px;height:10px;border-radius:50%;background:#2a302c"></div><div style="width:10px;height:10px;border-radius:50%;background:#2a302c"></div>
+<span style="margin-left:12px;font-size:10px;color:#5d6b5a;letter-spacing:.1em">RETAIN — SESSION 0142</span>
+</div>
+<div style="flex:none;display:flex;align-items:stretch;border-bottom:1px solid #1e2320;background:#0d100e">
+<div style="padding:10px 16px;border-right:1px solid #1e2320;display:flex;align-items:center;gap:9px"><div style="width:8px;height:8px;background:#ff4d3d;animation:recpulse 1.4s ease-in-out infinite"></div><span style="font-size:19px;font-weight:700;color:#b8ff3d;font-variant-numeric:tabular-nums">00:47:12</span></div>
+<div style="padding:11px 16px;border-right:1px solid #1e2320"><div style="font-size:9px;color:#5d6b5a;letter-spacing:.12em">KURS</div><div style="font-size:12px;margin-top:3px">BS-09 / PAGING</div></div>
+<div style="padding:11px 16px;border-right:1px solid #1e2320"><div style="font-size:9px;color:#5d6b5a;letter-spacing:.12em">ASR</div><div style="font-size:12px;margin-top:3px">parakeet-v2 · ANE 61%</div></div>
+<div style="padding:11px 16px;border-right:1px solid #1e2320"><div style="font-size:9px;color:#5d6b5a;letter-spacing:.12em">LLM</div><div style="font-size:12px;margin-top:3px">qwen3-14b @ :1234</div></div>
+<div style="padding:11px 16px;border-right:1px solid #1e2320"><div style="font-size:9px;color:#5d6b5a;letter-spacing:.12em">PWR</div><div style="font-size:12px;margin-top:3px;color:#b8ff3d">AC · groß</div></div>
+<div style="flex:1;padding:11px 16px;display:flex;align-items:center;gap:3px">
+<span style="font-size:9px;color:#5d6b5a;letter-spacing:.12em;margin-right:8px">IN</span>
+<div style="width:4px;height:9px;background:#b8ff3d"></div><div style="width:4px;height:15px;background:#b8ff3d"></div><div style="width:4px;height:22px;background:#b8ff3d"></div><div style="width:4px;height:12px;background:#b8ff3d"></div><div style="width:4px;height:25px;background:#b8ff3d"></div><div style="width:4px;height:17px;background:#7fa82c"></div><div style="width:4px;height:8px;background:#33421f"></div><div style="width:4px;height:4px;background:#33421f"></div>
+<span style="margin-left:10px;font-size:10.5px;color:#b8ff3d">SPEECH</span>
+</div>
+</div>
+<div style="flex:1;display:grid;grid-template-columns:1fr 340px;min-height:0">
+
+<div style="display:flex;flex-direction:column;min-height:0">
+<div style="flex:none;display:flex;gap:16px;padding:9px 20px;border-bottom:1px solid #1e2320;font-size:9.5px;color:#5d6b5a;letter-spacing:.1em"><span style="color:#b8ff3d">NOTES.MD</span><span style="color:#3c4a39">|</span><span>BLOCK 03 GENERIERT 62%</span><span style="color:#3c4a39">|</span><span>1 EIGENE ZEILE EINGEARBEITET</span></div>
+<div style="flex:1;padding:18px 20px 0;overflow:hidden;display:flex;flex-direction:column;font-size:13px;line-height:1.62">
+<div style="color:#b8ff3d;font-weight:700">## Adressräume sind eine Abmachung</div>
+<div style="margin-top:7px;color:#cfd9cb">Jeder Prozess sieht einen lückenlosen Adressraum. Real existiert er nicht — die <span style="color:#e7b84f">**Seitentabelle**</span> bildet virtuelle Seiten auf physische Kacheln ab.</div>
+<div style="margin-top:7px;color:#9aa896">- Seitengröße 4 KiB, Huge Pages 2 MiB<br>- Nicht abgebildete Seite → Trap ins Betriebssystem</div>
+<div style="margin-top:18px;color:#b8ff3d;font-weight:700">## Der TLB als Cache der Übersetzung</div>
+<div style="margin-top:7px;color:#cfd9cb">Ohne Puffer kostet jeder Zugriff zwei Speicherzugriffe. Der <span style="color:#e7b84f">**TLB**</span> hält die letzten Übersetzungen, Verdrängung per `pseudo-LRU` — Hardware, kein Einfluss vom BS.</div>
+<div style="margin-top:11px;border-left:2px solid #4f8fd6;padding-left:11px;color:#8fb9e4"><span style="font-size:9px;letter-spacing:.12em;color:#4f8fd6">&gt; EIGENE NOTIZ 00:46:41</span><br>Reinhardt sagt jedes Jahr, TLB-Größe kommt in der Klausur.</div>
+<div style="margin-top:18px;color:#b8ff3d;font-weight:700">## Page Faults und Thrashing<span style="color:#5d6b5a;font-weight:400;font-size:10px;margin-left:10px">░ schreibt</span></div>
+<div style="margin-top:7px;color:#7f8d7b">Ein Page Fault ist kein Fehler, sondern der normale Weg, eine Seite nachzuladen. Kritisch wird es, wenn das System mehr Zeit mit Ein- und Auslagern verbringt als mit<span style="display:inline-block;width:8px;height:13px;background:#b8ff3d;margin-left:4px;vertical-align:-2px;animation:caret 1s step-end infinite"></span></div>
+</div>
+<div style="flex:none;border-top:1px solid #1e2320;background:#0d100e;padding:11px 20px;display:flex;align-items:center;gap:10px">
+<span style="font-size:11px;color:#b8ff3d">❯</span><span style="flex:1;font-size:12.5px;color:#4c5949">eigene zeile … wird in den nächsten block eingearbeitet</span><span style="font-size:9.5px;color:#e7b84f">◆ 2 MARKER · ⌘⇧M</span>
+</div>
+</div>
+
+<div style="border-left:1px solid #1e2320;background:#0d100e;display:flex;flex-direction:column;min-height:0">
+<div style="flex:none;padding:9px 14px;border-bottom:1px solid #1e2320;font-size:9.5px;color:#5d6b5a;letter-spacing:.1em;display:flex;justify-content:space-between"><span>TRANSKRIPT</span><span>WER-EST 4.1%</span></div>
+<div style="flex:1;padding:12px 14px;overflow:hidden;display:flex;flex-direction:column;gap:9px;font-size:11.5px;line-height:1.5">
+<div style="color:#5f6d5c"><span style="color:#4f8fd6">00:44:02 DOZ</span><br>Der virtuelle Adressraum ist zunächst nur eine Abmachung.</div>
+<div style="color:#7f8d7b"><span style="color:#4f8fd6">00:45:10 DOZ</span><br>Deshalb brauchen wir den TLB, sonst kostet jeder Zugriff einen zusätzlichen Speicherzugriff.</div>
+<div style="color:#e7b84f;background:rgba(231,184,79,.07);padding:5px 7px;margin:0 -7px"><span>00:46:03 PUB</span><br>Was passiert, wenn der TLB voll ist?</div>
+<div style="color:#aebba9"><span style="color:#4f8fd6">00:46:20 DOZ</span><br>Dann wird verdrängt, üblicherweise pseudo-LRU.</div>
+<div style="color:#fff"><span style="color:#b8ff3d">00:47:05 DOZ</span><br>Wenn der Anteil der Page Faults zu hoch wird, verbringt das System mehr Zeit mit Ein- und Auslagern als mit<span style="display:inline-block;width:7px;height:11px;background:#b8ff3d;margin-left:3px;vertical-align:-1px;animation:caret 1s step-end infinite"></span></div>
+</div>
+<div style="flex:none;border-top:1px solid #1e2320;padding:9px 14px;display:flex;align-items:flex-end;gap:2px;height:34px">
+<div style="width:3px;height:40%;background:#2d3a2a"></div><div style="width:3px;height:70%;background:#2d3a2a"></div><div style="width:3px;height:30%;background:#2d3a2a"></div><div style="width:3px;height:85%;background:#2d3a2a"></div><div style="width:3px;height:55%;background:#2d3a2a"></div><div style="width:3px;height:20%;background:#2d3a2a"></div><div style="width:3px;height:66%;background:#2d3a2a"></div><div style="width:3px;height:90%;background:#e7b84f"></div><div style="width:3px;height:44%;background:#2d3a2a"></div><div style="width:3px;height:25%;background:#2d3a2a"></div><div style="width:3px;height:72%;background:#2d3a2a"></div><div style="width:3px;height:38%;background:#2d3a2a"></div><div style="width:3px;height:60%;background:#2d3a2a"></div><div style="width:3px;height:95%;background:#2d3a2a"></div><div style="width:3px;height:48%;background:#2d3a2a"></div><div style="width:3px;height:18%;background:#2d3a2a"></div><div style="width:3px;height:64%;background:#2d3a2a"></div><div style="width:3px;height:80%;background:#2d3a2a"></div><div style="width:3px;height:35%;background:#2d3a2a"></div><div style="width:3px;height:52%;background:#2d3a2a"></div><div style="width:3px;height:88%;background:#e7b84f"></div><div style="width:3px;height:42%;background:#2d3a2a"></div><div style="width:3px;height:28%;background:#2d3a2a"></div><div style="width:3px;height:70%;background:#2d3a2a"></div><div style="width:3px;height:58%;background:#2d3a2a"></div><div style="width:3px;height:33%;background:#2d3a2a"></div><div style="width:3px;height:77%;background:#2d3a2a"></div><div style="width:3px;height:46%;background:#2d3a2a"></div><div style="width:3px;height:22%;background:#2d3a2a"></div><div style="width:3px;height:68%;background:#2d3a2a"></div><div style="width:3px;height:92%;background:#b8ff3d"></div><div style="width:3px;height:61%;background:#b8ff3d"></div><div style="width:3px;height:37%;background:#b8ff3d"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a><b>Tafel</b>Will das Gefühl der Vorlesung selbst: dunkelgrüne Fläche, große Kreide-Typo, das Transkript als leiser Rand. Gibt dafür Informationsdichte und Feinheit der Hierarchie auf.</div>
+<div class="dv-card" style="width:1120px;border-color:#132019">
+<div style="height:720px;display:flex;flex-direction:column;background:#16241c;color:#e8efe4;font-family:'Space Grotesk',sans-serif">
+<div style="height:34px;flex:none;display:flex;align-items:center;gap:9px;padding:0 13px;background:#101a14;border-bottom:1px solid #24352a">
+<div style="width:10px;height:10px;border-radius:50%;background:#2e4236"></div><div style="width:10px;height:10px;border-radius:50%;background:#2e4236"></div><div style="width:10px;height:10px;border-radius:50%;background:#2e4236"></div>
+<span style="margin-left:12px;font-size:11.5px;color:#7f9c88">Betriebssysteme · 09</span>
+<span style="margin-left:auto;display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:#f4d35e;animation:recpulse 2s ease-in-out infinite"></span><span style="font-size:12px;color:#cfe0d3;font-variant-numeric:tabular-nums">00:47:12</span></span>
+</div>
+<div style="flex:1;display:grid;grid-template-columns:1fr 300px;min-height:0">
+<div style="display:flex;flex-direction:column;min-height:0;padding:0 0 0 0">
+<div style="flex:none;padding:30px 52px 0">
+<div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7f9c88">Virtueller Speicher und Paging</div>
+</div>
+<div style="flex:1;padding:22px 52px 0;overflow:hidden;display:flex;flex-direction:column">
+<h3 style="margin:0;font:700 26px/1.2 'Space Grotesk',sans-serif;color:#f4d35e">Adressräume sind eine Abmachung</h3>
+<p style="margin:10px 0 0;font:400 16px/1.66 'Space Grotesk',sans-serif;color:#cfe0d3;max-width:62ch">Jeder Prozess sieht einen lückenlosen Adressraum. Erst die <strong style="color:#fff;font-weight:700">Seitentabelle</strong> bildet virtuelle Seiten auf physische Kacheln ab.</p>
+<div style="margin:12px 0 0;display:flex;flex-direction:column;gap:7px;font:400 15.5px/1.5 'Space Grotesk',sans-serif;color:#a9c2b0">
+<div style="display:flex;gap:12px"><span style="color:#4f7a5e">—</span><span>Seitengröße 4 KiB, Huge Pages 2 MiB</span></div>
+<div style="display:flex;gap:12px"><span style="color:#4f7a5e">—</span><span>Nicht abgebildete Seite löst einen Trap aus</span></div>
+</div>
+<h3 style="margin:28px 0 0;font:700 26px/1.2 'Space Grotesk',sans-serif;color:#f4d35e">Der TLB als Cache der Übersetzung</h3>
+<p style="margin:10px 0 0;font:400 16px/1.66 'Space Grotesk',sans-serif;color:#cfe0d3;max-width:62ch">Ohne Puffer kostet jeder Zugriff zwei Speicherzugriffe. Verdrängt wird nach <strong style="color:#fff;font-weight:700">pseudo-LRU</strong>, in Hardware.</p>
+<div style="margin:14px 0 0;display:flex;gap:12px;align-items:flex-start">
+<span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#f4d35e;border:1px solid #6b6029;padding:3px 7px;margin-top:2px">du</span>
+<span style="font:400 15.5px/1.55 'Space Grotesk',sans-serif;color:#e8efe4">Reinhardt sagt jedes Jahr, TLB-Größe kommt in der Klausur.</span>
+</div>
+<h3 style="margin:28px 0 0;font:700 26px/1.2 'Space Grotesk',sans-serif;color:#7f9c88">Page Faults und Thrashing</h3>
+<p style="margin:10px 0 0;font:400 16px/1.66 'Space Grotesk',sans-serif;color:#93ac99;max-width:62ch">Ein Page Fault ist der normale Weg, eine Seite nachzuladen. Kritisch wird es, wenn das System mehr Zeit mit Ein- und Auslagern verbringt als mit<span style="display:inline-block;width:9px;height:3px;background:#f4d35e;margin-left:5px;vertical-align:3px;animation:caret 1.1s step-end infinite"></span></p>
+</div>
+<div style="flex:none;padding:16px 52px 20px">
+<div style="border-top:1px solid #2c4034;padding-top:13px;display:flex;align-items:center;gap:12px">
+<span style="font-size:19px;color:#4f7a5e">+</span>
+<span style="flex:1;font:400 15.5px 'Space Grotesk',sans-serif;color:#5d8168">selbst dazuschreiben — die KI arbeitet es ein</span>
+<span style="font-size:11px;color:#4f7a5e">⌘⇧M</span>
+</div>
+</div>
+</div>
+<div style="border-left:1px solid #24352a;background:#131f18;display:flex;flex-direction:column;min-height:0">
+<div style="flex:none;padding:16px 20px 8px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#4f7a5e">Gesagt</div>
+<div style="flex:1;padding:0 20px;overflow:hidden;display:flex;flex-direction:column;gap:13px;font:400 12.5px/1.55 'Space Grotesk',sans-serif">
+<div style="color:#5d8168">Der virtuelle Adressraum ist zunächst nur eine Abmachung.</div>
+<div style="color:#7f9c88">Deshalb brauchen wir den TLB. Sonst kostet jeder Zugriff einen zusätzlichen Speicherzugriff.</div>
+<div style="color:#f4d35e;display:flex;gap:8px"><span>?</span><span>Was passiert, wenn der TLB voll ist?</span></div>
+<div style="color:#a9c2b0">Dann wird verdrängt, üblicherweise pseudo-LRU.</div>
+<div style="color:#e8efe4">Wenn der Anteil der Page Faults zu hoch wird, verbringt das System mehr Zeit mit Ein- und Auslagern als mit<span style="display:inline-block;width:7px;height:2px;background:#f4d35e;margin-left:4px;vertical-align:3px;animation:caret 1.1s step-end infinite"></span></div>
+</div>
+<div style="flex:none;padding:12px 20px;border-top:1px solid #24352a;font-size:11px;color:#4f7a5e;display:flex;justify-content:space-between"><span>Netzteil · großes Modell</span><span>2 Marker</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a><b>Redaktion</b>Will, dass am Ende ein publizierbarer Text steht — Zeitungs-Typografie, harte Schwarz-Weiß-Hierarchie, das Transkript als Korrekturspalte. Gibt dafür jede Verspieltheit und alle Farbe auf.</div>
+<div class="dv-card" style="width:1120px;border-color:#111">
+<div style="height:720px;display:flex;flex-direction:column;background:#fff;color:#111;font-family:'Newsreader',Georgia,serif">
+<div style="height:34px;flex:none;display:flex;align-items:center;gap:9px;padding:0 13px;background:#111;border-bottom:1px solid #111">
+<div style="width:10px;height:10px;border-radius:50%;background:#3a3a3a"></div><div style="width:10px;height:10px;border-radius:50%;background:#3a3a3a"></div><div style="width:10px;height:10px;border-radius:50%;background:#3a3a3a"></div>
+<span style="margin-left:12px;font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:#fff">Mitschrift · Betriebssysteme 09</span>
+<span style="margin-left:auto;font:500 11px 'IBM Plex Mono',monospace;color:#fff;font-variant-numeric:tabular-nums">REC 00:47:12</span>
+</div>
+<div style="flex:1;display:grid;grid-template-columns:1fr 282px;min-height:0">
+<div style="display:flex;flex-direction:column;min-height:0">
+<div style="flex:none;padding:26px 50px 16px;border-bottom:3px solid #111">
+<div style="font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:#111">Wintersemester 25/26 — Ausgabe 09 — Prof. Dr. Almut Reinhardt</div>
+<div style="font:400 40px/1.05 'Instrument Serif',serif;margin-top:10px">Virtueller Speicher und Paging</div>
+</div>
+<div style="flex:1;padding:22px 50px 0;overflow:hidden;column-count:2;column-gap:38px;column-rule:1px solid #ddd">
+<h3 style="margin:0;font:400 22px/1.2 'Instrument Serif',serif;break-after:avoid">Adressräume sind eine Abmachung</h3>
+<p style="margin:7px 0 0;font:400 14.5px/1.62 'Newsreader',serif;color:#222">Jeder Prozess sieht einen eigenen, lückenlosen Adressraum. Real existiert der nicht: die <strong style="font-weight:600">Seitentabelle</strong> bildet virtuelle Seiten auf physische Kacheln ab, und erst diese Abbildung macht aus der Abmachung Speicher. Seitengröße üblicherweise 4 KiB, Huge Pages 2 MiB. Eine nicht abgebildete Seite löst einen Trap ins Betriebssystem aus.</p>
+<h3 style="margin:18px 0 0;font:400 22px/1.2 'Instrument Serif',serif;break-after:avoid">Der TLB als Cache der Übersetzung</h3>
+<p style="margin:7px 0 0;font:400 14.5px/1.62 'Newsreader',serif;color:#222">Ohne Puffer kostet jeder Zugriff zwei Speicherzugriffe: einen für die Tabelle, einen für die Nutzdaten. Der <strong style="font-weight:600">TLB</strong> hält die zuletzt benutzten Übersetzungen und verdrängt nach pseudo-LRU. Das ist Hardware — das Betriebssystem hat darauf keinen Einfluss.</p>
+<div style="margin:14px 0 0;padding:11px 13px;background:#f2f0eb;break-inside:avoid">
+<div style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#7a7469">Am Rand notiert · 00:46:41</div>
+<div style="font:italic 400 14.5px/1.55 'Newsreader',serif;margin-top:5px">Reinhardt sagt jedes Jahr, TLB-Größe kommt in der Klausur.</div>
+</div>
+<h3 style="margin:18px 0 0;font:400 22px/1.2 'Instrument Serif',serif;color:#8a8479;break-after:avoid">Page Faults und Thrashing</h3>
+<p style="margin:7px 0 0;font:400 14.5px/1.62 'Newsreader',serif;color:#8a8479">Ein Page Fault ist kein Fehler, sondern der normale Weg, eine Seite nachzuladen. Kritisch wird es erst, wenn das System mehr Zeit mit Ein- und Auslagern verbringt als mit<span style="display:inline-block;width:2px;height:14px;background:#111;margin-left:3px;vertical-align:-2px;animation:caret 1.1s step-end infinite"></span></p>
+</div>
+<div style="flex:none;padding:14px 50px 18px;border-top:1px solid #ddd;display:flex;align-items:center;gap:14px">
+<span style="font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase">Eigener Absatz</span>
+<span style="flex:1;font:italic 400 15px 'Newsreader',serif;color:#9a948a">hier schreiben — geht in die nächste Zusammenfassung ein</span>
+<span style="font:500 9.5px 'IBM Plex Mono',monospace;color:#9a948a">⌘⇧M</span>
+</div>
+</div>
+<div style="border-left:1px solid #111;display:flex;flex-direction:column;min-height:0;background:#fafaf8">
+<div style="flex:none;padding:14px 18px 8px;font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;border-bottom:1px solid #ddd">Wortlaut</div>
+<div style="flex:1;padding:12px 18px;overflow:hidden;display:flex;flex-direction:column;gap:11px;font:400 12.5px/1.5 'IBM Plex Mono',monospace">
+<div style="color:#a09a90">00:44:02 · R.<br><span style="color:#8a8479;font-family:'Newsreader',serif;font-size:13px;line-height:1.5">Der virtuelle Adressraum ist zunächst nur eine Abmachung.</span></div>
+<div style="color:#a09a90">00:45:10 · R.<br><span style="color:#555;font-family:'Newsreader',serif;font-size:13px;line-height:1.5">Deshalb brauchen wir den TLB, sonst kostet jeder Zugriff einen zusätzlichen Speicherzugriff.</span></div>
+<div style="color:#111;border-left:3px solid #111;padding-left:9px">00:46:03 · Publikum<br><span style="font-family:'Newsreader',serif;font-size:13px;line-height:1.5;font-style:italic">Was passiert, wenn der TLB voll ist?</span></div>
+<div style="color:#a09a90">00:46:20 · R.<br><span style="color:#333;font-family:'Newsreader',serif;font-size:13px;line-height:1.5">Dann wird verdrängt, üblicherweise pseudo-LRU.</span></div>
+<div style="color:#a09a90">00:47:05 · R.<br><span style="color:#111;font-family:'Newsreader',serif;font-size:13px;line-height:1.5">Wenn der Anteil der Page Faults zu hoch wird, verbringt das System mehr Zeit mit Ein- und Auslagern als mit<span style="display:inline-block;width:2px;height:12px;background:#111;margin-left:3px;vertical-align:-2px;animation:caret 1.1s step-end infinite"></span></span></div>
+</div>
+<div style="flex:none;padding:11px 18px;border-top:1px solid #ddd;font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#7a7469;display:flex;justify-content:space-between"><span>NETZTEIL · GROSS</span><span>2 MARKER</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a><b>Signal</b>Will maximale Orientierung auf einen Blick: flache Farbflächen, Schweizer Raster, alles hart beschriftet. Gibt dafür Wärme und Textgefühl auf.</div>
+<div class="dv-card" style="width:1120px;border-color:#111">
+<div style="height:720px;display:flex;flex-direction:column;background:#eceae5;color:#111;font-family:'IBM Plex Sans',sans-serif">
+<div style="height:34px;flex:none;display:flex;align-items:center;gap:9px;padding:0 13px;background:#ff4a1c">
+<div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.45)"></div><div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.45)"></div><div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.45)"></div>
+<span style="margin-left:12px;font:600 11px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;color:#fff">AUFNAHME LÄUFT</span>
+<span style="margin-left:auto;font:600 12px 'IBM Plex Mono',monospace;color:#fff;font-variant-numeric:tabular-nums">00:47:12</span>
+</div>
+<div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#111;border-bottom:1px solid #111">
+<div style="background:#111;color:#fff;padding:12px 16px"><div style="font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8d8d8d">KURS</div><div style="font:600 14px 'IBM Plex Sans',sans-serif;margin-top:3px">Betriebssysteme 09</div></div>
+<div style="background:#111;color:#fff;padding:12px 16px"><div style="font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8d8d8d">THEMA</div><div style="font:600 14px 'IBM Plex Sans',sans-serif;margin-top:3px">Virtueller Speicher</div></div>
+<div style="background:#111;color:#fff;padding:12px 16px"><div style="font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8d8d8d">STROM</div><div style="font:600 14px 'IBM Plex Sans',sans-serif;margin-top:3px">Netzteil · großes Modell</div></div>
+<div style="background:#111;color:#fff;padding:12px 16px"><div style="font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8d8d8d">STATUS</div><div style="font:600 14px 'IBM Plex Sans',sans-serif;margin-top:3px;color:#ff4a1c">Dozentin spricht</div></div>
+</div>
+<div style="flex:1;display:grid;grid-template-columns:1fr 312px;min-height:0;gap:1px;background:#111">
+<div style="background:#eceae5;display:flex;flex-direction:column;min-height:0">
+<div style="flex:1;padding:24px 40px 0;overflow:hidden;display:flex;flex-direction:column">
+<div style="display:flex;align-items:baseline;gap:12px"><span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;background:#111;color:#fff;padding:3px 6px">01</span><h3 style="margin:0;font:700 23px/1.2 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">Adressräume sind eine Abmachung</h3></div>
+<p style="margin:9px 0 0 44px;font:400 15px/1.6 'IBM Plex Sans',sans-serif;color:#2b2b2b;max-width:66ch">Jeder Prozess sieht einen lückenlosen Adressraum. Real existiert er nicht — die <strong style="font-weight:600;background:#ffe2d8">Seitentabelle</strong> bildet virtuelle Seiten auf physische Kacheln ab.</p>
+<ul style="margin:9px 0 0 44px;padding-left:17px;font:400 14.5px/1.6 'IBM Plex Sans',sans-serif;color:#2b2b2b">
+<li>Seitengröße 4 KiB, Huge Pages 2 MiB</li><li>Nicht abgebildete Seite löst einen Trap aus</li></ul>
+<div style="display:flex;align-items:baseline;gap:12px;margin-top:24px"><span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;background:#111;color:#fff;padding:3px 6px">02</span><h3 style="margin:0;font:700 23px/1.2 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">Der TLB als Cache der Übersetzung</h3></div>
+<p style="margin:9px 0 0 44px;font:400 15px/1.6 'IBM Plex Sans',sans-serif;color:#2b2b2b;max-width:66ch">Ohne Puffer kostet jeder Zugriff zwei Speicherzugriffe. Der <strong style="font-weight:600;background:#ffe2d8">TLB</strong> hält die letzten Übersetzungen, Verdrängung nach pseudo-LRU — Hardware, kein Einfluss vom Betriebssystem.</p>
+<div style="margin:14px 0 0 44px;background:#fff;border-left:4px solid #ff4a1c;padding:10px 14px;max-width:66ch">
+<div style="font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#ff4a1c">VON DIR · 00:46:41</div>
+<div style="font:400 14.5px/1.55 'IBM Plex Sans',sans-serif;margin-top:4px">Reinhardt sagt jedes Jahr, TLB-Größe kommt in der Klausur.</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:12px;margin-top:24px"><span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;background:#b8b3a9;color:#fff;padding:3px 6px">03</span><h3 style="margin:0;font:700 23px/1.2 'IBM Plex Sans',sans-serif;letter-spacing:-.01em;color:#8b867c">Page Faults und Thrashing</h3><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#8b867c">SCHREIBT</span></div>
+<p style="margin:9px 0 0 44px;font:400 15px/1.6 'IBM Plex Sans',sans-serif;color:#8b867c;max-width:66ch">Ein Page Fault ist der normale Weg, eine Seite nachzuladen. Kritisch wird es, wenn das System mehr Zeit mit Ein- und Auslagern verbringt als mit<span style="display:inline-block;width:8px;height:14px;background:#ff4a1c;margin-left:4px;vertical-align:-2px;animation:caret 1.1s step-end infinite"></span></p>
+</div>
+<div style="flex:none;margin:16px 40px 20px;background:#fff;border:1px solid #111;display:flex;align-items:center">
+<span style="font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;background:#111;color:#fff;padding:11px 12px">EIGENE NOTIZ</span>
+<span style="flex:1;padding:0 14px;font:400 14.5px 'IBM Plex Sans',sans-serif;color:#9a948a">tippen — die KI arbeitet es in Block 03 ein</span>
+<span style="font:500 10px 'IBM Plex Mono',monospace;color:#9a948a;padding-right:12px">⌘⇧M · 2 MARKER</span>
+</div>
+</div>
+<div style="background:#dedbd4;display:flex;flex-direction:column;min-height:0">
+<div style="flex:none;padding:12px 16px;background:#111;color:#fff;font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.16em;display:flex;justify-content:space-between"><span>TRANSKRIPT</span><span style="color:#8d8d8d">LIVE</span></div>
+<div style="flex:1;padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;gap:11px">
+<div style="opacity:.5"><div style="font:500 9.5px 'IBM Plex Mono',monospace;color:#6a665e">00:44:02 DOZENTIN</div><div style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;margin-top:2px">Der virtuelle Adressraum ist zunächst nur eine Abmachung.</div></div>
+<div style="opacity:.75"><div style="font:500 9.5px 'IBM Plex Mono',monospace;color:#6a665e">00:45:10 DOZENTIN</div><div style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;margin-top:2px">Deshalb brauchen wir den TLB, sonst kostet jeder Zugriff einen zusätzlichen Speicherzugriff.</div></div>
+<div style="background:#ff4a1c;color:#fff;padding:8px 10px;margin:0 -10px"><div style="font:600 9.5px 'IBM Plex Mono',monospace">00:46:03 PUBLIKUM</div><div style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;margin-top:2px">Was passiert, wenn der TLB voll ist?</div></div>
+<div><div style="font:500 9.5px 'IBM Plex Mono',monospace;color:#6a665e">00:46:20 DOZENTIN</div><div style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;margin-top:2px">Dann wird verdrängt, üblicherweise pseudo-LRU.</div></div>
+<div><div style="font:500 9.5px 'IBM Plex Mono',monospace;color:#111">00:47:05 DOZENTIN</div><div style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;margin-top:2px;color:#111">Wenn der Anteil der Page Faults zu hoch wird, verbringt das System mehr Zeit mit Ein- und Auslagern als mit<span style="display:inline-block;width:7px;height:12px;background:#ff4a1c;margin-left:3px;vertical-align:-2px;animation:caret 1.1s step-end infinite"></span></div></div>
+</div>
+<div style="flex:none;padding:11px 16px;border-top:1px solid #111;display:flex;align-items:flex-end;gap:2px;height:32px">
+<div style="width:4px;height:30%;background:#111"></div><div style="width:4px;height:60%;background:#111"></div><div style="width:4px;height:85%;background:#ff4a1c"></div><div style="width:4px;height:45%;background:#111"></div><div style="width:4px;height:70%;background:#111"></div><div style="width:4px;height:25%;background:#111"></div><div style="width:4px;height:55%;background:#111"></div><div style="width:4px;height:90%;background:#ff4a1c"></div><div style="width:4px;height:40%;background:#111"></div><div style="width:4px;height:18%;background:#111"></div>
+<span style="margin-left:auto;font:500 10px 'IBM Plex Mono',monospace;color:#4a463f">MIK: MACBOOK</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1f">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a><b>Studio</b>Nimmt die Struktur von <a class="dv-oid" href="#1e">1e</a> — feste Statusleiste, nummerierte Blöcke, eigene Notiz unten — aber in weich, warm und rund statt hart schwarz-orange. Gibt dafür die plakative Sofort-Orientierung auf.</div>
+<div class="dv-card" style="width:1120px;border-color:#000">
+<div style="height:720px;display:flex;flex-direction:column;background:#0e1013;color:#edeff2;font-family:'DM Sans',system-ui,sans-serif">
+<div style="height:38px;flex:none;display:flex;align-items:center;gap:9px;padding:0 14px;background:#16181c;border-bottom:1px solid #272b31">
+<div style="width:10px;height:10px;border-radius:50%;background:#30353c"></div><div style="width:10px;height:10px;border-radius:50%;background:#30353c"></div><div style="width:10px;height:10px;border-radius:50%;background:#30353c"></div>
+<span style="margin-left:auto;display:flex;align-items:center;gap:14px">
+<span style="display:flex;align-items:center;gap:7px"><span style="display:flex;align-items:flex-end;gap:2px;height:13px"><span style="width:3px;height:5px;border-radius:2px;background:oklch(.5 .08 165)"></span><span style="width:3px;height:9px;border-radius:2px;background:oklch(.64 .11 165)"></span><span style="width:3px;height:13px;border-radius:2px;background:oklch(.78 .13 165)"></span><span style="width:3px;height:7px;border-radius:2px;background:oklch(.64 .11 165)"></span><span style="width:3px;height:4px;border-radius:2px;background:oklch(.42 .06 165)"></span></span><span style="font:500 11.5px 'DM Sans',sans-serif;color:oklch(.78 .13 165)">Dozentin spricht</span></span>
+<span style="font:500 11.5px 'DM Sans',sans-serif;color:#7c838c">8,6 W</span>
+<span style="display:flex;align-items:center;gap:8px;background:#171a1e;border:1px solid #272b31;border-radius:999px;padding:3px 11px 3px 8px"><span style="width:7px;height:7px;border-radius:50%;background:oklch(.68 .17 25);animation:recpulse 2s ease-in-out infinite"></span><span style="font:500 12px 'DM Sans',sans-serif;color:#edeff2;font-variant-numeric:tabular-nums">00:47:12</span></span>
+</span>
+</div>
+<div style="flex:none;display:grid;grid-template-columns:1.6fr 1fr 1fr;border-bottom:1px solid #24282e;background:#14161a">
+<div style="padding:13px 34px;border-right:1px solid #24282e"><div style="font:500 10.5px 'DM Sans',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#7c838c">Thema · automatisch erkannt</div><div style="font:500 14.5px 'DM Sans',sans-serif;margin-top:3px;color:#edeff2">Virtueller Speicher und Paging</div></div>
+<div style="padding:13px 20px;border-right:1px solid #24282e"><div style="font:500 10.5px 'DM Sans',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#7c838c">Fach</div><div style="display:flex;align-items:center;gap:7px;margin-top:3px"><span style="font:500 14.5px 'DM Sans',sans-serif;color:#edeff2">Betriebssysteme</span><span style="font:400 10px 'DM Sans',sans-serif;color:#7c838c">▾</span></div></div>
+<div style="padding:13px 20px"><div style="font:500 10.5px 'DM Sans',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#7c838c">Datum</div><div style="font:500 14.5px 'DM Sans',sans-serif;margin-top:3px;color:#b8bec6">Mo, 14. September 2026</div></div>
+</div>
+<div style="flex:1;display:grid;grid-template-columns:1fr 320px;min-height:0">
+<div style="display:flex;flex-direction:column;min-height:0">
+<div style="flex:1;padding:22px 34px 0;overflow:hidden;display:flex;flex-direction:column">
+<div style="display:flex;align-items:baseline;gap:11px"><span style="font:500 11px 'DM Sans',sans-serif;color:#767d86;font-variant-numeric:tabular-nums">01</span><h3 style="margin:0;font:700 22px/1.25 'DM Sans',sans-serif;letter-spacing:-.015em">Adressräume sind eine Abmachung</h3></div>
+<p style="margin:8px 0 0 30px;font:400 15px/1.66 'DM Sans',sans-serif;color:#b8bec6;max-width:64ch">Jeder Prozess sieht einen lückenlosen Adressraum. Real existiert er nicht — die <strong style="font-weight:600;color:#edeff2;background:oklch(.38 .06 95);border-radius:3px;padding:0 3px">Seitentabelle</strong> bildet virtuelle Seiten auf physische Kacheln ab.</p>
+<ul style="margin:8px 0 0 30px;padding-left:18px;font:400 14.5px/1.6 'DM Sans',sans-serif;color:#9aa1a9"><li>Seitengröße 4 KiB, Huge Pages 2 MiB</li></ul>
+<div style="display:flex;align-items:baseline;gap:11px;margin-top:22px"><span style="font:500 11px 'DM Sans',sans-serif;color:#767d86;font-variant-numeric:tabular-nums">02</span><h3 style="margin:0;font:700 22px/1.25 'DM Sans',sans-serif;letter-spacing:-.015em">Der TLB als Cache der Übersetzung</h3></div>
+<p style="margin:8px 0 0 30px;font:400 15px/1.66 'DM Sans',sans-serif;color:#b8bec6;max-width:64ch">Ohne Puffer kostet jeder Zugriff zwei Speicherzugriffe. Der <strong style="font-weight:600;color:#edeff2;background:oklch(.38 .06 95);border-radius:3px;padding:0 3px">TLB</strong> hält die letzten Übersetzungen, Verdrängung nach pseudo-LRU — Hardware, kein Einfluss vom Betriebssystem.</p>
+<div style="margin:13px 0 0 30px;border-left:2px solid oklch(.7 .11 250);padding-left:14px;max-width:64ch">
+<div style="font:500 10.5px 'DM Sans',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:oklch(.7 .11 250)">Von dir · 00:46:41</div>
+<div style="font:400 14.5px/1.55 'DM Sans',sans-serif;margin-top:3px;color:#e2e5e9">Reinhardt sagt jedes Jahr, TLB-Größe kommt in der Klausur.</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:11px;margin-top:22px"><span style="font:500 11px 'DM Sans',sans-serif;color:#5d646d;font-variant-numeric:tabular-nums">03</span><h3 style="margin:0;font:700 22px/1.25 'DM Sans',sans-serif;letter-spacing:-.015em;color:#8e959e">Page Faults und Thrashing</h3><span style="font:500 11.5px 'DM Sans',sans-serif;color:#7c838c">schreibt …</span></div>
+<p style="margin:8px 0 0 30px;font:400 15px/1.66 'DM Sans',sans-serif;color:#8e959e;max-width:64ch">Ein Page Fault ist der normale Weg, eine Seite nachzuladen. Kritisch wird es, wenn das System mehr Zeit mit Ein- und Auslagern verbringt als mit<span style="display:inline-block;width:2px;height:15px;background:oklch(.68 .17 25);margin-left:4px;vertical-align:-3px;animation:caret 1.1s step-end infinite"></span></p>
+</div>
+<div style="flex:none;margin:14px 34px 20px;background:#171a1e;border:1px solid #272b31;border-radius:14px;padding:11px 15px;display:flex;align-items:center;gap:12px;box-shadow:none">
+<span style="font:500 14.5px 'DM Sans',sans-serif;color:#767d86">Eigene Notiz — die KI arbeitet sie in Block 03 ein</span>
+<span style="margin-left:auto;font:500 11.5px 'DM Sans',sans-serif;color:#7c838c;background:#131519;border-radius:7px;padding:4px 9px">⌘⇧M · 2 Marker</span>
+</div>
+</div>
+<div style="border-left:1px solid #24282e;background:#131519;display:flex;flex-direction:column;min-height:0">
+<div style="flex:none;padding:16px 20px 10px;display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 10.5px 'DM Sans',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#7c838c">Transkript</span><span style="font:400 11px 'DM Sans',sans-serif;color:#767d86">live</span></div>
+<div style="flex:1;padding:0 20px;overflow:hidden;display:flex;flex-direction:column;gap:12px">
+<div style="opacity:.5"><div style="font:500 10.5px 'DM Sans',sans-serif;color:#7c838c;font-variant-numeric:tabular-nums">00:44:02 · Dozentin</div><div style="font:400 12.5px/1.55 'DM Sans',sans-serif;margin-top:2px;color:#b8bec6">Der virtuelle Adressraum ist zunächst nur eine Abmachung.</div></div>
+<div style="opacity:.75"><div style="font:500 10.5px 'DM Sans',sans-serif;color:#7c838c;font-variant-numeric:tabular-nums">00:45:10 · Dozentin</div><div style="font:400 12.5px/1.55 'DM Sans',sans-serif;margin-top:2px;color:#b8bec6">Deshalb brauchen wir den TLB, sonst kostet jeder Zugriff einen zusätzlichen Speicherzugriff.</div></div>
+<div style="border-left:2px solid oklch(.75 .12 70);padding-left:11px"><div style="font:500 10.5px 'DM Sans',sans-serif;color:oklch(.55 .09 70);font-variant-numeric:tabular-nums">00:46:03 · Publikum</div><div style="font:400 12.5px/1.55 'DM Sans',sans-serif;margin-top:2px;color:#e2e5e9">Was passiert, wenn der TLB voll ist?</div></div>
+<div><div style="font:500 10.5px 'DM Sans',sans-serif;color:#7c838c;font-variant-numeric:tabular-nums">00:46:20 · Dozentin</div><div style="font:400 12.5px/1.55 'DM Sans',sans-serif;margin-top:2px;color:#e2e5e9">Dann wird verdrängt, üblicherweise pseudo-LRU.</div></div>
+<div><div style="font:500 10.5px 'DM Sans',sans-serif;color:#9aa1a9;font-variant-numeric:tabular-nums">00:47:05 · Dozentin</div><div style="font:400 12.5px/1.55 'DM Sans',sans-serif;margin-top:2px;color:#edeff2">Wenn der Anteil der Page Faults zu hoch wird, verbringt das System mehr Zeit mit Ein- und Auslagern als mit<span style="display:inline-block;width:2px;height:12px;background:oklch(.68 .17 25);margin-left:3px;vertical-align:-2px;animation:caret 1.1s step-end infinite"></span></div></div>
+</div>
+<div style="flex:none;padding:12px 20px;border-top:1px solid #272b31;font:400 11.5px 'DM Sans',sans-serif;color:#7c838c;display:flex;justify-content:space-between"><span>Mikrofon: MacBook Pro</span><span>durchsuchbar nach der Vorlesung</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p class="dv-next">Weiter mit: „nimm <a class="dv-oid" href="#1a">1a</a> und bau alle Screens aus“ · „<a class="dv-oid" href="#1d">1d</a> aber mit Farbe“ · „noch drei ganz andere Richtungen“</p>
+</section>
+
+</x-dc>
+</body>
+</html>
