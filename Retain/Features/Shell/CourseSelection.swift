@@ -28,8 +28,14 @@ final class CourseSelection {
     /// tell "no courses" from "not looked yet".
     private(set) var hasLoaded = false
 
-    /// There is no recording without a course.
-    var canRecord: Bool { selected != nil }
+    /// There is no recording without a course **and** without a term.
+    ///
+    /// A recording carries the term it was made in, and the one it carries is
+    /// whichever was current when the microphone opened. With no current term
+    /// there is no honest id to write, so the answer is no — refused here,
+    /// where the Record button reads it, rather than guessed at the moment the
+    /// row is opened.
+    var canRecord: Bool { selected != nil && term?.id != nil }
 
     private let library: LibraryRepository?
 
@@ -42,8 +48,9 @@ final class CourseSelection {
     /// For rendering the ready state and for testing what the picker does with
     /// a term that has no courses in it — both of which are questions about the
     /// list, not about the store it came from.
-    init(courses: [Course], selected: Course?) {
+    init(term: Term? = nil, courses: [Course], selected: Course?) {
         library = nil
+        self.term = term
         self.courses = courses
         self.selected = selected
         hasLoaded = true

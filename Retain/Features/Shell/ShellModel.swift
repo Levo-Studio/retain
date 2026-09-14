@@ -41,9 +41,13 @@ final class ShellModel {
 
     // MARK: - Verbs
 
+    /// A recording needs a course **and** the term it is being made in: the row
+    /// carries both, and the term cannot be worked out from the date afterwards
+    /// because a term's period is optional. The picker holds both, which is why
+    /// it is asked for both here.
     func record() {
-        guard let course = courses.selected else { return }
-        Task { await session.start(in: course) }
+        guard let course = courses.selected, let term = courses.term else { return }
+        Task { await session.start(in: course, during: term) }
     }
 
     func pause() {

@@ -56,10 +56,25 @@ nonisolated enum LibraryCopy {
         String(localized: "\(count) min", comment: "A recording's length in whole minutes, in the library table")
     }
 
-    /// "Oct 2025 – Mar 2026 · 4 courses" under the term's name.
-    static func termPeriod(from: String, to: String, courses: String) -> String {
-        String(localized: "\(from) – \(to) · \(courses)",
-               comment: "A term's period and how many courses are in it, in the library sidebar")
+    /// "Oct 2025 – Mar 2026 · 4 courses" under the term's name, or "4 courses"
+    /// on its own for a term nobody dated.
+    ///
+    /// The period is the optional half. `TermPeriod` decides how it reads; this
+    /// only decides whether the middle dot is there, because a line beginning
+    /// with a separator is worse than a line that is simply shorter.
+    static func termSubtitle(period: String?, courses: String) -> String {
+        guard let period else { return courses }
+        return joined(period, courses)
+    }
+
+    /// Two values side by side, separated by the export's middle dot.
+    ///
+    /// One key rather than one per place it is used: the separator is the
+    /// export's and the words either side of it are already translated, so a
+    /// second copy would be a second thing to keep in step for no gain.
+    static func joined(_ left: String, _ right: String) -> String {
+        String(localized: "\(left) · \(right)",
+               comment: "Two values side by side, separated by the export's middle dot")
     }
 
     /// "Third year, winter · 9 recordings · 13 h 24 min" beside a course.
@@ -95,8 +110,7 @@ nonisolated enum LibraryCopy {
     /// "Today · 10:15" and "7 Sep · 10:15" — the export's own separator, since
     /// the column now carries two values where it used to carry one.
     static func startedAt(day: String, time: String) -> String {
-        String(localized: "\(day) · \(time)",
-               comment: "Two values side by side, separated by the export's middle dot")
+        joined(day, time)
     }
 
     // MARK: - Where a recording has got to
@@ -155,5 +169,40 @@ nonisolated enum LibraryCopy {
     static var hitInAnnotation: String {
         String(localized: "in your note",
                comment: "A search hit that is in something the user typed during the recording")
+    }
+}
+
+// MARK: - A term's period, however much of it there is
+
+/// The caption under a term's name in board 05's sidebar — the "Oct 2025 –
+/// Mar 2026" half of it.
+///
+/// **A period is never mandatory and nothing computes with it.** It is a
+/// caption, so all four shapes of it have to read as a caption: both endpoints,
+/// one endpoint, the other endpoint, and none. What is not allowed is a dash
+/// with nothing on one side of it, or a date nobody typed standing in for one
+/// they did not.
+///
+/// Kept here, beside the rest of board 05's words, rather than on `Term`: the
+/// model is a row and knows nothing about how it is drawn, and this is the only
+/// place in the app that turns a period into words.
+nonisolated enum TermPeriod {
+
+    /// The caption, or `nil` when there is no period at all — which is a line
+    /// that is simply absent, not an empty one and not a placeholder.
+    static func caption(of term: Term) -> String? {
+        switch (term.startsOn, term.endsOn) {
+        case let (start?, end?):
+            String(localized: "\(TermMonth.label(start)) – \(TermMonth.label(end))",
+                   comment: "A term's period, with both endpoints — the export's Okt 2025 – März 2026")
+        case let (start?, nil):
+            String(localized: "from \(TermMonth.label(start))",
+                   comment: "A term's period whose end was left empty")
+        case let (nil, end?):
+            String(localized: "until \(TermMonth.label(end))",
+                   comment: "A term's period whose start was left empty")
+        case (nil, nil):
+            nil
+        }
     }
 }

@@ -125,7 +125,7 @@ struct LibraryStoreTests {
 
     // MARK: - Courses
 
-    @Test("A course belongs to one term and shows up only under it")
+    @Test("A course shows up under every term it runs in, and no others")
     func coursesAreScopedToTheirTerm() async throws {
         let database = try StoreFixture.database()
         let repository = LibraryRepository(database)
@@ -158,13 +158,13 @@ struct LibraryStoreTests {
         let course = try await StoreFixture.course(in: database, term: term)
         let courseID = try #require(course.id)
 
+        let termID = try #require(term.id)
         for minutes in [92.0, 88.0, 90.0] {
-            var recording = try await repository.startRecording(in: courseID)
+            var recording = try await repository.startRecording(in: courseID, during: termID)
             recording.duration = minutes * 60
             try await repository.save(recording)
         }
 
-        let termID = try #require(term.id)
         let listing = try #require(try await repository.courses(in: termID).first)
         #expect(listing.recordingCount == 3)
         #expect(listing.totalDuration == 270 * 60)
@@ -214,7 +214,11 @@ struct LibraryStoreTests {
         let course = try await StoreFixture.course(in: database, term: term)
 
         let started = StoreFixture.instant(2026, 2, 7, 14, 45)
-        let recording = try await repository.startRecording(in: try #require(course.id), at: started)
+        let recording = try await repository.startRecording(
+            in: try #require(course.id),
+            during: try #require(term.id),
+            at: started
+        )
 
         #expect(try await repository.recording(try #require(recording.id))?.startedAt == started)
     }
@@ -226,13 +230,14 @@ struct LibraryStoreTests {
         let term = try await StoreFixture.term(in: database)
         let course = try await StoreFixture.course(in: database, term: term)
         let courseID = try #require(course.id)
+        let termID = try #require(term.id)
 
         let morning = StoreFixture.instant(2026, 2, 7, 9, 0)
         let afternoon = StoreFixture.instant(2026, 2, 7, 14, 30)
-        try await repository.startRecording(in: courseID, at: morning)
-        try await repository.startRecording(in: courseID, at: afternoon)
+        try await repository.startRecording(in: courseID, during: termID, at: morning)
+        try await repository.startRecording(in: courseID, during: termID, at: afternoon)
 
-        let recordings = try await repository.recordings(in: courseID)
+        let recordings = try await repository.recordings(in: courseID, during: termID)
         #expect(recordings.count == 2)
         #expect(recordings.map(\.startedAt) == [afternoon, morning])
     }
@@ -277,12 +282,17 @@ struct LibraryStoreTests {
         let term = try await StoreFixture.term(in: database)
         let course = try await StoreFixture.course(in: database, term: term)
         let courseID = try #require(course.id)
+        let termID = try #require(term.id)
 
         for month in 1...3 {
-            try await repository.startRecording(in: courseID, at: StoreFixture.instant(2026, month))
+            try await repository.startRecording(
+                in: courseID,
+                during: termID,
+                at: StoreFixture.instant(2026, month)
+            )
         }
 
-        let dates = try await repository.recordings(in: courseID).map(\.startedAt)
+        let dates = try await repository.recordings(in: courseID, during: termID).map(\.startedAt)
         #expect(dates == [
             StoreFixture.instant(2026, 3),
             StoreFixture.instant(2026, 2),

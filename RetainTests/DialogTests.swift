@@ -46,33 +46,62 @@ struct DialogTests {
 
     // MARK: - The course draft
 
-    @Test("A course needs a name and a term")
+    @Test("A course needs a name and at least one term")
     func courseValidity() {
-        #expect(!CourseDraft(name: "", termID: 1).isSaveable)
-        #expect(!CourseDraft(name: "   ", termID: 1).isSaveable)
-        #expect(!CourseDraft(name: "Computer networks", termID: nil).isSaveable)
-        #expect(CourseDraft(name: "Computer networks", termID: 1).isSaveable)
+        #expect(!CourseDraft(name: "", termIDs: [1]).isSaveable)
+        #expect(!CourseDraft(name: "   ", termIDs: [1]).isSaveable)
+        #expect(!CourseDraft(name: "Computer networks", termIDs: []).isSaveable)
+        #expect(CourseDraft(name: "Computer networks", termIDs: [1]).isSaveable)
+        #expect(CourseDraft(name: "Computer networks", termIDs: [1, 2]).isSaveable)
     }
 
-    @Test("A saved course is trimmed and keeps its term and colour")
+    /// The preselected term is a convenience for the two windows that already
+    /// have one chosen, and `nil` really means none — not "the first one".
+    @Test("Opening the dialog with no term ticks none")
+    func courseDraftFromOneTerm() {
+        #expect(CourseDraft(termID: 4).termIDs == [4])
+        #expect(CourseDraft(termID: nil).termIDs.isEmpty)
+    }
+
+    @Test("Ticking a term adds it, ticking it again takes it away")
+    func togglingTerms() {
+        var draft = CourseDraft(name: "Computer science", termID: 1)
+        draft.toggle(2)
+        #expect(draft.termIDs == [1, 2])
+        draft.toggle(1)
+        #expect(draft.termIDs == [2])
+        draft.toggle(2)
+        #expect(draft.termIDs.isEmpty)
+        #expect(!draft.isSaveable)
+    }
+
+    /// The row is the subject itself. Which terms it runs in is written beside
+    /// it, in the join table, which is what lets one name serve both half-years.
+    @Test("A saved course is trimmed and carries no term of its own")
     func courseRow() throws {
-        let course = try #require(CourseDraft(name: "  Computer networks ", termID: 7, color: .amber).course())
+        let draft = CourseDraft(name: "  Computer networks ", termIDs: [7, 9], color: .amber)
+        let course = try #require(draft.course())
         #expect(course.name == "Computer networks")
-        #expect(course.termID == 7)
         #expect(course.color == .amber)
+        #expect(draft.termIDs == [7, 9])
+    }
+
+    @Test("A course with no term ticked produces no row at all")
+    func courseWithoutATermIsRefused() {
+        #expect(CourseDraft(name: "Computer networks", termIDs: []).course() == nil)
     }
 
     /// Board 05 draws a teacher in the course header and no dialog offers a
     /// field for one. The owner settled it: there is no teacher.
-    @Test("A course has a name, a term and a colour, and nothing else")
+    @Test("A course has a name, its terms and a colour, and nothing else")
     func courseHasNoTeacher() {
         let mirror = Mirror(reflecting: CourseDraft())
-        #expect(Set(mirror.children.compactMap(\.label)) == ["name", "termID", "color"])
+        #expect(Set(mirror.children.compactMap(\.label)) == ["name", "termIDs", "color"])
     }
 
     // MARK: - The term draft
 
-    @Test("A term needs a name and a period that runs forwards")
+    @Test("A term needs a name, and a period it has both ends of must run forwards")
     func termValidity() {
         let start = Date(timeIntervalSinceReferenceDate: 0)
         #expect(!TermDraft(title: "", startsOn: start, endsOn: start).isSaveable)
@@ -85,6 +114,39 @@ struct DialogTests {
                 endsOn: start
             ).isSaveable
         )
+    }
+
+    /// The period is a caption and nothing computes with it, so every shape of
+    /// it saves — including the one the dialog now opens with.
+    @Test("A term with half a period, or none at all, is still saveable")
+    func termWithoutAPeriod() {
+        let start = Date(timeIntervalSinceReferenceDate: 0)
+        #expect(TermDraft(title: "Third year, winter").isSaveable)
+        #expect(TermDraft(title: "Third year, winter", startsOn: start).isSaveable)
+        #expect(TermDraft(title: "Third year, winter", endsOn: start).isSaveable)
+        #expect(!TermDraft(title: "   ").isSaveable)
+    }
+
+    @Test("A term the dialog was opened fresh for has no period in it")
+    func aNewDraftHasNoPeriod() {
+        let draft = TermDraft()
+        #expect(draft.startsOn == nil)
+        #expect(draft.endsOn == nil)
+        #expect(draft.term().startsOn == nil)
+        #expect(draft.term().endsOn == nil)
+    }
+
+    /// Against the current calendar, which is the one the draft normalises
+    /// with: the claim is that half a period is normalised exactly as a whole
+    /// one is, not anything about a particular time zone.
+    @Test("An endpoint that is there is still normalised to its month")
+    func halfAPeriodIsStillMonths() {
+        let middleOfOctober = Date(timeIntervalSinceReferenceDate: 781_100_520)
+        let draft = TermDraft(title: "Third year, winter", startsOn: middleOfOctober)
+
+        #expect(draft.startsOn == TermMonth.normalised(middleOfOctober))
+        #expect(draft.term().startsOn == TermMonth.normalised(middleOfOctober))
+        #expect(draft.term().endsOn == nil)
     }
 
     @Test("A period is kept at month granularity")

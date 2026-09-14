@@ -48,13 +48,15 @@ nonisolated enum StoreFixture {
         return calendar.date(from: components) ?? .distantPast
     }
 
+    /// A term with a period, because most tests want one to read. A term
+    /// without one is `startsOn: nil, endsOn: nil` — see the period tests.
     @discardableResult
     static func term(
         in database: RetainDatabase,
         title: String = "Third year, winter",
         kind: TermKind = .halfYear,
-        startsOn: Date = instant(2025, 10),
-        endsOn: Date = instant(2026, 3),
+        startsOn: Date? = instant(2025, 10),
+        endsOn: Date? = instant(2026, 3),
         isCurrent: Bool = false
     ) async throws -> Term {
         try await LibraryRepository(database).save(
@@ -68,6 +70,7 @@ nonisolated enum StoreFixture {
         )
     }
 
+    /// A course running in one term.
     @discardableResult
     static func course(
         in database: RetainDatabase,
@@ -75,20 +78,43 @@ nonisolated enum StoreFixture {
         name: String = "Computer science",
         color: CourseColor = .accent
     ) async throws -> Course {
-        guard let termID = term.id else { throw StoreFixtureError.unsavedRow }
-        return try await LibraryRepository(database).save(
-            Course(termID: termID, name: name, color: color)
+        try await course(in: database, terms: [term], name: name, color: color)
+    }
+
+    /// A course running in several — the same subject across a whole year,
+    /// which is one row and one name.
+    @discardableResult
+    static func course(
+        in database: RetainDatabase,
+        terms: [Term],
+        name: String = "Computer science",
+        color: CourseColor = .accent
+    ) async throws -> Course {
+        let termIDs = terms.compactMap(\.id)
+        guard termIDs.count == terms.count else { throw StoreFixtureError.unsavedRow }
+
+        return try await LibraryRepository(database).create(
+            Course(name: name, color: color),
+            in: Set(termIDs)
         )
     }
 
+    /// A recording is made in a course **and** in a term, and carries both.
     @discardableResult
     static func recording(
         in database: RetainDatabase,
         course: Course,
+        term: Term,
         at startedAt: Date = instant(2026, 2, 7, 10, 15)
     ) async throws -> Recording {
-        guard let courseID = course.id else { throw StoreFixtureError.unsavedRow }
-        return try await LibraryRepository(database).startRecording(in: courseID, at: startedAt)
+        guard let courseID = course.id, let termID = term.id else {
+            throw StoreFixtureError.unsavedRow
+        }
+        return try await LibraryRepository(database).startRecording(
+            in: courseID,
+            during: termID,
+            at: startedAt
+        )
     }
 
     /// A term with one course and one recording in it, which is what most tests
@@ -98,7 +124,7 @@ nonisolated enum StoreFixture {
     ) async throws -> (term: Term, course: Course, recording: Recording) {
         let term = try await term(in: database, isCurrent: true)
         let course = try await course(in: database, term: term)
-        let recording = try await recording(in: database, course: course)
+        let recording = try await recording(in: database, course: course, term: term)
         return (term, course, recording)
     }
 

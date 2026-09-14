@@ -6,13 +6,20 @@ import GRDB
 /// They come out of the same grouped query as the course itself: asking for the
 /// courses and then counting each one's recordings is one statement per course,
 /// and the sidebar has a row per course.
+///
+/// **The two numbers are the selected term's, not the course's.** A course runs
+/// in several terms and its recordings are filed under the term they were made
+/// in, so "9 recordings · 13 h 24 min" beside Computer science in the winter
+/// half-year counts winter and nothing else. That is the whole point of the
+/// library: pick another term at the top and the same course shows that term's
+/// work instead.
 nonisolated struct CourseListing: Identifiable, Hashable, Sendable {
 
     var course: Course
     /// Drawn at the right of the sidebar row, and in the course header.
     var recordingCount: Int
-    /// Seconds over every recording in the course — "13 h 24 min" in the
-    /// header.
+    /// Seconds over every recording in the course **in that term** —
+    /// "13 h 24 min" in the header.
     var totalDuration: TimeInterval
 
     var id: Int64? { course.id }
@@ -35,6 +42,12 @@ nonisolated struct LibraryRepository: Sendable {
     // MARK: - Terms
 
     /// Newest first, which is the order the picker opens in.
+    ///
+    /// A term with no period has no place on that line, so SQLite's own answer
+    /// is taken rather than invented: `NULL` is the smallest value there is, so
+    /// descending puts the periodless terms after the dated ones, and `id`
+    /// orders those among themselves — most recently named first, which is the
+    /// only sense in which one of them is newer than another.
     func terms() async throws -> [Term] {
         try await database.writer.read { db in
             try Term
@@ -86,6 +99,14 @@ nonisolated struct LibraryRepository: Sendable {
 
     /// The courses of one term, in the order they were created, each with the
     /// numbers the sidebar draws.
+    ///
+    /// Which courses is the join table; **how many recordings is the term
+    /// again**, on the join condition rather than in a `WHERE`. That is the
+    /// difference between a course that is in this term and a course whose
+    /// recordings are in this term: the first decides whether the row is drawn
+    /// at all, the second what number sits beside it. On a `WHERE` the second
+    /// would turn the outer join inner and a course with nothing recorded in
+    /// this term would vanish from the sidebar instead of reading zero.
     func courses(in termID: Int64) async throws -> [CourseListing] {
         try await database.writer.read { db in
             let rows = try Row.fetchAll(db, sql: """
@@ -93,8 +114,11 @@ nonisolated struct LibraryRepository: Sendable {
                        COUNT(recording.id) AS recordingCount,
                        COALESCE(SUM(recording.duration), 0) AS totalDuration
                 FROM course
-                LEFT JOIN recording ON recording.courseID = course.id
-                WHERE course.termID = ?
+                JOIN courseTerm ON courseTerm.courseID = course.id
+                LEFT JOIN recording
+                       ON recording.courseID = course.id
+                      AND recording.termID = courseTerm.termID
+                WHERE courseTerm.termID = ?
                 GROUP BY course.id
                 ORDER BY course.id
                 """, arguments: [termID])
@@ -113,6 +137,72 @@ nonisolated struct LibraryRepository: Sendable {
         try await database.writer.read { try Course.fetchOne($0, key: id) }
     }
 
+    /// The terms a course runs in, newest first — the same order the picker
+    /// lists them in.
+    func terms(of courseID: Int64) async throws -> [Term] {
+        try await database.writer.read { db in
+            try Term.fetchAll(db, sql: """
+                SELECT term.*
+                FROM term
+                JOIN courseTerm ON courseTerm.termID = term.id
+                WHERE courseTerm.courseID = ?
+                ORDER BY term.startsOn DESC, term.id DESC
+                """, arguments: [courseID])
+        }
+    }
+
+    /// Writes a course and the terms it runs in, together.
+    ///
+    /// **A course in no term is refused.** It would be a row nothing can ever
+    /// reach: the sidebar is a term's courses, the popover's picker is the
+    /// current term's courses, and a subject that appears in neither is not a
+    /// course, it is a leak. The dialog refuses it too — this is the second
+    /// answer to the same question, because the repository is reachable without
+    /// the dialog.
+    ///
+    /// One transaction, so a course never exists for a moment with no term.
+    @discardableResult
+    func create(_ course: Course, in termIDs: Set<Int64>) async throws -> Course {
+        guard !termIDs.isEmpty else { throw RetainDatabaseError.courseWithoutTerm }
+
+        return try await database.writer.write { db in
+            var stored = course
+            try stored.insert(db)
+            guard let courseID = stored.id else { throw RetainDatabaseError.unsavedRow }
+
+            // Sorted so two runs write the rows in the same order, which keeps
+            // a failing assertion about them readable.
+            for termID in termIDs.sorted() {
+                var link = CourseTerm(courseID: courseID, termID: termID)
+                try link.insert(db)
+            }
+            return stored
+        }
+    }
+
+    /// Replaces the terms a course runs in.
+    ///
+    /// A delete and an insert rather than a diff: the set is at most a handful
+    /// of rows, and the pairs carry nothing of their own that could be lost by
+    /// writing them again. Recordings are untouched — they hold their own term
+    /// and are not reachable from these rows.
+    func setTerms(of courseID: Int64, to termIDs: Set<Int64>) async throws {
+        guard !termIDs.isEmpty else { throw RetainDatabaseError.courseWithoutTerm }
+
+        try await database.writer.write { db in
+            try CourseTerm
+                .filter(CourseTerm.Columns.courseID == courseID)
+                .deleteAll(db)
+
+            for termID in termIDs.sorted() {
+                var link = CourseTerm(courseID: courseID, termID: termID)
+                try link.insert(db)
+            }
+        }
+    }
+
+    /// Renames a course, or repaints it. **Not** where its terms change — see
+    /// `setTerms(of:to:)` — because a course row no longer carries one.
     @discardableResult
     func save(_ course: Course) async throws -> Course {
         try await database.writer.write { db in
@@ -124,15 +214,21 @@ nonisolated struct LibraryRepository: Sendable {
 
     // MARK: - Recordings
 
-    /// Newest first, the way the table is drawn.
+    /// One course in one term, newest first — the way the table is drawn.
+    ///
+    /// **Both, always.** A course runs in several terms and the library is
+    /// looking at one of them: the course alone would pour last summer's
+    /// recordings into this winter's table, which is precisely what the term
+    /// picker at the top of board 05 exists to prevent.
     ///
     /// By date **and** time: two recordings on one afternoon are ordinary, and
     /// sorting by the day alone would put them in whichever order the rows
     /// happened to be written.
-    func recordings(in courseID: Int64) async throws -> [Recording] {
+    func recordings(in courseID: Int64, during termID: Int64) async throws -> [Recording] {
         try await database.writer.read { db in
             try Recording
                 .filter(Recording.Columns.courseID == courseID)
+                .filter(Recording.Columns.termID == termID)
                 .order(Recording.Columns.startedAt.desc, Recording.Columns.id.desc)
                 .fetchAll(db)
         }
@@ -156,15 +252,23 @@ nonisolated struct LibraryRepository: Sendable {
     /// `startedAt` is the moment the microphone opened, to the second, and it
     /// is what the recording is identified by from here on. There is nothing to
     /// number and nothing to name.
+    ///
+    /// The term is taken rather than worked out. It is the one that was current
+    /// when the microphone opened, and once written it does not move: a term's
+    /// period can be edited afterwards without a single recording changing
+    /// hands, and a course that is added to another term next year does not
+    /// drag this recording into it.
     @discardableResult
     func startRecording(
         in courseID: Int64,
+        during termID: Int64,
         at startedAt: Date = .now,
         filename: String? = nil
     ) async throws -> Recording {
         try await database.writer.write { db in
             var recording = Recording(
                 courseID: courseID,
+                termID: termID,
                 startedAt: startedAt,
                 state: .recording,
                 filename: filename

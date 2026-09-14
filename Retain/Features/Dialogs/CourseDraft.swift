@@ -8,28 +8,53 @@ import Foundation
 nonisolated struct CourseDraft: Equatable, Sendable {
 
     var name: String
-    var termID: Int64?
+
+    /// Every term the course runs in, and there can be several: the same school
+    /// subject runs in the winter half-year and in the summer one, and it is
+    /// one course in both.
+    var termIDs: Set<Int64>
+
     var color: CourseColor
 
-    init(name: String = "", termID: Int64? = nil, color: CourseColor = .accent) {
+    init(name: String = "", termIDs: Set<Int64> = [], color: CourseColor = .accent) {
         self.name = name
-        self.termID = termID
+        self.termIDs = termIDs
         self.color = color
     }
 
-    /// A course needs a name and a term to be in. A course that runs across two
-    /// terms is two rows, one per term, which is what board 05 draws.
-    var isSaveable: Bool {
-        termID != nil && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    /// One term preselected — what the library sidebar and the General pane
+    /// open the dialog with, since both already have a term chosen.
+    init(name: String = "", termID: Int64?, color: CourseColor = .accent) {
+        self.init(name: name, termIDs: termID.map { [$0] } ?? [], color: color)
     }
 
+    /// A course needs a name and **at least one** term to run in.
+    ///
+    /// None is refused rather than allowed and hidden: every list of courses in
+    /// the app is a term's list, so a course belonging to no term would be a
+    /// row the user cannot see, cannot record into and cannot delete.
+    var isSaveable: Bool {
+        !termIDs.isEmpty && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// The course row. Which terms it runs in is `termIDs`, written beside it —
+    /// the row itself no longer carries a term.
     func course() -> Course? {
-        guard let termID, isSaveable else { return nil }
+        guard isSaveable else { return nil }
         return Course(
-            termID: termID,
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             color: color
         )
+    }
+
+    /// Ticks a term, or unticks it. The dialog's chips are a toggle each, and
+    /// which way round they go is the draft's business rather than the view's.
+    mutating func toggle(_ termID: Int64) {
+        if termIDs.contains(termID) {
+            termIDs.remove(termID)
+        } else {
+            termIDs.insert(termID)
+        }
     }
 }
 

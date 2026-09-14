@@ -144,12 +144,34 @@ struct LectureSessionTests {
         #expect(session.markers.isEmpty)
     }
 
-    @Test("A lecture that has not started belongs to no course")
+    @Test("A lecture that has not started belongs to no course and no term")
     func noCourseBeforeALecture() {
         let session = LectureSession()
         #expect(session.course == nil)
+        #expect(session.term == nil)
         #expect(session.recordingID == nil)
         #expect(!session.isPaused)
+    }
+
+    /// A recording carries the term it was made in, and a term that was never
+    /// written has no id to carry. The answer is refusal with something to
+    /// read, not a row filed under a half-year that does not exist — and it is
+    /// decided before the microphone or a gigabyte of weights is touched.
+    @Test("A lecture will not start into a term that was never saved")
+    func aLectureNeedsARealTerm() async {
+        let session = LectureSession()
+        await session.start(
+            in: Course(id: 1, name: "Informatik", color: .accent),
+            during: Term(title: "Third year, winter")
+        )
+
+        guard case .failed(let message) = session.phase else {
+            Issue.record("A lecture started without a term to file it under")
+            return
+        }
+        #expect(!message.isEmpty)
+        #expect(session.recordingID == nil)
+        #expect(session.recorder.state == .idle)
     }
 
     @Test("Pausing and resuming do nothing outside a lecture")
@@ -164,7 +186,7 @@ struct LectureSessionTests {
     @Test("Changing the course of a lecture that has none does nothing")
     func changingCourseWithoutALecture() {
         let session = LectureSession()
-        session.changeCourse(to: Course(id: 1, termID: 1, name: "Mathematics", color: .blue))
+        session.changeCourse(to: Course(id: 1, name: "Mathematics", color: .blue))
         // No row to move, so the change is only the label — which is what the
         // meta strip then draws.
         #expect(session.course?.name == "Mathematics")

@@ -120,6 +120,11 @@ nonisolated enum RetainDatabaseError: Error, Hashable, Sendable {
     /// A highlight was asked for over a range that is not inside the block it
     /// marks, or that cuts a character in half.
     case invalidHighlightRange
+
+    /// A course was asked to be written into no terms at all. It would be a row
+    /// nothing in the interface can reach — every list of courses there is is a
+    /// term's list.
+    case courseWithoutTerm
 }
 
 nonisolated extension RetainDatabaseError: LocalizedError {
@@ -129,12 +134,13 @@ nonisolated extension RetainDatabaseError: LocalizedError {
         case .cannotOpen:
             String(localized: "Retain could not open its library.",
                    comment: "The database file could not be opened or created")
-        case .migrationHasNoRollback, .unsavedRow, .invalidHighlightRange:
+        case .migrationHasNoRollback, .unsavedRow, .invalidHighlightRange, .courseWithoutTerm:
             // None of these is a user-facing state: nothing in the interface
             // rolls a migration back, saves against a row that was never
-            // written, or marks a range outside the text it is marking. Each
-            // is a mistake in the caller, and a message about one would mean
-            // nothing to the person reading it.
+            // written, marks a range outside the text it is marking, or offers
+            // a Create button for a course with no term ticked. Each is a
+            // mistake in the caller, and a message about one would mean nothing
+            // to the person reading it.
             nil
         }
     }

@@ -69,16 +69,34 @@ struct NameTermDialog: View {
         }
     }
 
-    private func monthField(_ month: Binding<Date>) -> some View {
-        RetainPickerField(
+    /// One of the two month fields, either of which may be left empty.
+    ///
+    /// The export draws both filled and offers no way to empty one, because it
+    /// was drawn when a period was required. It is not any more, so the menu
+    /// carries "No month" ahead of the months and an empty field draws that
+    /// word in placeholder ink — the same treatment `RetainTextField` gives an
+    /// empty field. Nothing else about the box changes: same chrome, same plain
+    /// look with no disclosure, exactly as drawn.
+    private func monthField(_ month: Binding<Date?>) -> some View {
+        // Around what is in the field, or around today for an empty one: the
+        // run of months has to start somewhere, and the month somebody is
+        // filling the field in is the likeliest place. "No month" leads,
+        // because a field that cannot be emptied again is a field that traps
+        // the first date somebody picks by accident.
+        let options: [Date?] = [nil]
+            + TermMonth.choices(around: month.wrappedValue ?? .now).map(Optional.some)
+
+        return RetainPickerField(
             selection: month,
-            options: TermMonth.choices(around: month.wrappedValue),
-            title: TermMonth.label,
+            options: options,
+            title: { $0.map(TermMonth.label) ?? TermMonth.noMonth },
             showsDisclosure: false
         ) {
-            Text(TermMonth.label(month.wrappedValue))
+            Text(month.wrappedValue.map(TermMonth.label) ?? TermMonth.noMonth)
                 .retainStyle(RetainTypography.fieldText)
-                .foregroundStyle(RetainPalette.inkPrimary)
+                .foregroundStyle(month.wrappedValue == nil
+                                 ? RetainPalette.inkLabel
+                                 : RetainPalette.inkPrimary)
                 .lineLimit(1)
         }
     }

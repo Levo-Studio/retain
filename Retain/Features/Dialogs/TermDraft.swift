@@ -21,6 +21,19 @@ nonisolated enum TermMonth {
         date.formatted(.dateTime.month(.abbreviated).year())
     }
 
+    /// What a month field says when it has been left empty, and what the entry
+    /// that empties it again is called.
+    ///
+    /// The export draws both fields filled and offers no way to clear one,
+    /// because it was drawn when a period was required. It is not: a term with
+    /// no period is a term that works, so each field has to be able to say it
+    /// has nothing — in placeholder ink, the same way every other empty field
+    /// in the app says it.
+    static var noMonth: String {
+        String(localized: "No month",
+               comment: "A month field of a term's period that has been left empty, and the menu entry that empties it")
+    }
+
     /// The months a picker offers around a date.
     ///
     /// Not drawn: the export shows two filled-in fields and no open menu. The
@@ -42,8 +55,13 @@ nonisolated struct TermDraft: Equatable, Sendable {
 
     var title: String
     var kind: TermKind
-    var startsOn: Date
-    var endsOn: Date
+
+    /// Either endpoint may be left empty, and so may both. The period is a
+    /// caption and nothing computes with it, so a term somebody cannot date is
+    /// a term that still works — see `Term.startsOn`.
+    var startsOn: Date?
+    var endsOn: Date?
+
     var isCurrent: Bool
 
     /// The term being edited, or `nil` for a new one.
@@ -53,15 +71,15 @@ nonisolated struct TermDraft: Equatable, Sendable {
         id: Int64? = nil,
         title: String = "",
         kind: TermKind = .halfYear,
-        startsOn: Date,
-        endsOn: Date,
+        startsOn: Date? = nil,
+        endsOn: Date? = nil,
         isCurrent: Bool = false
     ) {
         self.id = id
         self.title = title
         self.kind = kind
-        self.startsOn = TermMonth.normalised(startsOn)
-        self.endsOn = TermMonth.normalised(endsOn)
+        self.startsOn = startsOn.map { TermMonth.normalised($0) }
+        self.endsOn = endsOn.map { TermMonth.normalised($0) }
         self.isCurrent = isCurrent
     }
 
@@ -76,10 +94,16 @@ nonisolated struct TermDraft: Equatable, Sendable {
         )
     }
 
-    /// A term needs a name and a period that runs forwards. Nothing else is
-    /// required: the title is free text and there is no format to hold it to.
+    /// A term needs a name. Nothing else is required: the title is free text
+    /// and there is no format to hold it to.
+    ///
+    /// The period is optional at both ends, so the only thing left to check is
+    /// that a period somebody *did* give both ends of runs forwards. One
+    /// endpoint on its own cannot be backwards, and neither cannot be anything.
     var isSaveable: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && startsOn <= endsOn
+        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        guard let startsOn, let endsOn else { return true }
+        return startsOn <= endsOn
     }
 
     /// The row, with `isCurrent` **cleared**.
@@ -94,8 +118,8 @@ nonisolated struct TermDraft: Equatable, Sendable {
             id: id,
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             kind: kind,
-            startsOn: TermMonth.normalised(startsOn),
-            endsOn: TermMonth.normalised(endsOn),
+            startsOn: startsOn.map { TermMonth.normalised($0) },
+            endsOn: endsOn.map { TermMonth.normalised($0) },
             isCurrent: false
         )
     }

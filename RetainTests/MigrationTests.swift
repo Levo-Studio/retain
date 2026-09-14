@@ -19,7 +19,7 @@ struct MigrationTests {
     @Test("Each migration brings its own tables and nothing else")
     func eachMigrationBringsItsOwnTables() throws {
         let library = try StoreFixture.database(upTo: .library)
-        #expect(try library.tableNames().isSuperset(of: ["term", "course", "recording"]))
+        #expect(try library.tableNames().isSuperset(of: ["term", "course", "courseTerm", "recording"]))
         #expect(try library.tableNames().isDisjoint(with: [
             "transcriptLine", "annotation", "noteBlock", "highlight",
         ]))
@@ -200,7 +200,7 @@ struct MigrationTests {
 
         // And it refused without taking anything with it.
         #expect(try database.tableNames().isSuperset(of: [
-            "term", "course", "recording", "transcriptLine",
+            "term", "course", "courseTerm", "recording", "transcriptLine",
         ]))
         #expect(try await TranscriptRepository(database).lines(for: recordingID).count == 1)
     }

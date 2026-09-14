@@ -31,8 +31,15 @@ nonisolated struct Term: Identifiable, Hashable, Sendable, Codable {
     /// The period, at month granularity: the dialog offers "Oct 2025" and
     /// "Mar 2026", never a day. Stored as an instant inside that month so two
     /// terms sort against each other without a second column.
-    var startsOn: Date
-    var endsOn: Date
+    ///
+    /// **Both endpoints are optional, and nothing computes with either.** The
+    /// period is the caption under the term's name in board 05's sidebar and
+    /// nowhere else: a recording carries the term it was made in, so no filter,
+    /// no grouping and no lookup ever asks a date which term it falls in. A
+    /// term with one endpoint, or with none, works completely — see
+    /// `TermPeriod` for how each of those reads.
+    var startsOn: Date?
+    var endsOn: Date?
 
     /// The term the picker opens on. At most one row carries it, which
     /// `LibraryRepository.makeCurrent(_:)` is the only way to set.
@@ -42,8 +49,8 @@ nonisolated struct Term: Identifiable, Hashable, Sendable, Codable {
         id: Int64? = nil,
         title: String,
         kind: TermKind = .halfYear,
-        startsOn: Date,
-        endsOn: Date,
+        startsOn: Date? = nil,
+        endsOn: Date? = nil,
         isCurrent: Bool = false
     ) {
         self.id = id
@@ -70,24 +77,46 @@ nonisolated enum CourseColor: Int, CaseIterable, Hashable, Sendable, Codable {
     case purple = 3
 }
 
-/// One subject inside one term.
+/// One subject, once — however many terms it runs in.
 ///
-/// A course that runs across two terms is two rows, one per term. That is what
-/// board 05 draws — the sidebar lists only the courses of the selected term —
-/// and it is also how a timetable works: the recordings and the colour belong
-/// to the half-year, not to the subject in the abstract.
+/// The same school subject runs in the winter half-year and in the summer one,
+/// and it is **the same course**: renaming it renames it in both, and its
+/// colour is its colour everywhere. Which terms it runs in is the `courseTerm`
+/// table, and what was recorded in each of them is the recording's own term, so
+/// board 05 still shows only the term being looked at — the filter moved off
+/// the course and onto the recording, where it can be exact.
 nonisolated struct Course: Identifiable, Hashable, Sendable, Codable {
 
     var id: Int64?
-    var termID: Int64
     var name: String
     var color: CourseColor
 
-    init(id: Int64? = nil, termID: Int64, name: String, color: CourseColor) {
+    init(id: Int64? = nil, name: String, color: CourseColor) {
         self.id = id
-        self.termID = termID
         self.name = name
         self.color = color
+    }
+}
+
+// MARK: - Which terms a course runs in
+
+/// One course being in one term.
+///
+/// The whole row is the pairing: a course keeps its name and its colour in one
+/// place, and this says which terms it appears in. Adding a course to a second
+/// term is one of these, not a second course — which is what makes renaming
+/// "Computer science" rename it in the winter half-year and the summer one at
+/// the same time.
+nonisolated struct CourseTerm: Identifiable, Hashable, Sendable, Codable {
+
+    var id: Int64?
+    var courseID: Int64
+    var termID: Int64
+
+    init(id: Int64? = nil, courseID: Int64, termID: Int64) {
+        self.id = id
+        self.courseID = courseID
+        self.termID = termID
     }
 }
 
@@ -119,6 +148,16 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
 
     var id: Int64?
     var courseID: Int64
+
+    /// The term the recording was made in — whichever one was current when the
+    /// microphone opened.
+    ///
+    /// **It is carried, not derived.** A term's period is optional, so the date
+    /// cannot answer which term a recording falls in; and a course runs in
+    /// several terms, so the course cannot either. Carrying it also means
+    /// editing a term's period afterwards moves no recordings, which a derived
+    /// answer would do silently.
+    var termID: Int64
 
     /// When the recording started, to the second.
     ///
@@ -156,6 +195,7 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     init(
         id: Int64? = nil,
         courseID: Int64,
+        termID: Int64,
         startedAt: Date,
         duration: TimeInterval = 0,
         state: RecordingState = .recording,
@@ -164,6 +204,7 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     ) {
         self.id = id
         self.courseID = courseID
+        self.termID = termID
         self.startedAt = startedAt
         self.duration = duration
         self.state = state

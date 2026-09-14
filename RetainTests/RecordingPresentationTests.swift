@@ -23,7 +23,15 @@ struct RecordingPresentationTests {
         duration: TimeInterval = 5520,
         state: RecordingState = .done
     ) -> Recording {
-        Recording(id: 1, courseID: 1, startedAt: startedAt, duration: duration, state: state, topic: topic)
+        Recording(
+            id: 1,
+            courseID: 1,
+            termID: 1,
+            startedAt: startedAt,
+            duration: duration,
+            state: state,
+            topic: topic
+        )
     }
 
     // MARK: - The Topic column

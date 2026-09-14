@@ -36,12 +36,19 @@ nonisolated enum RetainMigrations {
             // sits on the row rather than in a setting so that switching from
             // half-years to semesters does not re-label the terms already
             // recorded.
+            //
+            // **Both endpoints are nullable and nothing computes with them.**
+            // The period is a caption under the term's name and no more: a
+            // recording carries the term it was made in on its own row, so a
+            // term with no period filters the library exactly as well as one
+            // with a period. Somebody who does not know when their half-year
+            // officially ends is not blocked by a field they cannot answer.
             try db.create(table: "term") { t in
                 t.autoIncrementedPrimaryKey("id")
                 t.column("title", .text).notNull()
                 t.column("kind", .text).notNull()
-                t.column("startsOn", .datetime).notNull()
-                t.column("endsOn", .datetime).notNull()
+                t.column("startsOn", .datetime)
+                t.column("endsOn", .datetime)
                 t.column("isCurrent", .boolean).notNull().defaults(to: false)
             }
 
@@ -57,34 +64,82 @@ nonisolated enum RetainMigrations {
                 condition: Column("isCurrent")
             )
 
-            // A course belongs to exactly one term. A course that runs across
-            // two terms is two rows — that is what the sidebar draws, and it is
-            // what makes the term a filter rather than a label.
+            // A course is **one subject, once**, and it carries no term.
+            //
+            // The same school subject runs in the winter half-year and in the
+            // summer one, and it is the same course: renaming it renames it in
+            // both, and its colour is its colour everywhere. Which terms it
+            // runs in is `courseTerm`, and what was recorded in each of them is
+            // the recording's own term — so a course spanning a year is one row
+            // here rather than one row per half-year.
             try db.create(table: "course") { t in
                 t.autoIncrementedPrimaryKey("id")
-                t.column("termID", .integer)
-                    .notNull()
-                    .references("term", onDelete: .cascade)
                 t.column("name", .text).notNull()
                 // The index into the four colours the dialog offers, never a
                 // hex string: the palette belongs to the design layer.
                 t.column("color", .integer).notNull()
             }
 
-            // The sidebar is "the courses of the selected term" and nothing
-            // else, so this is the one read the table exists for.
-            try db.create(index: "courseOnTermID", on: "course", columns: ["termID"])
+            // Which terms a course runs in. Nothing else belongs on this row:
+            // it is the membership and not a per-term copy of the course, which
+            // is the whole point of the change — a name lives in one place.
+            //
+            // Cascading from **either** side, because a link to a course that
+            // is gone, or to a term that is gone, is not a link. The course
+            // survives losing a term and the term survives losing a course;
+            // only the pairing goes.
+            try db.create(table: "courseTerm") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("courseID", .integer)
+                    .notNull()
+                    .references("course", onDelete: .cascade)
+                t.column("termID", .integer)
+                    .notNull()
+                    .references("term", onDelete: .cascade)
+            }
+
+            // A course is in a term or it is not — there is no "twice". The
+            // uniqueness is in the schema rather than in a check the repository
+            // makes first, so a second way of writing the row cannot get round
+            // it. It is also the index the sidebar's read uses, since it leads
+            // on the column that read groups by.
+            try db.create(
+                index: "courseTermOnCourseIDAndTermID",
+                on: "courseTerm",
+                columns: ["courseID", "termID"],
+                unique: true
+            )
+
+            // The sidebar is "the courses of the selected term", which walks
+            // the pair the other way round and would otherwise scan.
+            try db.create(index: "courseTermOnTermID", on: "courseTerm", columns: ["termID"])
 
             // There is no lesson and no lesson number. A recording is what
             // happened, and `startedAt` carries the day **and the time of
             // day** — the column is not called `date` because it is not one:
             // two recordings on one afternoon are ordinary, so nothing indexes
             // or groups by the day alone.
+            //
+            // **A recording carries its term.** It cannot be derived: a term's
+            // period is optional, so the date answers nothing, and a course now
+            // runs in several terms, so the course answers nothing either. The
+            // term is whichever one was current when the microphone opened, and
+            // it stays that one — editing the term's period afterwards does not
+            // move a single recording, which is exactly what a derived answer
+            // would do.
+            //
+            // Cascading from the term as well as from the course, so that no
+            // recording can point at a term that is gone. Both directions
+            // remove recordings, which is why nothing in the interface deletes
+            // a term.
             try db.create(table: "recording") { t in
                 t.autoIncrementedPrimaryKey("id")
                 t.column("courseID", .integer)
                     .notNull()
                     .references("course", onDelete: .cascade)
+                t.column("termID", .integer)
+                    .notNull()
+                    .references("term", onDelete: .cascade)
                 t.column("startedAt", .datetime).notNull()
                 t.column("duration", .double).notNull().defaults(to: 0)
                 t.column("state", .text).notNull()
@@ -97,12 +152,22 @@ nonisolated enum RetainMigrations {
                 t.column("filename", .text)
             }
 
-            // The table is drawn newest first, which is this index read
-            // backwards, and it is the lookup for a course's recordings.
+            // The library table is "this course, in this term, newest first",
+            // which is this index read backwards. Leading on `courseID` means
+            // it still answers "everything in this course" for the sidebar's
+            // count, without a second index for it.
             try db.create(
-                index: "recordingOnCourseIDAndStartedAt",
+                index: "recordingOnCourseIDAndTermIDAndStartedAt",
                 on: "recording",
-                columns: ["courseID", "startedAt"]
+                columns: ["courseID", "termID", "startedAt"]
+            )
+
+            // And the other way in: the term alone, which is the scope search
+            // runs under and the one the cascade from a deleted term walks.
+            try db.create(
+                index: "recordingOnTermIDAndStartedAt",
+                on: "recording",
+                columns: ["termID", "startedAt"]
             )
         }
 

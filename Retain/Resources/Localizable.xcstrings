@@ -30,8 +30,8 @@
       "comment": "Label of a transcript line the user marked while it was being said",
       "extractionState": "manual"
     },
-    "%@ – %@ · %@": {
-      "comment": "A term's period and how many courses are in it, in the library sidebar",
+    "%@ – %@": {
+      "comment": "A term's period, with both endpoints — the export's Okt 2025 – März 2026",
       "extractionState": "manual"
     },
     "%lld courses": {
@@ -526,6 +526,10 @@
       "comment": "New-course dialog field label",
       "extractionState": "manual"
     },
+    "Name a term first — a course runs in one.": {
+      "comment": "The new-course dialog's term row on an install with no terms yet",
+      "extractionState": "manual"
+    },
     "Name term": {
       "comment": "Name-term dialog title",
       "extractionState": "manual"
@@ -576,6 +580,10 @@
     },
     "No models on the server": {
       "comment": "Model picker label when the server listed nothing",
+      "extractionState": "manual"
+    },
+    "No month": {
+      "comment": "A month field of a term's period that has been left empty, and the menu entry that empties it",
       "extractionState": "manual"
     },
     "No recordings in this course yet.": {
@@ -774,6 +782,10 @@
       "comment": "Recording failed because permission was refused",
       "extractionState": "manual"
     },
+    "Retain has no current term to record into.": {
+      "comment": "A lecture could not start because no term is marked as the current one",
+      "extractionState": "manual"
+    },
     "Retain is not allowed to use the keychain. Reinstalling Retain fixes this.": {
       "comment": "Keychain refused the app because it is not signed correctly",
       "extractionState": "manual"
@@ -903,7 +915,11 @@
       "extractionState": "manual"
     },
     "Term": {
-      "comment": "New-course dialog field label for the term picker\nSettings field label for the term picker\nUppercase label above the name-term dialog title",
+      "comment": "Settings field label for the term picker\nUppercase label above the name-term dialog title",
+      "extractionState": "manual"
+    },
+    "Terms": {
+      "comment": "New-course dialog field label above the terms a course runs in",
       "extractionState": "manual"
     },
     "Test connection": {
@@ -1026,6 +1042,10 @@
       "comment": "Footer of the chapters rail — the export's klausurrelevant",
       "extractionState": "manual"
     },
+    "from %@": {
+      "comment": "A term's period whose end was left empty",
+      "extractionState": "manual"
+    },
     "granted": {
       "comment": "Microphone permission state in settings",
       "extractionState": "manual"
@@ -1084,6 +1104,10 @@
     },
     "summarizing": {
       "comment": "A recording whose notes are being written — the export's wird zusammengefasst",
+      "extractionState": "manual"
+    },
+    "until %@": {
+      "comment": "A term's period whose start was left empty",
       "extractionState": "manual"
     },
     "writing …": {

@@ -12,8 +12,9 @@ nonisolated enum LibrarySheet: Identifiable, Equatable, Sendable {
     /// `nil` creates a term rather than renaming one.
     case nameTerm(Term?)
 
-    /// The term the course is created in. `nil` when none is selected, which
-    /// the dialog itself then refuses.
+    /// The term ticked when the dialog opens — the one the window already has
+    /// selected. The user can tick more, or untick this one; `nil` opens with
+    /// none ticked, and the dialog then refuses to create anything.
     case newCourse(Int64?)
 
     var id: String {
@@ -50,10 +51,15 @@ enum LibraryEditing {
         return saved
     }
 
+    /// The course row and the terms it runs in, in one transaction.
+    ///
+    /// `draft.course()` is `nil` for a draft with no term ticked, so a course
+    /// that belongs nowhere is refused here as well as by the disabled Create
+    /// button — and again by the repository, which is reachable without either.
     @discardableResult
     static func create(_ draft: CourseDraft, in library: LibraryRepository) async -> Course? {
         guard let course = draft.course() else { return nil }
-        return try? await library.save(course)
+        return try? await library.create(course, in: draft.termIDs)
     }
 }
 
@@ -78,7 +84,10 @@ extension View {
                 case .nameTerm(let term):
                     NameTermDialog(
                         terms: terms,
-                        draft: term.map(TermDraft.init) ?? TermDraft(startsOn: .now, endsOn: .now),
+                        // A new term opens with no period. It is optional, and
+                        // prefilling both fields with this month would make a
+                        // date the user never picked look like one they did.
+                        draft: term.map(TermDraft.init) ?? TermDraft(),
                         save: { draft in
                             sheet.wrappedValue = nil
                             guard let library else { return }

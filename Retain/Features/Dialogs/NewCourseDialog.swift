@@ -15,7 +15,7 @@ nonisolated extension CourseColor {
 
 // MARK: -
 
-/// "New course": a name, the term it is in, and one of exactly four colours.
+/// "New course": a name, the terms it runs in, and one of exactly four colours.
 struct NewCourseDialog: View {
 
     let terms: [Term]
@@ -39,9 +39,9 @@ struct NewCourseDialog: View {
 
                     GridRow {
                         DialogFieldLabel(
-                            text: String(localized: "Term", comment: "Field label for a term, and the label above the name-term dialog title")
+                            text: String(localized: "Terms", comment: "New-course dialog field label above the terms a course runs in")
                         )
-                        termPicker
+                        termsField
                     }
 
                     GridRow {
@@ -66,21 +66,47 @@ struct NewCourseDialog: View {
 
     // MARK: -
 
-    private var termPicker: some View {
-        RetainPickerField(
-            selection: Binding(
-                get: { draft.termID ?? terms.first?.id ?? 0 },
-                set: { draft.termID = $0 }
-            ),
-            options: terms.compactMap(\.id),
-            title: { id in terms.first { $0.id == id }?.title ?? "" }
-        ) {
-            Text(terms.first { $0.id == draft.termID }?.title ?? "")
+    /// The terms the course runs in — **several of them**, which board 07 does
+    /// not draw.
+    ///
+    /// The export draws a single-select picker field here, from when a course
+    /// belonged to exactly one term. It belongs to as many as the user has it
+    /// in, so a field that opens a menu and closes on one answer is the wrong
+    /// shape: every term a person has is worth seeing at once, and each is
+    /// simply on or off.
+    ///
+    /// Nothing new is drawn for it. Each term is `RetainSegment` — board 03's
+    /// segment, which is the export's own way of saying "these sit beside each
+    /// other and this one is chosen" — laid out by `RetainWrappingRow` so that
+    /// a year's worth of terms goes onto a second line instead of scrolling or
+    /// being cut off inside a 430-point sheet. The one thing that is not drawn
+    /// anywhere is that several can be on at once.
+    @ViewBuilder
+    private var termsField: some View {
+        if terms.isEmpty {
+            // Not an empty box. Create is already refused without a term, and a
+            // blank row leaves the reader working out why on their own.
+            Text(String(localized: "Name a term first — a course runs in one.",
+                        comment: "The new-course dialog's term row on an install with no terms yet"))
                 .retainStyle(RetainTypography.fieldText)
-                .foregroundStyle(RetainPalette.inkPrimary)
-                .lineLimit(1)
+                .foregroundStyle(RetainPalette.inkLabel)
+                .fixedSize(horizontal: false, vertical: true)
+        } else {
+            RetainWrappingRow(
+                spacing: RetainMetrics.segmentGap,
+                rowSpacing: RetainMetrics.segmentGap
+            ) {
+                ForEach(terms) { term in
+                    if let id = term.id {
+                        RetainSegment(
+                            title: term.title,
+                            isSelected: draft.termIDs.contains(id),
+                            select: { draft.toggle(id) }
+                        )
+                    }
+                }
+            }
         }
-        .disabled(terms.isEmpty)
     }
 
     private var colours: some View {
