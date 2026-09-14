@@ -137,12 +137,20 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     /// — the interface draws the date and time instead, which is honest.
     var topic: String?
 
-    /// The audio's file name, never its path.
+    /// The audio's file name while there is audio, never its path.
     ///
     /// The folder is `RecordingStore.directory`, which is derived at read time.
     /// Storing the full path would put the user's home directory into the
     /// database and into everything derived from it, and would break the moment
     /// the folder moves.
+    ///
+    /// **`nil` once the recording has been transcribed**, because the file is
+    /// deleted then — see `TransientAudio`. It is cleared rather than kept as a
+    /// record of what the file used to be called: the name's only use is
+    /// finding the file, so a name pointing at nothing would be a promise the
+    /// disk does not keep, and every reader would have to ask the file system
+    /// what this field already answers. A recording with no filename is the
+    /// ordinary, finished state, not a broken row.
     var filename: String?
 
     init(

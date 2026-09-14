@@ -337,6 +337,16 @@ final class LectureSession {
 
             lines = TranscriptAssembly.replacingProvisional(lines, with: output.lines)
             await write(lines, state: .done)
+
+            // Everything that ever had to read the audio has read it: the batch
+            // pass and the diarization inside `pass.run`, and the transcript is
+            // written. Retain keeps the transcript, not the recording — see
+            // `TransientAudio`, which deletes nothing whose transcript is not
+            // stored, so the `catch` below still leaves its file on disk.
+            if let store, let recordingID {
+                await TransientAudio(store.database).discardAudio(of: recordingID)
+            }
+
             phase = .done
         } catch {
             // The recording itself is not lost because the pass over it failed,

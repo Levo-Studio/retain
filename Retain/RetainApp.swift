@@ -63,7 +63,18 @@ final class RetainApp: NSObject, NSApplicationDelegate {
         // the microphone, the live transcript and the window all work without
         // one, and what is lost is that the lecture is written down. The shell
         // carries `nil` in that case rather than refusing to launch.
-        statusItem = StatusItemController(store: (try? RetainDatabase.openOnDisk()).map(LectureStore.init))
+        let database = try? RetainDatabase.openOnDisk()
+        statusItem = StatusItemController(store: database.map(LectureStore.init))
+
+        // A quit or a crash between writing a transcript and deleting the audio
+        // it was made from leaves a file that nothing will ever read again.
+        // Launch is the only place that is looked for — see `TransientAudio`
+        // for why there is no timer — and it happens off the launch path
+        // because an interrupted deletion is not a reason to delay the status
+        // item appearing.
+        if let database {
+            Task { await TransientAudio(database).sweep() }
+        }
     }
 
     /// Closing the last window puts Retain back in the status bar; it does not
