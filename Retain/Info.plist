@@ -31,6 +31,24 @@
 	     machine, and the permission sheet is the one moment a user actually
 	     asks that question, so it is answered there rather than in a settings
 	     pane they may never open. -->
+	<!-- DM Sans is the one family the design draws in, and it is not on macOS,
+	     so it ships in the bundle and is registered from there. This is the
+	     macOS key; `UIAppFonts` is the iOS one and does nothing here.
+
+	     The value is "." and not "Fonts" on purpose. `Retain/Resources/Fonts/`
+	     is a folder inside a synchronized group, and Xcode copies the files it
+	     contains flat into `Contents/Resources` rather than keeping the folder,
+	     so the directory the fonts actually end up in is the Resources
+	     directory itself — which is what "." names. Preserving the folder would
+	     need a folder reference in `project.pbxproj`, and that file is not
+	     touched for resources.
+
+	     A font that fails to register does not fail loudly: text falls back to
+	     the system face and every measurement in the design is quietly wrong.
+	     `RetainTypography.isDesignFontAvailable` checks it at runtime and a test
+	     asserts it, so the failure has somewhere to show up. -->
+	<key>ATSApplicationFontsPath</key>
+	<string>.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Retain records the lecture through your microphone. The audio, the transcript and the notes stay on this Mac — nothing is uploaded, and only the lectures you keep are stored.</string>
 </dict>
