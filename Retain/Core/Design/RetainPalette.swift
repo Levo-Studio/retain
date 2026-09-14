@@ -192,6 +192,12 @@ nonisolated enum RetainPalette {
 
     static let courseSwatches: [RetainColor] = [accentBase, blueValue, amberValue, purpleValue]
 
+    /// The two surfaces a control is drawn on, as `RetainColor` rather than
+    /// `Color`, so `RetainInteraction` can step their lightness for hover and
+    /// pressed. The `Color` accessors above are what a view uses at rest.
+    static let insetControlSwatch = insetControl
+    static let selectedRowSwatch = selectedRow
+
     // MARK: - Values
 
     private static let canvas = RetainColor(hex: 0x08090B)
