@@ -117,6 +117,7 @@ struct TranscriptStoreTests {
         let other = try await StoreFixture.recording(
             in: database,
             course: library.course,
+            term: library.term,
             at: StoreFixture.instant(2026, 2, 7, 14, 30)
         )
         let repository = TranscriptRepository(database)

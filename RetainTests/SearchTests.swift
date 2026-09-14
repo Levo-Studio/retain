@@ -89,6 +89,55 @@ struct SearchTests {
 
     // MARK: - Scope
 
+    /// The case a course-shaped scope gets wrong. One course, two half-years,
+    /// the same word said in each: the term has to come off the recording, or
+    /// searching either half-year finds both.
+    @Test("A course running in two terms is searched one term at a time")
+    func searchIsScopedThroughTheJoin() async throws {
+        let database = try StoreFixture.database()
+        let winter = try await StoreFixture.term(in: database, title: "Third year, winter", isCurrent: true)
+        let summer = try await StoreFixture.term(
+            in: database,
+            title: "Third year, summer",
+            startsOn: StoreFixture.instant(2026, 4),
+            endsOn: StoreFixture.instant(2026, 9)
+        )
+        let course = try await StoreFixture.course(in: database, terms: [winter, summer], name: "Informatik")
+
+        let winterRecording = try await StoreFixture.recording(
+            in: database,
+            course: course,
+            term: winter,
+            at: StoreFixture.instant(2025, 11, 3, 10, 0)
+        )
+        let summerRecording = try await StoreFixture.recording(
+            in: database,
+            course: course,
+            term: summer,
+            at: StoreFixture.instant(2026, 5, 4, 10, 0)
+        )
+
+        let transcript = TranscriptRepository(database)
+        try await transcript.append(
+            StoreFixture.line("Das Working Set im Winterhalbjahr.", at: 30),
+            to: try #require(winterRecording.id)
+        )
+        try await transcript.append(
+            StoreFixture.line("Das Working Set noch einmal im Sommer.", at: 40),
+            to: try #require(summerRecording.id)
+        )
+
+        let repository = SearchRepository(database)
+        let winterHits = try await repository.search("Working", in: try #require(winter.id))
+        let summerHits = try await repository.search("Working", in: try #require(summer.id))
+
+        #expect(winterHits.map(\.recordingID) == [winterRecording.id])
+        #expect(summerHits.map(\.recordingID) == [summerRecording.id])
+        // Labelled with the one course both of them are in.
+        #expect(winterHits.first?.courseName == "Informatik")
+        #expect(summerHits.first?.courseName == "Informatik")
+    }
+
     @Test("Search stops at the edge of the term")
     func searchIsScopedToTheTerm() async throws {
         let database = try StoreFixture.database()
@@ -110,6 +159,7 @@ struct SearchTests {
         let summerRecording = try await StoreFixture.recording(
             in: database,
             course: summerCourse,
+            term: summer,
             at: StoreFixture.instant(2026, 5, 4, 11, 0)
         )
         let summerRecordingID = try #require(summerRecording.id)
@@ -142,6 +192,7 @@ struct SearchTests {
         let mathematicsRecording = try await StoreFixture.recording(
             in: database,
             course: mathematics,
+            term: library.term,
             at: StoreFixture.instant(2026, 2, 6, 8, 0)
         )
 
@@ -426,12 +477,14 @@ struct SearchTests {
         let older = try await StoreFixture.recording(
             in: database,
             course: library.course,
+            term: library.term,
             at: StoreFixture.instant(2025, 11, 18, 9, 0)
         )
         // Later the same day as `older`, which is what the time of day is for.
         let newer = try await StoreFixture.recording(
             in: database,
             course: library.course,
+            term: library.term,
             at: StoreFixture.instant(2025, 11, 18, 14, 30)
         )
 
