@@ -120,9 +120,12 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     var id: Int64?
     var courseID: Int64
 
-    /// When the recording started, to the second. Not a day: the interface
-    /// draws the time of day beside it and two recordings can share a date.
-    var date: Date
+    /// When the recording started, to the second.
+    ///
+    /// Not a day, which is why it is not called one: the interface draws the
+    /// time of day beside the date, and two recordings can fall on the same
+    /// afternoon.
+    var startedAt: Date
 
     /// Seconds of recorded audio. Zero while the first minute is still running.
     var duration: TimeInterval
@@ -145,7 +148,7 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     init(
         id: Int64? = nil,
         courseID: Int64,
-        date: Date,
+        startedAt: Date,
         duration: TimeInterval = 0,
         state: RecordingState = .recording,
         topic: String? = nil,
@@ -153,7 +156,7 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     ) {
         self.id = id
         self.courseID = courseID
-        self.date = date
+        self.startedAt = startedAt
         self.duration = duration
         self.state = state
         self.topic = topic

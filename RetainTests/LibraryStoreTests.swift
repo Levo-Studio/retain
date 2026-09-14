@@ -216,7 +216,7 @@ struct LibraryStoreTests {
         let started = StoreFixture.instant(2026, 2, 7, 14, 45)
         let recording = try await repository.startRecording(in: try #require(course.id), at: started)
 
-        #expect(try await repository.recording(try #require(recording.id))?.date == started)
+        #expect(try await repository.recording(try #require(recording.id))?.startedAt == started)
     }
 
     @Test("Two recordings on one afternoon are ordinary, and stay apart")
@@ -234,7 +234,7 @@ struct LibraryStoreTests {
 
         let recordings = try await repository.recordings(in: courseID)
         #expect(recordings.count == 2)
-        #expect(recordings.map(\.date) == [afternoon, morning])
+        #expect(recordings.map(\.startedAt) == [afternoon, morning])
     }
 
     @Test("What the pass after the recording writes back stays written")
@@ -282,7 +282,7 @@ struct LibraryStoreTests {
             try await repository.startRecording(in: courseID, at: StoreFixture.instant(2026, month))
         }
 
-        let dates = try await repository.recordings(in: courseID).map(\.date)
+        let dates = try await repository.recordings(in: courseID).map(\.startedAt)
         #expect(dates == [
             StoreFixture.instant(2026, 3),
             StoreFixture.instant(2026, 2),

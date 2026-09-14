@@ -89,7 +89,7 @@ nonisolated extension Recording: FetchableRecord, MutablePersistableRecord {
     enum Columns {
         static let id = Column("id")
         static let courseID = Column("courseID")
-        static let date = Column("date")
+        static let startedAt = Column("startedAt")
         static let duration = Column("duration")
         static let state = Column("state")
         static let topic = Column("topic")

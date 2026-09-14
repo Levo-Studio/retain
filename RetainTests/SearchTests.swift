@@ -46,7 +46,7 @@ struct SearchTests {
         #expect(hit.time == 3168)
         #expect(hit.text.contains("Zeitfenster"))
         #expect(hit.courseName == "Computer science")
-        #expect(hit.recordingDate == StoreFixture.instant(2026, 2, 7, 10, 15))
+        #expect(hit.recordingStartedAt == StoreFixture.instant(2026, 2, 7, 10, 15))
     }
 
     @Test("A word that was never said is not found")

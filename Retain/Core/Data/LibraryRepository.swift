@@ -133,7 +133,7 @@ nonisolated struct LibraryRepository: Sendable {
         try await database.writer.read { db in
             try Recording
                 .filter(Recording.Columns.courseID == courseID)
-                .order(Recording.Columns.date.desc, Recording.Columns.id.desc)
+                .order(Recording.Columns.startedAt.desc, Recording.Columns.id.desc)
                 .fetchAll(db)
         }
     }
@@ -153,19 +153,19 @@ nonisolated struct LibraryRepository: Sendable {
 
     /// Opens a row for a recording that is starting now.
     ///
-    /// `date` is the moment the microphone opened, to the second, and it is
-    /// what the recording is identified by from here on. There is nothing to
+    /// `startedAt` is the moment the microphone opened, to the second, and it
+    /// is what the recording is identified by from here on. There is nothing to
     /// number and nothing to name.
     @discardableResult
     func startRecording(
         in courseID: Int64,
-        at date: Date = .now,
+        at startedAt: Date = .now,
         filename: String? = nil
     ) async throws -> Recording {
         try await database.writer.write { db in
             var recording = Recording(
                 courseID: courseID,
-                date: date,
+                startedAt: startedAt,
                 state: .recording,
                 filename: filename
             )
