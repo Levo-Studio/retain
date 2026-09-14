@@ -1,18 +1,78 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "About Retain" : {
-      "comment" : "Status bar menu item opening the about panel",
-      "extractionState" : "manual"
+  "sourceLanguage": "en",
+  "strings": {
+    "About Retain": {
+      "comment": "Status bar menu item opening the about panel",
+      "extractionState": "manual"
     },
-    "Quit Retain" : {
-      "comment" : "Status bar menu item quitting the app",
-      "extractionState" : "manual"
+    "Not recording": {
+      "comment": "Status bar menu header while idle",
+      "extractionState": "manual"
     },
-    "Retain" : {
-      "comment" : "Accessibility label of the status bar item",
-      "extractionState" : "manual"
+    "Paused": {
+      "comment": "Status bar menu header while paused",
+      "extractionState": "manual"
+    },
+    "Quit Retain": {
+      "comment": "Status bar menu item quitting the app",
+      "extractionState": "manual"
+    },
+    "Recording · %@": {
+      "comment": "Status bar menu header while recording, with elapsed time",
+      "extractionState": "manual"
+    },
+    "Retain": {
+      "comment": "Accessibility label of the status bar item",
+      "extractionState": "manual"
+    },
+    "Retain could not create the recording file.": {
+      "comment": "Recording failed because the output file could not be opened",
+      "extractionState": "manual"
+    },
+    "Retain could not open that microphone.": {
+      "comment": "Recording failed because the chosen input device could not be opened",
+      "extractionState": "manual"
+    },
+    "Retain could not reserve memory for the recording.": {
+      "comment": "Recording failed because the audio buffer could not be allocated",
+      "extractionState": "manual"
+    },
+    "Retain could not resume the recording.": {
+      "comment": "Resuming a paused recording failed",
+      "extractionState": "manual"
+    },
+    "Retain could not start the audio engine.": {
+      "comment": "Recording failed because AVAudioEngine refused to start",
+      "extractionState": "manual"
+    },
+    "Retain could not write to the recording file.": {
+      "comment": "Recording failed while writing audio to disk",
+      "extractionState": "manual"
+    },
+    "Retain has no access to the microphone.": {
+      "comment": "Recording failed because permission was refused",
+      "extractionState": "manual"
+    },
+    "Retain lost the microphone and could not reopen it.": {
+      "comment": "Recording failed after the input device changed",
+      "extractionState": "manual"
+    },
+    "Reveal Recordings in Finder": {
+      "comment": "Status bar menu item opening the recordings folder",
+      "extractionState": "manual"
+    },
+    "Start Recording": {
+      "comment": "Status bar menu item starting a recording",
+      "extractionState": "manual"
+    },
+    "Stop Recording": {
+      "comment": "Status bar menu item stopping a recording",
+      "extractionState": "manual"
+    },
+    "The microphone reported a format Retain cannot read.": {
+      "comment": "Recording failed because the input format was unusable",
+      "extractionState": "manual"
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
