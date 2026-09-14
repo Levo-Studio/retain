@@ -1,0 +1,31 @@
+#!/bin/bash
+# Refuses any commit that would put a development team or a provisioning
+# profile into the Xcode project.
+#
+# Picking a team in Xcode's Signing & Capabilities editor writes DEVELOPMENT_TEAM
+# straight into project.pbxproj, where it would be committed to a public
+# repository. The team belongs in Local.xcconfig, which is gitignored.
+#
+# Not tracked by git — reinstall with scripts/install-hooks.sh after a clone.
+
+staged=$(git diff --cached --name-only)
+case "$staged" in
+  *project.pbxproj*) ;;
+  *) exit 0 ;;
+esac
+
+hits=$(git diff --cached -U0 -- '*project.pbxproj' \
+       | grep '^+' \
+       | grep -E 'DEVELOPMENT_TEAM|PROVISIONING_PROFILE|CODE_SIGN_IDENTITY *=' \
+       | grep -v 'DEVELOPMENT_TEAM = ""')
+
+if [ -n "$hits" ]; then
+    echo "refused: signing identity would be committed into project.pbxproj"
+    echo
+    echo "$hits" | sed 's/^/    /'
+    echo
+    echo "The team belongs in Local.xcconfig, which is gitignored. Undo it in"
+    echo "Xcode (Signing & Capabilities, set Team back to None) or revert the"
+    echo "file:  git checkout -- Retain.xcodeproj/project.pbxproj"
+    exit 1
+fi

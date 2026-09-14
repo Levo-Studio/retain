@@ -98,6 +98,13 @@ Retain. Signing a build for distribution does; copy `Local.xcconfig.example` to
 `Local.xcconfig` and put your Team ID in. `Base.xcconfig` includes it optionally,
 so a clone without it still builds, and `Local.xcconfig` is ignored by git.
 
+**Do not set the team in Xcode's Signing & Capabilities editor.** Picking it
+from that dropdown writes `DEVELOPMENT_TEAM` into `project.pbxproj`, which is
+tracked and public. `Local.xcconfig` feeds the same setting in from outside the
+project, and Xcode shows the team as selected either way. Run
+`scripts/install-hooks.sh` once after cloning and a commit that would carry a
+signing identity into the project is refused.
+
 The project uses synchronized folders — new files under `Retain/` and
 `RetainTests/` join the target on their own, and `project.pbxproj` does not have
 to be touched for that.
