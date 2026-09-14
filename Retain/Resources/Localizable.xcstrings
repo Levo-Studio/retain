@@ -29,8 +29,32 @@
       "comment": "Status bar menu item opening the about panel",
       "extractionState": "manual"
     },
+    "Close": {
+      "comment": "Window menu item closing the front window",
+      "extractionState": "manual"
+    },
+    "Copy": {
+      "comment": "Edit menu item",
+      "extractionState": "manual"
+    },
+    "Cut": {
+      "comment": "Edit menu item",
+      "extractionState": "manual"
+    },
     "Downloading speech models": {
       "comment": "Status bar menu header during the one-time model download",
+      "extractionState": "manual"
+    },
+    "Edit": {
+      "comment": "Edit menu title",
+      "extractionState": "manual"
+    },
+    "Hide Others": {
+      "comment": "Application menu item hiding other apps",
+      "extractionState": "manual"
+    },
+    "Hide Retain": {
+      "comment": "Application menu item hiding the app",
       "extractionState": "manual"
     },
     "LM Studio answered with an error. (%lld)": {
@@ -49,6 +73,10 @@
       "comment": "Status bar menu header after a lecture",
       "extractionState": "manual"
     },
+    "Minimise": {
+      "comment": "Window menu item minimising the front window",
+      "extractionState": "manual"
+    },
     "No language model is selected.": {
       "comment": "Summarizing was asked for before a model was chosen in settings",
       "extractionState": "manual"
@@ -57,12 +85,28 @@
       "comment": "Status bar menu header while idle",
       "extractionState": "manual"
     },
+    "Paste": {
+      "comment": "Edit menu item",
+      "extractionState": "manual"
+    },
+    "Questions can be asked once the recording has stopped.": {
+      "comment": "The chat was used while the recording was still running",
+      "extractionState": "manual"
+    },
+    "Questions can be asked once the summary is finished.": {
+      "comment": "The chat was used before the notes had been written",
+      "extractionState": "manual"
+    },
     "Quit Retain": {
       "comment": "Status bar menu item quitting the app",
       "extractionState": "manual"
     },
     "Recording · %@": {
       "comment": "Status bar menu header while recording, with elapsed time",
+      "extractionState": "manual"
+    },
+    "Redo": {
+      "comment": "Edit menu item",
       "extractionState": "manual"
     },
     "Retain": {
@@ -133,12 +177,8 @@
       "comment": "Status bar menu item opening the recordings folder",
       "extractionState": "manual"
     },
-    "Questions can be asked once the recording has stopped.": {
-      "comment": "The chat was used while the recording was still running",
-      "extractionState": "manual"
-    },
-    "Questions can be asked once the summary is finished.": {
-      "comment": "The chat was used before the notes had been written",
+    "Select All": {
+      "comment": "Edit menu item",
       "extractionState": "manual"
     },
     "Separating speakers": {
@@ -179,6 +219,14 @@
     },
     "Transcribing": {
       "comment": "Status bar menu header during the batch pass",
+      "extractionState": "manual"
+    },
+    "Undo": {
+      "comment": "Edit menu item",
+      "extractionState": "manual"
+    },
+    "Window": {
+      "comment": "Window menu title",
       "extractionState": "manual"
     }
   },
