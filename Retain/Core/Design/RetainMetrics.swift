@@ -113,9 +113,9 @@ nonisolated enum RetainMetrics {
     static let titleBarPadding = horizontal(14)
     static let titleBarGap: CGFloat = 9
 
-    /// The window's own title sits this much further in than the traffic
-    /// lights' gap — `margin-left:13px` on top of the bar's `gap:9px`.
-    static let titleBarTitleGap: CGFloat = 13
+    // `titleBarTitleGap` is in `RetainMetrics+Boards0607.swift`, which board 06
+    // needs for the same bar.
+
     /// Between the controls at the trailing end of the title bar.
     static let titleBarTrailingGap: CGFloat = 8
     /// The `Export` button.

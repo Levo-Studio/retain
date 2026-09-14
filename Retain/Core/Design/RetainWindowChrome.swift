@@ -14,7 +14,7 @@ struct RetainWindowFrame<Content: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: RetainMetrics.radiusWindow, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: RetainMetrics.radiusWindow, style: .continuous)
-                    .strokeBorder(RetainPalette.lineWindowBorder, lineWidth: 1)
+                    .strokeBorder(RetainPalette.lineWindowBorder, lineWidth: RetainMetrics.borderWidth)
             }
             .shadow(
                 color: RetainMetrics.windowShadow.color,
@@ -99,8 +99,8 @@ struct RetainDivider: View {
         Rectangle()
             .fill(RetainPalette.lineDivider)
             .frame(
-                width: axis == .vertical ? 1 : nil,
-                height: axis == .horizontal ? 1 : nil
+                width: axis == .vertical ? RetainMetrics.borderWidth : nil,
+                height: axis == .horizontal ? RetainMetrics.borderWidth : nil
             )
     }
 }
@@ -146,7 +146,7 @@ struct RetainSurfaceButtonStyle: ButtonStyle {
             configuration.label
                 .background { shape.fill(fill) }
                 .overlay {
-                    if let border { shape.strokeBorder(border, lineWidth: 1) }
+                    if let border { shape.strokeBorder(border, lineWidth: RetainMetrics.borderWidth) }
                 }
                 .contentShape(shape)
                 .opacity(isEnabled ? 1 : RetainInteraction.disabledOpacity)
