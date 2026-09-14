@@ -7,6 +7,10 @@ import Foundation
 /// folder of opaque CAF files in Documents is clutter they did not ask for.
 /// Retain is not sandboxed, so this is the real path and not a container.
 ///
+/// Nothing in here stays for long. A recording is deleted as soon as it has
+/// been transcribed — see `TransientAudio` — so on a settled install this folder
+/// holds the lecture currently being recorded and nothing else.
+///
 /// The name carries the date and a random suffix rather than a running number.
 /// Two recordings started in the same minute must not collide, and a number
 /// would have to be derived from what is already in the folder — which makes
