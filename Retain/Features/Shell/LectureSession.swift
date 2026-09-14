@@ -78,6 +78,13 @@ final class LectureSession {
     /// user picks them. Until that pane exists there is nothing to summarise
     /// with, and `notes` stays empty rather than filling with placeholders for
     /// cards that are never going to arrive.
+    /// What turns a closed block into a note card.
+    ///
+    /// Rebuilt from Settings at the start of every lecture rather than held,
+    /// because the address, the model and whether LM Studio is running at all
+    /// can each have changed since the last one. `nil` is the ordinary state of
+    /// a fresh install: the lecture records and transcribes, and the notes
+    /// column stays empty until somebody has been to Settings.
     var summarizer: RecordingSummarizer?
 
     /// Whether the microphone is closed while the lecture stays open.
@@ -170,6 +177,12 @@ final class LectureSession {
         recordingURL = nil
         recordingID = nil
         markers = []
+
+        // Built here rather than held from launch: the address, the model and
+        // whether LM Studio is running at all can each have changed since the
+        // last lecture, and a summariser made at launch would be answering to
+        // whatever was true then. Nil is fine — see the property.
+        summarizer = SummarizerFactory.make()
         notes = []
         topic = nil
         startedAt = .now

@@ -12,7 +12,13 @@ nonisolated struct LectureStore: Sendable {
     let transcript: TranscriptRepository
     let notes: NoteRepository
 
+    /// Kept alongside the repositories because the detail and library models
+    /// build their own — they read across four tables at once, and handing them
+    /// four repositories would be handing them the database the long way round.
+    let database: RetainDatabase
+
     init(_ database: RetainDatabase) {
+        self.database = database
         library = LibraryRepository(database)
         transcript = TranscriptRepository(database)
         notes = NoteRepository(database)

@@ -485,6 +485,10 @@
       "comment": "Title of the library window — the export's Bibliothek",
       "extractionState": "manual"
     },
+    "Library…": {
+      "comment": "Status bar menu item opening the library window",
+      "extractionState": "manual"
+    },
     "Live transcript": {
       "comment": "Header of the popover's transcript section",
       "extractionState": "manual"

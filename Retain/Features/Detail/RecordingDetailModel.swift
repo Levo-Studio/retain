@@ -246,6 +246,20 @@ final class RecordingDetailModel {
         player.seek(to: DetailSeek.target(forChapterAt: chapter.time, duration: duration))
     }
 
+    /// Opens the recording at a moment somebody arrived from — a search hit in
+    /// the library, which carries the second it matched at.
+    ///
+    /// The transcript tab comes forward with it: a search result is a sentence,
+    /// and landing in the notes with the audio cued to a line the reader cannot
+    /// see is not where they asked to go.
+    func seek(to time: TimeInterval) {
+        tab = .transcript
+        // A recording still being written has no duration yet, and clamping to
+        // nil would be clamping to zero — which is the one place a search hit
+        // never points.
+        player.seek(to: min(max(0, time), duration ?? time))
+    }
+
     /// A source chip under a chat answer. A transcript chip also brings the
     /// transcript tab forward — jumping into audio the user cannot see the
     /// words of is half an answer.

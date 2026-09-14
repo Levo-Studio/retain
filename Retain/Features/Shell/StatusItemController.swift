@@ -18,6 +18,8 @@ final class StatusItemController {
     private let item: NSStatusItem
     private let shell: ShellModel
     private let recordingWindow: RecordingWindowController
+    private let settingsWindow: SettingsWindowController
+    private let libraryWindow: LibraryWindowController?
 
     private var panel: PopoverPanel?
     private var resignObserver: (any NSObjectProtocol)?
@@ -26,6 +28,14 @@ final class StatusItemController {
     init(store: LectureStore?) {
         shell = ShellModel(store: store)
         recordingWindow = RecordingWindowController(shell: shell)
+        libraryWindow = store.map { LibraryWindowController(database: $0.database) }
+        settingsWindow = SettingsWindowController(
+            model: SettingsModel(
+                speechModels: shell.session.models,
+                recorder: shell.session.recorder,
+                library: store?.library
+            )
+        )
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         // The mark from the repository, not an SF Symbol: the owner settled
@@ -88,16 +98,22 @@ final class StatusItemController {
             keyEquivalent: ""
         ).target = self
 
-        // Settings is board 06 and lives on another branch. `SettingsWindowController`
-        // is the type, `show()` is the call, and this item is where it goes;
-        // with no action the item is drawn unavailable rather than silently
-        // doing nothing.
+        let library = menu.addItem(
+            withTitle: String(localized: "Library…", comment: "Status bar menu item opening the library window"),
+            action: #selector(showLibrary),
+            keyEquivalent: "l"
+        )
+        library.keyEquivalentModifierMask = [.command]
+        library.target = self
+        library.isEnabled = libraryWindow != nil
+
         let settings = menu.addItem(
             withTitle: String(localized: "Settings…", comment: "Status bar menu item opening the settings window"),
-            action: nil,
+            action: #selector(showSettings),
             keyEquivalent: ","
         )
         settings.keyEquivalentModifierMask = [.command]
+        settings.target = self
 
         menu.addItem(.separator())
 
@@ -124,6 +140,14 @@ final class StatusItemController {
         let directory = RecordingStore.directory
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         NSWorkspace.shared.activateFileViewerSelecting([directory])
+    }
+
+    @objc private func showLibrary() {
+        libraryWindow?.show()
+    }
+
+    @objc private func showSettings() {
+        settingsWindow.show()
     }
 
     @objc private func showAbout() {
