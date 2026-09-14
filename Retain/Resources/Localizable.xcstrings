@@ -5,6 +5,18 @@
       "comment": "The live power reading beside a running recording, in watts",
       "extractionState": "manual"
     },
+    "%@ dB": {
+      "comment": "Microphone level readout in settings",
+      "extractionState": "manual"
+    },
+    "%@ of %@": {
+      "comment": "Byte counts on the speech model download card",
+      "extractionState": "manual"
+    },
+    "%@ stops being the current term.": {
+      "comment": "Note in the name-term dialog when switching the current term away from another one",
+      "extractionState": "manual"
+    },
     "%lld markers · %lld sections": {
       "comment": "What the finished summary contains, under the Open summary card",
       "extractionState": "manual",
@@ -93,6 +105,30 @@
         }
       }
     },
+    "%lld models loaded": {
+      "comment": "Middle part of the connected status line in settings",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld model loaded"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld models loaded"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld note blocks": {
       "comment": "How many note cards a running lecture has produced",
       "extractionState": "manual",
@@ -117,16 +153,60 @@
         }
       }
     },
+    "A term is the stretch of time the library is filtered by. Pick what yours are called and which courses they hold.": {
+      "comment": "Settings section description under the general heading",
+      "extractionState": "manual"
+    },
+    "API key": {
+      "comment": "Settings field label for the optional API key",
+      "extractionState": "manual"
+    },
     "About Retain": {
       "comment": "Status bar menu item opening the about panel",
+      "extractionState": "manual"
+    },
+    "Allow access": {
+      "comment": "Button that raises the microphone permission dialog",
+      "extractionState": "manual"
+    },
+    "Amber": {
+      "comment": "Name of the third course colour",
       "extractionState": "manual"
     },
     "Audience": {
       "comment": "Speaker of a transcript line that came from the room",
       "extractionState": "manual"
     },
+    "Base URL": {
+      "comment": "Settings field label for the LM Studio address",
+      "extractionState": "manual"
+    },
+    "Blue": {
+      "comment": "Name of the second course colour",
+      "extractionState": "manual"
+    },
+    "Both work while Retain is in the background, so they reach a recording without leaving the lecture.": {
+      "comment": "Settings section description under the shortcuts heading",
+      "extractionState": "manual"
+    },
+    "Cancel": {
+      "comment": "Dialog button that closes without saving",
+      "extractionState": "manual"
+    },
+    "Choose a model": {
+      "comment": "Model picker label before a model has been chosen",
+      "extractionState": "manual"
+    },
     "Close": {
       "comment": "Window menu item closing the front window",
+      "extractionState": "manual"
+    },
+    "Colour": {
+      "comment": "New-course dialog field label for the colour picker",
+      "extractionState": "manual"
+    },
+    "Connected · %@ · answered in %lld ms": {
+      "comment": "Status line after a successful connection test",
       "extractionState": "manual"
     },
     "Copy": {
@@ -137,6 +217,18 @@
       "comment": "Meta strip label above the course a recording belongs to",
       "extractionState": "manual"
     },
+    "Courses": {
+      "comment": "Settings field label for the course list",
+      "extractionState": "manual"
+    },
+    "Create": {
+      "comment": "New-course dialog button that creates the course",
+      "extractionState": "manual"
+    },
+    "Current": {
+      "comment": "Accessibility label of the current-term toggle\nName-term dialog field label for the is-current toggle",
+      "extractionState": "manual"
+    },
     "Cut": {
       "comment": "Edit menu item",
       "extractionState": "manual"
@@ -145,8 +237,12 @@
       "comment": "Meta strip label above the day a recording was made",
       "extractionState": "manual"
     },
+    "Download": {
+      "comment": "Button that starts the one-time speech model download",
+      "extractionState": "manual"
+    },
     "Downloading speech models": {
-      "comment": "Status bar tooltip during the one-time model download",
+      "comment": "Status bar menu header and tooltip during the one-time model download",
       "extractionState": "manual"
     },
     "Edit": {
@@ -157,12 +253,32 @@
       "comment": "Button that ends a recording and starts the summary",
       "extractionState": "manual"
     },
+    "General": {
+      "comment": "Settings section heading\nSettings sidebar row",
+      "extractionState": "manual"
+    },
+    "Green": {
+      "comment": "Name of the first course colour",
+      "extractionState": "manual"
+    },
+    "Half-year": {
+      "comment": "One of the two kinds a term can be",
+      "extractionState": "manual"
+    },
     "Hide Others": {
       "comment": "Application menu item hiding other apps",
       "extractionState": "manual"
     },
     "Hide Retain": {
       "comment": "Application menu item hiding the app",
+      "extractionState": "manual"
+    },
+    "Input": {
+      "comment": "Settings field label for the microphone picker",
+      "extractionState": "manual"
+    },
+    "Kind": {
+      "comment": "Name-term dialog field label for half-year or semester\nSettings field label for half-year or semester",
       "extractionState": "manual"
     },
     "LM Studio answered with an error. (%lld)": {
@@ -177,12 +293,32 @@
       "comment": "The chat completion had no choices in it",
       "extractionState": "manual"
     },
+    "Language model": {
+      "comment": "Settings sidebar row",
+      "extractionState": "manual"
+    },
     "Last line before the pause": {
       "comment": "Header above the transcript line a paused recording stopped on",
       "extractionState": "manual"
     },
+    "Later": {
+      "comment": "Microphone permission dialog button that postpones the ask",
+      "extractionState": "manual"
+    },
+    "Level": {
+      "comment": "Settings field label for the microphone level meter",
+      "extractionState": "manual"
+    },
     "Live transcript": {
       "comment": "Header of the popover's transcript section",
+      "extractionState": "manual"
+    },
+    "Local language model": {
+      "comment": "Settings section heading",
+      "extractionState": "manual"
+    },
+    "Microphone": {
+      "comment": "Settings section heading\nSettings sidebar row\nUppercase label above the microphone permission dialog title",
       "extractionState": "manual"
     },
     "Microphone on": {
@@ -197,6 +333,34 @@
       "comment": "Window menu item minimising the front window",
       "extractionState": "manual"
     },
+    "Model": {
+      "comment": "Settings field label for the model picker",
+      "extractionState": "manual"
+    },
+    "Name": {
+      "comment": "New-course dialog field label",
+      "extractionState": "manual"
+    },
+    "Name term": {
+      "comment": "Name-term dialog title",
+      "extractionState": "manual"
+    },
+    "New": {
+      "comment": "Uppercase label above the new-course dialog title",
+      "extractionState": "manual"
+    },
+    "New course": {
+      "comment": "New-course dialog title, and the button that opens it",
+      "extractionState": "manual"
+    },
+    "New term": {
+      "comment": "Button that creates the first term",
+      "extractionState": "manual"
+    },
+    "No connection": {
+      "comment": "Uppercase label above the LM Studio failure dialog title",
+      "extractionState": "manual"
+    },
     "No course": {
       "comment": "The course field when the current term has no courses",
       "extractionState": "manual"
@@ -209,8 +373,32 @@
       "comment": "Shown instead of a microphone name when there is none",
       "extractionState": "manual"
     },
+    "No microphone found": {
+      "comment": "Input picker label when the Mac has no audio input at all",
+      "extractionState": "manual"
+    },
+    "No models on the server": {
+      "comment": "Model picker label when the server listed nothing",
+      "extractionState": "manual"
+    },
+    "No server was reachable at %@. Recording continues; summaries are caught up once the connection is back.": {
+      "comment": "LM Studio failure dialog body, naming the configured address",
+      "extractionState": "manual"
+    },
+    "No term yet": {
+      "comment": "Term picker label before the first term has been named",
+      "extractionState": "manual"
+    },
+    "Note": {
+      "comment": "Settings field label for the annotation hotkey",
+      "extractionState": "manual"
+    },
     "Note — goes to the model": {
       "comment": "Placeholder of the annotation composer, which sends what is typed to the language model",
+      "extractionState": "manual"
+    },
+    "Open System Settings": {
+      "comment": "Button that opens the Privacy pane after the microphone was refused",
       "extractionState": "manual"
     },
     "Open summary": {
@@ -231,6 +419,18 @@
     },
     "Paused": {
       "comment": "Popover header while a recording is paused, and the status bar tooltip for the same",
+      "extractionState": "manual"
+    },
+    "Period": {
+      "comment": "Name-term dialog field label for the two months",
+      "extractionState": "manual"
+    },
+    "Permission": {
+      "comment": "Settings field label for the microphone permission",
+      "extractionState": "manual"
+    },
+    "Purple": {
+      "comment": "Name of the fourth course colour",
       "extractionState": "manual"
     },
     "Questions can be asked once the recording has stopped.": {
@@ -282,15 +482,19 @@
       }
     },
     "Recording · %@": {
-      "comment": "Status bar tooltip while recording, with elapsed time",
+      "comment": "Status bar menu header and tooltip while recording, with elapsed time",
       "extractionState": "manual"
     },
     "Redo": {
       "comment": "Edit menu item",
       "extractionState": "manual"
     },
+    "Rename": {
+      "comment": "Button that opens the name-term dialog for the selected term",
+      "extractionState": "manual"
+    },
     "Resume": {
-      "comment": "Button that continues a paused recording",
+      "comment": "Button that continues a paused recording, and the settings label for its hotkey",
       "extractionState": "manual"
     },
     "Retain": {
@@ -349,6 +553,10 @@
       "comment": "Recording failed after the input device changed",
       "extractionState": "manual"
     },
+    "Retain needs access to your microphone": {
+      "comment": "Microphone permission dialog title",
+      "extractionState": "manual"
+    },
     "Retain only talks to a language model on this Mac.": {
       "comment": "The configured LM Studio address is not on localhost",
       "extractionState": "manual"
@@ -361,12 +569,32 @@
       "comment": "Status bar menu item opening the recordings folder",
       "extractionState": "manual"
     },
+    "Runs on the Neural Engine. The model is downloaded once and used offline after that.": {
+      "comment": "Settings section description under the speech recognition heading",
+      "extractionState": "manual"
+    },
+    "Save": {
+      "comment": "Name-term dialog button that saves the term",
+      "extractionState": "manual"
+    },
     "Select All": {
       "comment": "Edit menu item",
       "extractionState": "manual"
     },
+    "Semester": {
+      "comment": "One of the two kinds a term can be",
+      "extractionState": "manual"
+    },
+    "Settings": {
+      "comment": "Button that opens the settings window\nSettings window title",
+      "extractionState": "manual"
+    },
     "Settings…": {
       "comment": "Status bar menu item opening the settings window",
+      "extractionState": "manual"
+    },
+    "Shortcuts": {
+      "comment": "Settings section heading\nSettings sidebar row",
       "extractionState": "manual"
     },
     "Silence": {
@@ -385,12 +613,44 @@
       "comment": "Title bar state while somebody is speaking",
       "extractionState": "manual"
     },
+    "Speech models · German": {
+      "comment": "Title of the speech model download card in settings",
+      "extractionState": "manual"
+    },
+    "Speech recognition": {
+      "comment": "Settings section heading\nSettings sidebar row",
+      "extractionState": "manual"
+    },
     "Stop": {
       "comment": "Button that asks to end a recording",
       "extractionState": "manual"
     },
+    "Stored in the Keychain — type to replace": {
+      "comment": "Placeholder of the API key field when a key is already stored",
+      "extractionState": "manual"
+    },
+    "Summaries run on a model on this Mac. Nothing leaves the device.": {
+      "comment": "Settings section description under the language model heading",
+      "extractionState": "manual"
+    },
     "Summarizing": {
       "comment": "Popover header while the passes after a recording run",
+      "extractionState": "manual"
+    },
+    "System default": {
+      "comment": "Input picker row that follows the system default device",
+      "extractionState": "manual"
+    },
+    "Term": {
+      "comment": "New-course dialog field label for the term picker\nSettings field label for the term picker\nUppercase label above the name-term dialog title",
+      "extractionState": "manual"
+    },
+    "Test connection": {
+      "comment": "Settings button that checks the LM Studio connection",
+      "extractionState": "manual"
+    },
+    "Testing …": {
+      "comment": "Status line while the connection test is running",
       "extractionState": "manual"
     },
     "The keychain holds something Retain cannot read as an API key.": {
@@ -413,8 +673,16 @@
       "comment": "The model stopped for a reason other than finishing",
       "extractionState": "manual"
     },
+    "The recording is processed only on this Mac. Nothing is uploaded, and only what you keep is stored.": {
+      "comment": "Microphone permission dialog body",
+      "extractionState": "manual"
+    },
     "This recording needs about %lld tokens and the model has room for %lld. Load the model with a larger context.": {
       "comment": "The prompt is too large for the loaded context length, measured before sending",
+      "extractionState": "manual"
+    },
+    "Title": {
+      "comment": "Name-term dialog field label",
       "extractionState": "manual"
     },
     "Topic · detected": {
@@ -423,6 +691,10 @@
     },
     "Transcript": {
       "comment": "Header of the recording window's transcript rail",
+      "extractionState": "manual"
+    },
+    "Try again": {
+      "comment": "Button that retries a failed speech model download\nButton that retries the LM Studio connection",
       "extractionState": "manual"
     },
     "Undo": {
@@ -437,12 +709,52 @@
       "comment": "Label above an annotation the user typed during the lecture, with the moment they typed it",
       "extractionState": "manual"
     },
+    "denied": {
+      "comment": "Microphone permission state in settings, after the user refused",
+      "extractionState": "manual"
+    },
+    "downloaded · used offline": {
+      "comment": "Speech model card caption once the models are on disk",
+      "extractionState": "manual"
+    },
+    "downloading": {
+      "comment": "Speech model card caption while the download runs and no estimate is available",
+      "extractionState": "manual"
+    },
+    "downloading · about %@ left": {
+      "comment": "Speech model card caption with a time estimate",
+      "extractionState": "manual"
+    },
+    "granted": {
+      "comment": "Microphone permission state in settings",
+      "extractionState": "manual"
+    },
     "keep running in the background": {
       "comment": "Dismisses the popover and leaves the summary running",
       "extractionState": "manual"
     },
+    "leave empty for LM Studio": {
+      "comment": "Placeholder of the optional API key field",
+      "extractionState": "manual"
+    },
     "live": {
       "comment": "Note in the transcript rail header saying the transcript is running",
+      "extractionState": "manual"
+    },
+    "not asked for yet": {
+      "comment": "Microphone permission state in settings, before the system dialog has been shown",
+      "extractionState": "manual"
+    },
+    "not downloaded yet": {
+      "comment": "Speech model card caption before the one-time download has run",
+      "extractionState": "manual"
+    },
+    "optional": {
+      "comment": "Note beside the API key field label",
+      "extractionState": "manual"
+    },
+    "shown as selected at the top": {
+      "comment": "Caption beside the current-term toggle",
       "extractionState": "manual"
     },
     "writing …": {

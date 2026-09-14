@@ -240,6 +240,14 @@ forgotten at ninety of them.
 (`extractionState: manual`). No visible string sits as a literal in a view. The
 interface is English-only — do not add a second language.
 
+Reach the catalog through `String(localized:comment:)`, not through a generated
+symbol: `STRING_CATALOG_GENERATE_SYMBOLS` is **off**. It was on, and it made
+two keys that differ only by punctuation a build error — "Settings" and
+"Settings…" collide, and both are required, because macOS puts an ellipsis on a
+menu item that opens a window and not on the button or the window's own title.
+Nothing in Retain used a generated symbol, so the setting only ever cost
+correct copy.
+
 **There is no network code outside `Core/LLM/`**, and what is there talks to
 `localhost`. If a view is building a `URLRequest`, the design of that feature is
 wrong.
