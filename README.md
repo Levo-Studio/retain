@@ -64,7 +64,7 @@ when the Mac is plugged in.
 
 ## Requirements
 
-- macOS 14.0 or later, Apple Silicon
+- macOS 15.0 or later, Apple Silicon
 - [LM Studio](https://lmstudio.ai) running locally, with a model loaded
 - Xcode 26 to build
 

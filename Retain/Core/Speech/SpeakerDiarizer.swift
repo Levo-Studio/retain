@@ -9,27 +9,26 @@ import Foundation
 /// `SpeakerRoles`, which is a judgement about lectures and lives in the
 /// pipeline where it can be tested.
 ///
-/// ## Not available on macOS 14
+/// The macOS 14 problem, and why the deployment target is 15
 ///
-/// FluidAudio's own source carries a warning: macOS 14 has an Apple bug in BNNS
+/// FluidAudio's source carries a warning: macOS 14 has an Apple bug in BNNS
 /// that crashes Core ML predictions on the BNNS CPU path with `EXC_BAD_ACCESS`
 /// inside `libBNNS`. Their matrix reproduced it 1200 times out of 1200 with
-/// `.cpuAndNeuralEngine` on hosts without a Neural Engine, and intermittently
-/// on Apple Silicon whenever a prediction falls back off the ANE. Apple fixed
-/// it in macOS 15. The reported mitigation is GPU-enabled routing — which is
-/// exactly what hard rule 4 forbids, and which FluidAudio itself marks
-/// unverified.
+/// `.cpuAndNeuralEngine`, and intermittently on Apple Silicon whenever a
+/// prediction falls back off the ANE. Apple fixed it in macOS 15, and the only
+/// reported workaround is GPU-enabled routing — which hard rule 4 forbids and
+/// which FluidAudio itself marks unverified.
 ///
-/// So on macOS 14 diarization does not run. Every line keeps `.unknown` as its
-/// speaker and the rest of the lecture — recording, both transcripts, notes,
-/// search — is unaffected. **This is a placeholder for a decision, not the
-/// decision:** the deployment target and the ANE routing are both locked, and
-/// which of them gives way is the owner's call.
+/// **The owner raised the deployment target to macOS 15 rather than ship a
+/// lecture app that cannot tell the lecturer from the room.** The availability
+/// check below is therefore belt and braces rather than a live code path: it
+/// cannot be false on a machine that can run Retain at all. It stays because a
+/// future lowering of the target would otherwise reintroduce a crash silently.
 actor SpeakerDiarizer {
 
     enum Availability: Equatable, Sendable {
         case available
-        /// macOS 14, where running it risks a crash. See the type comment.
+        /// Unreachable at the current deployment target. See the type comment.
         case unsupportedOperatingSystem
     }
 

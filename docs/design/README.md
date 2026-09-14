@@ -441,33 +441,41 @@ tile: 128px, 29px corner radius, `#14181c` fill, `#23272d` border.
 
 # Where the design and the written brief disagree
 
-These are open questions for the owner, not gaps to fill with taste. Until they
-are answered, **the design wins for anything that is drawn** and the brief wins
-for anything that is not.
+The owner has settled these. What follows is the decision, not the question.
 
-1. **School, not university.** The export says *Stunde* (lesson), *Fach*,
-   *Halbjahr*, *Lehrerin*, *Frau Reinhardt*. The brief says *Vorlesung*,
-   *Kurs*, *Semester*, *Dozent*. The nouns in the model layer follow one or the
-   other and cannot follow both.
-2. **No flashcards, no Anki export.** The brief lists both. No board draws
-   either. Screen 03 has one `Export` button with no menu drawn behind it.
-3. **Chat is drawn but not in the brief.** Screens 03 and 04 both have a Chat
-   rail that answers questions against the notes and the transcript and cites
-   timestamps and note numbers.
-4. **Chapters are drawn but not in the brief.** Screen 03's rail lists
-   timestamped chapters and sub-entries, with markers flagged by an amber dot.
-5. **⌘⇧M is a typed annotation, not a bare marker.** The brief says the hotkey
-   marks a spot as exam-relevant. The design shows a composer — "Anmerkung —
-   geht an die KI" — whose text appears in the notes as "Von dir · 00:46:41" and
-   is fed to the model.
-6. **⌘⇧P resumes** a paused recording. The brief does not mention it.
-7. **A live power reading** — "8,6 W" — is drawn in the title bar and in the
-   popover header. Nothing in the brief asks for one, and reading it costs
-   something.
-8. **Topic detection.** Screen 01 labels the topic "automatisch erkannt". The
-   brief does not describe where the topic comes from.
-9. **The Base URL shown is `http://localhost:1234/v1`** while the locked
-   decision is to call `/api/v0/chat/completions`. Both can be true — the stored
-   value is the `/v1` base and the client swaps the path — but the settings
-   field says `/v1` and must keep saying it.
-10. **No light appearance is drawn.** Dark only.
+1. **Term, course, recording — and no "lesson".** The design says *Stunde*, the
+   brief says *Vorlesung*; the answer is neither. There is no lesson entity and
+   no lesson number: a recording is identified by its **date and time of day**.
+   Board 05's `Nr.` column is therefore gone, and `Thema` is derived by the
+   language model, never typed. Above it, *Halbjahr* is **term** and *Fach* is
+   **course**, and a term is either a half-year or a semester — the user picks
+   which, and then sets which courses they have in it. That switch is not drawn
+   anywhere; build it in the same style as the rest.
+2. **No flashcards and no Anki export.** The brief listed both, nothing draws
+   either, and they are cut. Screen 03's `Export` button is not a menu.
+3. **Chat: build it.** One conversation per recording, available only once the
+   recording has stopped and the summary has finished. The model sees the notes
+   and the transcript and cites its sources, as board 04 draws.
+4. **Chapters: build them, derived.** The model writes **Markdown**, formatted
+   to look like board 03's note blocks, and the chapter rail is read out of the
+   headings rather than stored separately.
+5. **⌘⇧M is the annotation the design draws**, not a bare marker: text the user
+   types during the lecture, which goes to the model and appears in the notes as
+   "Von dir · 00:46:41". On top of that the user can **highlight** passages of
+   the finished notes, during the lecture or after it.
+6. **⌘⇧P resumes** a paused recording, as board 02 says.
+7. **The live power reading** — "8,6 W" on board 01 and in the popover header —
+   stands as drawn.
+8. **The topic is derived**, per 1 above.
+9. **The Base URL shown is `http://localhost:1234/v1`** while the client calls
+   `/api/v0/chat/completions`. Both are true: the stored value is the `/v1` base
+   and the client swaps the path. The settings field keeps saying `/v1`.
+10. **No light appearance is drawn, and none is built.** Dark only.
+11. **No teacher.** Board 05 draws "Frau Reinhardt" in the course header and no
+    dialog offers a field for it. There is no teacher: drop the segment.
+12. **The menu-bar glyph and the app icon are the marks already in the
+    repository** — `retain-logo.png` and `retain-icon.icon`. Nothing new is
+    drawn for the status bar.
+13. **The deployment target is macOS 15.0**, raised from 14 because offline
+    diarization crashes on 14 through an Apple BNNS bug whose only reported
+    workaround is the GPU routing hard rule 4 forbids.

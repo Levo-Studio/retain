@@ -79,7 +79,7 @@ change it on your own.
 
 | | |
 |---|---|
-| Deployment target | macOS 14.0, **Apple Silicon only** |
+| Deployment target | macOS 15.0, **Apple Silicon only** |
 | Language | Swift 6, SwiftUI, strict concurrency |
 | Audio | `AVAudioEngine` `inputNode.installTap`, 16 kHz mono Int16 → CAF. **No Core Audio process taps** — Retain records the microphone and nothing else. |
 | Live speech-to-text | FluidAudio, `StreamingNemotronMultilingualAsrManager`, `languageCode "de-DE"`, `chunkMs 1120` |
@@ -163,7 +163,7 @@ And in general:
 
 ## Toolchain and commands
 
-- **Xcode 26**, target **macOS 14.0**, **Swift 6** with
+- **Xcode 26**, target **macOS 15.0**, **Swift 6** with
   `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`: types are on the main actor
   unless they say otherwise. Anything that should not be — the audio consumer,
   the pipeline, anything a test runs without a UI — is explicitly `nonisolated`.
