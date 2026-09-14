@@ -40,8 +40,90 @@ final class LectureSession {
     /// The recording on disk, once there is one.
     private(set) var recordingURL: URL?
 
+    /// The course this lecture belongs to, picked in the popover before the
+    /// microphone opens. A recording belongs to exactly one course, so there is
+    /// no lecture without one.
+    private(set) var course: Course?
+
+    /// The row the lecture is being written into, once there is a database and
+    /// a course. `nil` in a session built without a store.
+    private(set) var recordingID: Int64?
+
+    /// When the microphone opened. What board 01's meta strip draws under
+    /// "Date", and what a recording is identified by — there is no lecture
+    /// number and nothing to name.
+    private(set) var startedAt = Date.now
+
+    /// The topic, once a model has read it out of the transcript.
+    ///
+    /// Nil for the whole lecture, which is why the meta strip's value is empty
+    /// while one is running: the topic comes out of the reduce over the
+    /// finished transcript, and there is nothing honest to put there before it.
+    private(set) var topic: String?
+
+    /// Everything the user marked with `⌘⇧M`, in the order they marked it.
+    private(set) var markers: [RecordingMarker] = []
+
+    /// The note cards written while the lecture runs, one per closed block.
+    ///
+    /// A card appears the moment its block closes, in `.summarising`, and is
+    /// replaced when the model answers — which is what board 01 draws as the
+    /// dim block with "writing …" beside its heading.
+    private(set) var notes: [NoteBlock] = []
+
+    /// What turns a closed block into a card.
+    ///
+    /// **Nothing sets it yet.** It needs an LM Studio address and the name of a
+    /// model, and both of those are settings — board 06 — which is where the
+    /// user picks them. Until that pane exists there is nothing to summarise
+    /// with, and `notes` stays empty rather than filling with placeholders for
+    /// cards that are never going to arrive.
+    var summarizer: RecordingSummarizer?
+
+    /// Whether the microphone is closed while the lecture stays open.
+    ///
+    /// A pause is not a phase: the file, the transcriber and the block
+    /// boundaries all stay exactly where they were, and the only thing that
+    /// stops is the audio going in.
+    var isPaused: Bool { recorder.state == .paused }
+
     let recorder = RecordingEngine()
     let models = SpeechModels()
+
+    /// Where the lecture is written down. `nil` in previews and in tests that
+    /// only care about what the interface does with a phase.
+    private let store: LectureStore?
+
+    init(store: LectureStore? = nil) {
+        self.store = store
+    }
+
+    /// A session holding what a lecture in progress would hold, without one.
+    ///
+    /// It opens no microphone, loads no model and writes nothing down. It
+    /// exists because board 01 cannot otherwise be looked at: every way of
+    /// getting a transcript line onto that screen for real runs through a
+    /// gigabyte of weights and somebody talking for three minutes, and a screen
+    /// that can only be seen that way is a screen nobody checks against the
+    /// export.
+    init(
+        course: Course,
+        lines: [TranscriptLine] = [],
+        partial: String = "",
+        markers: [RecordingMarker] = [],
+        notes: [NoteBlock] = [],
+        topic: String? = nil,
+        startedAt: Date = .now
+    ) {
+        store = nil
+        self.course = course
+        self.lines = lines
+        self.partial = partial
+        self.markers = markers
+        self.notes = notes
+        self.topic = topic
+        self.startedAt = startedAt
+    }
 
     /// How far the one-time model download has got, 0…1. Meaningful while
     /// `phase` is `.preparingModels`.
@@ -70,7 +152,12 @@ final class LectureSession {
 
     // MARK: - Running a lecture
 
-    func start() async {
+    /// Opens the microphone for one course.
+    ///
+    /// The course is taken rather than chosen here: it is what the recording
+    /// row hangs off, and the popover has already asked for it. Nothing in
+    /// Retain records into no course.
+    func start(in course: Course) async {
         switch phase {
         case .idle, .done, .failed:
             break
@@ -81,6 +168,12 @@ final class LectureSession {
         lines = []
         partial = ""
         recordingURL = nil
+        recordingID = nil
+        markers = []
+        notes = []
+        topic = nil
+        startedAt = .now
+        self.course = course
 
         // The models come first: starting the recording and only then
         // discovering there is a gigabyte to fetch would mean the first
@@ -129,7 +222,72 @@ final class LectureSession {
         }
 
         recordingURL = url
+        // The row is opened only once audio is actually flowing. A row written
+        // before `recorder.start` would survive a microphone that never opened
+        // as a recording of nothing, and the library would show it.
+        if let store, let courseID = course.id {
+            recordingID = try? await store.library.startRecording(
+                in: courseID,
+                filename: url.lastPathComponent
+            ).id
+        }
         phase = .recording
+    }
+
+    /// Holds the microphone. Everything else about the lecture stays open.
+    func pause() {
+        guard phase == .recording else { return }
+        recorder.pause()
+    }
+
+    /// What `⌘⇧P` does, and the "Resume" button with it.
+    func resume() {
+        guard phase == .recording else { return }
+        recorder.resume()
+    }
+
+    /// Moves a running lecture to another course — the chevron board 01 draws
+    /// beside the course in the meta strip.
+    ///
+    /// The row moves with it. A recording belongs to exactly one course, so
+    /// picking a different one is not a label change: it is where the recording
+    /// will be found in the library afterwards.
+    func changeCourse(to course: Course) {
+        guard self.course?.id != course.id else { return }
+        self.course = course
+
+        guard let store, let recordingID, let courseID = course.id else { return }
+        Task {
+            if var recording = try? await store.library.recording(recordingID) {
+                recording.courseID = courseID
+                _ = try? await store.library.save(recording)
+            }
+        }
+    }
+
+    /// What `⌘⇧M` produces: a line the user typed, at the second they typed it.
+    ///
+    /// The text goes to the model with the block it falls in, which is why the
+    /// marker is recorded before the block boundaries are asked again — a
+    /// marker that arrives after its own block has closed would be summarised
+    /// into the next one.
+    func addMarker(_ text: String) {
+        guard phase == .recording else { return }
+
+        let marker = RecordingMarker(time: recorder.duration, text: text)
+        markers.append(marker)
+
+        if let store, let recordingID {
+            Task {
+                _ = try? await store.transcript.annotate(
+                    at: marker.time,
+                    note: marker.hasText ? marker.text : nil,
+                    in: recordingID
+                )
+            }
+        }
+
+        closeBlocks()
     }
 
     /// Stops the recording and runs the pass that produces the transcript of
@@ -145,6 +303,7 @@ final class LectureSession {
         partial = ""
 
         guard let url = recordingURL, let prepared = models.prepared else {
+            await write(lines, state: .done)
             phase = .done
             return
         }
@@ -164,15 +323,13 @@ final class LectureSession {
             }
 
             lines = TranscriptAssembly.replacingProvisional(lines, with: output.lines)
-            // The transcript is not written anywhere yet, and that is a gap
-            // rather than a design: `TranscriptRepository` stores it against a
-            // recording row, a recording belongs to a course, and nothing in
-            // the status bar can name a course until the picker on board 01
-            // exists. The session holds the lines in the meantime; whoever
-            // builds that picker wires `startRecording` here and the transcript
-            // stops living only in memory.
+            await write(lines, state: .done)
             phase = .done
         } catch {
+            // The recording itself is not lost because the pass over it failed,
+            // so the row is closed with the live lines rather than left saying
+            // it is still recording for ever.
+            await write(lines, state: .done)
             // The live transcript stays on screen: it is worse than the batch
             // pass, and it is very much better than an empty lecture.
             phase = .failed(String(localized: "Retain could not transcribe the recording.",
@@ -206,6 +363,90 @@ final class LectureSession {
         case .line(let line):
             lines.append(line)
             partial = ""
+
+            if let store, let recordingID {
+                // One insert per finished line, not a batch at the end: the
+                // line is already on screen, and the write is what makes it
+                // survive a crash in the middle of a lecture.
+                Task { _ = try? await store.transcript.append(line, to: recordingID) }
+            }
+
+            closeBlocks()
+        }
+    }
+
+    // MARK: - Note blocks
+
+    /// Cuts the transcript so far into blocks and summarises any that have just
+    /// closed.
+    ///
+    /// `finished: false`, always: the trailing block is still filling, and
+    /// closing it would send half a topic to the model and put a card in the
+    /// notes that the next card then repeats.
+    private func closeBlocks() {
+        guard let summarizer else { return }
+
+        let blocks = BlockBoundaries.blocks(from: lines, markers: markers, finished: false)
+
+        for block in blocks where !notes.contains(where: { $0.number == block.number }) {
+            notes.append(
+                NoteBlock(
+                    number: block.number,
+                    markdown: "",
+                    start: block.start,
+                    end: block.end,
+                    state: .summarising
+                )
+            )
+
+            Task { [weak self] in
+                let written = try? await summarizer.summarise(block)
+                await MainActor.run { self?.replaceNote(block.number, with: written) }
+            }
+        }
+    }
+
+    /// Puts the model's card in place of the placeholder, or marks the block as
+    /// waiting if the model could not be reached.
+    ///
+    /// `deferred` rather than dropping the card: board 07's "No connection"
+    /// dialog says summaries are caught up once the connection is back, and a
+    /// block that silently vanished could not be.
+    private func replaceNote(_ number: Int, with written: NoteBlock?) {
+        guard let index = notes.firstIndex(where: { $0.number == number }) else { return }
+
+        if let written {
+            notes[index] = written
+            if let store, let recordingID {
+                let block = StoredNoteBlock(
+                    recordingID: recordingID,
+                    position: written.number,
+                    startTime: written.start,
+                    endTime: written.end,
+                    markdown: written.markdown
+                )
+                Task { _ = try? await store.notes.append(block, to: recordingID) }
+            }
+        } else {
+            notes[index].state = .deferred
+        }
+    }
+
+    // MARK: - Writing the lecture down
+
+    /// Closes the recording row and replaces its transcript in one go.
+    ///
+    /// Nothing happens without a store or without a row, which is every session
+    /// a test or a preview builds.
+    private func write(_ lines: [TranscriptLine], state: RecordingState) async {
+        guard let store, let recordingID else { return }
+
+        try? await store.transcript.replaceLines(lines, for: recordingID)
+
+        if var recording = try? await store.library.recording(recordingID) {
+            recording.duration = recorder.duration
+            recording.state = state
+            _ = try? await store.library.save(recording)
         }
     }
 }

@@ -16,6 +16,14 @@ nonisolated struct RetainShadow: Sendable, Equatable {
     var color: Color { Color.black.opacity(opacity) }
 
     var radius: CGFloat { blur / 2 }
+
+    /// How far the shadow reaches past the box it falls from.
+    ///
+    /// A borderless window has to be this much larger than the card it draws,
+    /// or the shadow is clipped at the window's edge and the card looks stuck
+    /// to the screen. Offset plus the full blur, which is as far as any of it
+    /// can land.
+    var extent: CGFloat { blur + offsetY }
 }
 
 // MARK: - Grids
@@ -269,6 +277,16 @@ nonisolated enum RetainMetrics {
     static let caretHeightNotes: CGFloat = 15
     static let caretHeightRail: CGFloat = 12
 
+    /// The air between the last word and the caret — `margin-left` in the
+    /// export.
+    static let caretLeadingGapNotes: CGFloat = 4
+    static let caretLeadingGapRail: CGFloat = 3
+
+    /// How far the caret hangs below the baseline. The export writes it as
+    /// `vertical-align`, which is a shift of the box rather than a height.
+    static let caretBaselineDropNotes: CGFloat = 3
+    static let caretBaselineDropRail: CGFloat = 2
+
     static let courseColourRail = CGSize(width: 3, height: 14)
 
     static let toggleSize = CGSize(width: 34, height: 20)
@@ -329,6 +347,108 @@ nonisolated enum RetainMetrics {
     static let transcriptRailOpacities: [Double] = [0.5, 0.75, 1, 1, 1]
     static let transcriptPopoverOpacities: [Double] = [0.55, 0.8, 1]
 
+    // MARK: - Board 01, the recording window
+
+    // Read out of `Retain - Alle Screens.dc.html` rather than the README's
+    // tables, which name the paddings of the panes and leave the gaps inside a
+    // row to the board.
+
+    /// Between the groups at the right of the recording window's title bar —
+    /// the meter, the power reading and the timer pill.
+    static let titleBarGroupGap: CGFloat = 14
+
+    /// Between the meter and the words beside it.
+    static let titleBarSpeechGap: CGFloat = 7
+
+    /// The pill is tighter on the side the dot sits on: `3px 11px 3px 8px`.
+    static let titleBarTimerPillPadding = edges(3, 8, 3, 11)
+    static let titleBarTimerPillGap: CGFloat = 8
+
+    /// The recording dot inside that pill. Smaller than the popover's 8px dot.
+    static let statusDotTimerPill: CGFloat = 7
+
+    /// Between a meta-strip value and the `▾` that opens its menu.
+    static let metaChevronGap: CGFloat = 7
+
+    /// "writing …" sits in the heading's own row, at the heading gap.
+    static let noteWritingLabelGap: CGFloat = 11
+
+    /// The `⌘⇧M · 2 markers` chip inside the annotation bar.
+    static let annotationChipPadding = edges(4, 9)
+
+    /// The row of buttons along the bottom of the transcript rail.
+    static let railFooterPadding = edges(12, 20)
+
+    // MARK: - Board 02, the popover
+
+    /// The status row at the top of a popover header — dot, label, and the
+    /// power reading pushed to the right.
+    static let popoverStatusRowGap: CGFloat = 9
+
+    /// Between that row and the title under it. The paused state sits one point
+    /// lower than the running one, which is drawn and not rounded away.
+    static let popoverTitleGapRunning: CGFloat = 10
+    static let popoverTitleGapPaused: CGFloat = 11
+    static let popoverTitleGapSummarizing: CGFloat = 11
+    static let popoverTitleGapStopConfirmation: CGFloat = 9
+
+    /// Between a popover title and the line under it.
+    static let popoverSubtitleGap: CGFloat = 3
+    static let popoverSubtitleGapSummarizing: CGFloat = 4
+    static let popoverBodyGapStopConfirmation: CGFloat = 6
+
+    /// Between the title block and the meter row under it, and between the
+    /// meter and the buttons beside it.
+    static let popoverMeterGap: CGFloat = 14
+    static let popoverMeterRowGap: CGFloat = 12
+
+    /// How many bars each meter is drawn with. The export draws a fixed count
+    /// rather than a bar per unit of time, so the count is the geometry.
+    static let meterBarCountTitleBar = 5
+    static let meterBarCountReady = 5
+    static let meterBarCountPopover = 17
+
+    static let popoverPauseButtonPadding = edges(8, 15)
+    static let popoverPauseButtonGap: CGFloat = 8
+    static let popoverStopButtonPadding = edges(8, 14)
+    static let popoverResumeButtonPadding = edges(8, 16)
+    static let popoverRecordButtonPadding = edges(9, 15)
+
+    /// The two large buttons of the stop confirmation.
+    static let popoverLargeButtonGap: CGFloat = 9
+    static let popoverButtonRowGap: CGFloat = 10
+    static let popoverButtonRowGapStopConfirmation: CGFloat = 16
+
+    /// The live-transcript section of the running state.
+    static let popoverTranscriptHeader = edges(14, 18, 8)
+    static let popoverTranscriptBody = edges(0, 18, 14)
+
+    /// The last line before the pause, which is set one point wider because the
+    /// paused header is.
+    static let popoverLastLineHeader = edges(14, 20, 8)
+    static let popoverLastLineBody = edges(0, 20, 16)
+
+    static let popoverFooterPadding = edges(12, 18)
+    static let popoverFooterPaddingPaused = edges(12, 20)
+
+    /// The body of the summarizing state, under the progress bar.
+    static let popoverSummarizingBody = edges(16, 18, 18)
+
+    /// The accent-filled "Open summary" card.
+    static let popoverCardPadding = edges(14, 16)
+    static let popoverCardGap: CGFloat = 12
+    static let popoverCardSubtitleGap: CGFloat = 2
+
+    /// "keep running in the background", under that card.
+    static let popoverBackgroundActionGap: CGFloat = 10
+
+    /// The ready state: the course field and the Record button beside it, and
+    /// the level row under them.
+    static let popoverReadyRowGap: CGFloat = 10
+    static let popoverReadyRowTopGap: CGFloat = 9
+    static let popoverReadyFooter = edges(14, 16)
+    static let popoverReadyFooterGap: CGFloat = 11
+
     // MARK: - Shadows
 
     static let windowShadow = RetainShadow(offsetY: 18, blur: 44, opacity: 0.5)
@@ -345,6 +465,18 @@ nonisolated enum RetainMetrics {
     /// `padding: <top> <horizontal> <bottom>`.
     private static func edges(_ top: CGFloat, _ horizontal: CGFloat, _ bottom: CGFloat) -> EdgeInsets {
         EdgeInsets(top: top, leading: horizontal, bottom: bottom, trailing: horizontal)
+    }
+
+    /// A padding whose two sides differ. CSS writes the four-value shorthand
+    /// clockwise from the top and SwiftUI names its edges, so the order here is
+    /// SwiftUI's and the one call site that needs it says which is which.
+    private static func edges(
+        _ top: CGFloat,
+        _ leading: CGFloat,
+        _ bottom: CGFloat,
+        _ trailing: CGFloat
+    ) -> EdgeInsets {
+        EdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing)
     }
 
     /// `padding: 0 <horizontal>`.

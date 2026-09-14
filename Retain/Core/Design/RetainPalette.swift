@@ -192,6 +192,20 @@ nonisolated enum RetainPalette {
 
     static let courseSwatches: [RetainColor] = [accentBase, blueValue, amberValue, purpleValue]
 
+    // MARK: - Lines as values
+
+    // On the OKLCH axes rather than as a `Color`, for the same reason
+    // `accentValue` is: `RetainInteraction` steps lightness, and lightness
+    // cannot be read back out of a SwiftUI `Color`. Only the two outlines a
+    // button is ever drawn with are here; everything else is read as a colour.
+
+    /// The outline of "Stop" and "Finish".
+    static var redBorderSwatch: RetainColor { redBorderValue }
+
+    /// The outline of "Pause" in the recording window's rail, which the export
+    /// draws a step stronger than every other control border.
+    static var controlBorderEmphasisedSwatch: RetainColor { controlBorderEmphasised }
+
     // MARK: - Values
 
     private static let canvas = RetainColor(hex: 0x08090B)

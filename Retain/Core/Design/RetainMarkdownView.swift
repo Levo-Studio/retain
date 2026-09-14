@@ -48,15 +48,34 @@ struct RetainMarkdownView: View {
     /// and paragraph in the dim ink — board 01, block 03.
     var isBeingWritten: Bool = false
 
+    /// The blinking caret at the end of the last line of a block whose text is
+    /// still arriving. Off everywhere but the recording screen, where board 01
+    /// draws it inside the open block's paragraph.
+    var showsTrailingCaret: Bool = false
+
     private var elements: [RetainNoteElement] {
         RetainMarkdown.elements(of: markdown, highlights: highlights)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        if showsTrailingCaret {
+            RetainCaretTimeline { opacity in
+                blocks(caretOpacity: opacity)
+            }
+        } else {
+            blocks(caretOpacity: nil)
+        }
+    }
+
+    private func blocks(caretOpacity: Double?) -> some View {
+        let elements = elements
+        return VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(elements.enumerated()), id: \.offset) { index, element in
-                view(for: element)
-                    .padding(.top, topGap(for: element, at: index))
+                view(
+                    for: element,
+                    caretOpacity: index == elements.count - 1 ? caretOpacity : nil
+                )
+                .padding(.top, topGap(for: element, at: index))
             }
         }
     }
@@ -64,24 +83,34 @@ struct RetainMarkdownView: View {
     // MARK: Elements
 
     @ViewBuilder
-    private func view(for element: RetainNoteElement) -> some View {
+    private func view(for element: RetainNoteElement, caretOpacity: Double?) -> some View {
         switch element {
         case let .heading(runs):
-            rendered(runs, style: RetainTypography.noteHeading, ink: headingInk)
+            rendered(
+                runs,
+                style: RetainTypography.noteHeading,
+                ink: headingInk,
+                caretOpacity: caretOpacity
+            )
 
         case let .paragraph(runs):
-            rendered(runs, style: paragraphStyle, ink: paragraphInk)
+            rendered(runs, style: paragraphStyle, ink: paragraphInk, caretOpacity: caretOpacity)
                 .frame(maxWidth: paragraphWidth, alignment: .leading)
 
         case let .bulletList(items):
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                     HStack(alignment: .firstTextBaseline, spacing: 0) {
                         Text(verbatim: "•")
                             .retainStyle(bulletStyle)
                             .foregroundStyle(RetainPalette.inkMuted)
                             .frame(width: bulletIndent, alignment: .leading)
-                        rendered(item, style: bulletStyle, ink: RetainPalette.inkMuted)
+                        rendered(
+                            item,
+                            style: bulletStyle,
+                            ink: RetainPalette.inkMuted,
+                            caretOpacity: index == items.count - 1 ? caretOpacity : nil
+                        )
                     }
                 }
             }
@@ -91,7 +120,12 @@ struct RetainMarkdownView: View {
 
     /// The runs of one line as a single `Text`, so it breaks, selects and reads
     /// as one piece of prose rather than as a row of separate labels.
-    private func rendered(_ runs: [RetainInlineRun], style: RetainTextStyle, ink: Color) -> some View {
+    private func rendered(
+        _ runs: [RetainInlineRun],
+        style: RetainTextStyle,
+        ink: Color,
+        caretOpacity: Double?
+    ) -> some View {
         let termStyle = RetainTextStyle(
             size: style.size,
             weight: RetainTypography.emphasisedTermWeight,
@@ -124,7 +158,8 @@ struct RetainMarkdownView: View {
                     termBackground: RetainPalette.termHighlight,
                     termRadius: RetainMetrics.radiusTermHighlight,
                     termPadding: RetainMetrics.termHighlightPadding.leading,
-                    highlight: highlightStyle
+                    highlight: highlightStyle,
+                    caret: caretOpacity.map(RetainCaretStyle.notes(opacity:))
                 )
             )
     }
@@ -210,6 +245,9 @@ private struct RetainNoteTextRenderer: TextRenderer {
     let termPadding: CGFloat
     let highlight: RetainNoteHighlightStyle?
 
+    /// Set only on the last line of a block that is still being written.
+    let caret: RetainCaretStyle?
+
     func draw(layout: Text.Layout, in context: inout GraphicsContext) {
         for line in layout {
             for run in line {
@@ -232,6 +270,19 @@ private struct RetainNoteTextRenderer: TextRenderer {
             for run in line {
                 context.draw(run)
             }
+        }
+
+        if let caret, let bounds = layout.last?.last?.typographicBounds {
+            let rect = CGRect(
+                x: bounds.origin.x + bounds.width + caret.leadingGap,
+                y: bounds.origin.y + caret.baselineDrop - caret.height,
+                width: caret.width,
+                height: caret.height
+            )
+            context.fill(
+                Path(rect),
+                with: .color(RetainPalette.redRecording.opacity(caret.opacity))
+            )
         }
     }
 

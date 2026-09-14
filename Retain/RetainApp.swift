@@ -52,7 +52,18 @@ final class RetainApp: NSObject, NSApplicationDelegate {
         // an ordinary app, and drops it back when the last one closes.
         NSApp.setActivationPolicy(.accessory)
 
-        statusItem = StatusItemController()
+        // A database that will not open is not a reason to have no status item:
+        // the microphone, the live transcript and the window all work without
+        // one, and what is lost is that the lecture is written down. The shell
+        // carries `nil` in that case rather than refusing to launch.
+        statusItem = StatusItemController(store: (try? RetainDatabase.openOnDisk()).map(LectureStore.init))
+    }
+
+    /// Closing the last window puts Retain back in the status bar; it does not
+    /// quit it. A lecture can be recording with nothing on screen, and that is
+    /// the ordinary case rather than an edge one.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
