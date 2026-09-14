@@ -126,6 +126,14 @@ nonisolated enum RetainMetrics {
 
     /// Between the controls at the trailing end of the title bar.
     static let titleBarTrailingGap: CGFloat = 8
+
+    /// The logo left of the window title. Sized to the subtitle's cap height
+    /// rather than to the bar, so it reads as part of the line of text it sits
+    /// on instead of as a second thing in the bar.
+    static let titleBarMark: CGFloat = 16
+
+    /// Between the mark and the title.
+    static let titleBarMarkGap: CGFloat = 8
     /// The `Export` button.
     static let titleBarButtonPadding = edges(5, 10)
     /// The term picker in the library title bar, and the gap inside it.

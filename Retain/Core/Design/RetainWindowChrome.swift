@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // MARK: - The window itself
@@ -67,10 +68,13 @@ struct RetainTitleBar<Trailing: View>: View {
         HStack(spacing: 0) {
             RetainTrafficLightSpace()
 
+            RetainWindowMark()
+                .padding(.leading, RetainMetrics.titleBarGap + RetainMetrics.titleBarTitleGap)
+
             Text(verbatim: title)
                 .retainStyle(RetainTypography.titleBarSubtitle)
                 .foregroundStyle(RetainPalette.inkDim)
-                .padding(.leading, RetainMetrics.titleBarGap + RetainMetrics.titleBarTitleGap)
+                .padding(.leading, RetainMetrics.titleBarMarkGap)
                 .lineLimit(1)
 
             Spacer(minLength: RetainMetrics.titleBarTitleGap)
@@ -257,4 +261,32 @@ struct RetainFixedColumns: Layout {
         let each = flexibleCount > 0 ? remaining / CGFloat(flexibleCount) : 0
         return used.map { $0 ?? each }
     }
+}
+
+// MARK: - The mark
+
+/// Retain's own logo, left of the window title.
+///
+/// The export draws the title bar with the word alone, which is what a board
+/// does — it has no app around it to be part of. A real window does, and the
+/// library's bar in particular reads as unfinished with a line of dim text at
+/// the far left and nothing else on it.
+///
+/// The same artwork as the status item, drawn in colour rather than as a
+/// template: up there it has to sit in a menu bar that is light or dark and be
+/// legible in both, which is what a template image is for. Here it sits on
+/// Retain's own title bar surface and can simply be itself.
+struct RetainWindowMark: View {
+
+    var body: some View {
+        Image(nsImage: Self.image)
+            .resizable()
+            .interpolation(.high)
+            .frame(width: RetainMetrics.titleBarMark, height: RetainMetrics.titleBarMark)
+            .accessibilityHidden(true)
+    }
+
+    /// Read once. `NSImage(named:)` goes through the asset catalog every call,
+    /// and this is drawn in the title bar of every window.
+    private static let image: NSImage = NSImage(named: "WindowMark") ?? NSImage()
 }

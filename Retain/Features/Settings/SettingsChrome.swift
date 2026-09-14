@@ -44,10 +44,13 @@ struct SettingsTitleBar: View {
             }
             .accessibilityHidden(true)
 
+            RetainWindowMark()
+                .padding(.leading, RetainMetrics.titleBarTitleGap)
+
             Text(title)
                 .retainStyle(RetainTypography.titleBarSubtitle)
                 .foregroundStyle(RetainPalette.inkDim)
-                .padding(.leading, RetainMetrics.titleBarTitleGap)
+                .padding(.leading, RetainMetrics.titleBarMarkGap)
 
             Spacer(minLength: 0)
         }
