@@ -332,10 +332,14 @@ Retain follows the repository conventions of `levo-studio/fuel` and
 `levo-studio/score`: `Base.xcconfig` plus a gitignored `Local.xcconfig` for the
 development team, synchronized folders so `project.pbxproj` stays untouched,
 `Core/` and `Features/` splitting the app, a design layer that owns every
-number, a hand-maintained string catalog, Swift Testing, Conventional Commits,
-and a source-available licence. **Do not invent your own.** Where Fuel and Score
-disagree, Fuel is newer and wins — which is why this repository is English
-throughout, as Fuel is, and not German, as Score is.
+number, a hand-maintained string catalog, Swift Testing, and Conventional
+Commits. **Do not invent your own.** Where Fuel and Score disagree, Fuel is
+newer and wins — which is why this repository is English throughout, as Fuel is,
+and not German, as Score is.
+
+Retain departs from them in one place: **the licence is MIT**, not the
+source-available licence Fuel and Score carry. Nothing in this repository may
+suggest otherwise.
 
 ## None of this happens without asking
 
