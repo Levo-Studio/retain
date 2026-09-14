@@ -145,6 +145,12 @@ struct RetainPickerField<Value: Hashable, Label: View>: View {
     /// fields of a term's period, which it paints as plain boxes.
     var showsDisclosure = true
 
+    /// The ready state on board 02 draws its course field at radius 9 rather
+    /// than the 8 every settings field is drawn at, so the chrome is a
+    /// parameter here too.
+    var cornerRadius: CGFloat = RetainMetrics.radiusTextField
+    var padding: EdgeInsets = RetainMetrics.fieldPadding
+
     @ViewBuilder let label: () -> Label
 
     var body: some View {
@@ -164,7 +170,7 @@ struct RetainPickerField<Value: Hashable, Label: View>: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .retainFieldChrome()
+            .retainFieldChrome(cornerRadius: cornerRadius, padding: padding)
             .contentShape(.rect)
         }
         // `.button` rather than `.borderlessButton`: the borderless style draws
@@ -189,10 +195,19 @@ struct RetainStatusDot: View {
     /// Set where the export draws the dot breathing — the summarizing state.
     var breathes = false
 
+    /// The loop the dot runs, where it is not `breathe`. Board 02's running
+    /// card and board 01's timer pill draw the same dot pulsing rather than
+    /// breathing, so the curve is a parameter and not a flag per curve.
+    var loop: RetainMotion.Curve?
+
+    private var curve: RetainMotion.Curve? {
+        loop ?? (breathes ? .breathe : nil)
+    }
+
     var body: some View {
         Group {
-            if breathes {
-                circle.retainLoop(.breathe)
+            if let curve {
+                circle.retainLoop(curve)
             } else {
                 circle
             }
@@ -312,13 +327,18 @@ struct RetainPrimaryButtonStyle: ButtonStyle {
     var padding: EdgeInsets = RetainMetrics.dialogButtonPadding
     var cornerRadius: CGFloat = RetainMetrics.radiusDialogButton
 
+    /// Almost always the on-accent ink. Board 02's Record button is the one
+    /// place the export writes the window's own background instead, and the
+    /// HTML is what is built.
+    var ink: Color = RetainPalette.onAccent
+
     @Environment(\.isEnabled) private var isEnabled
     @State private var hovering = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .retainStyle(textStyle)
-            .foregroundStyle(RetainPalette.onAccent)
+            .foregroundStyle(ink)
             .padding(padding)
             .background(fill(pressed: configuration.isPressed), in: RoundedRectangle(cornerRadius: cornerRadius))
             .opacity(isEnabled ? 1 : RetainInteraction.disabledOpacity)
@@ -344,27 +364,43 @@ struct RetainSecondaryButtonStyle: ButtonStyle {
     /// footer's sit on the dialog body with no fill at all.
     var isFilled = false
 
+    /// The label's colour. Boards 01 and 02 draw "Stop" and "Finish" as this
+    /// same outlined button in red ink, which is the only thing that makes them
+    /// destructive — there is no filled red button anywhere in the export.
+    var ink: Color = RetainPalette.inkBody
+
+    /// The outline at rest. `nil` takes the control border every other
+    /// secondary button is drawn with; the destructive pair take the red one.
+    var border: RetainColor?
+
     @Environment(\.isEnabled) private var isEnabled
     @State private var hovering = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .retainStyle(textStyle)
-            .foregroundStyle(RetainPalette.inkBody)
+            .foregroundStyle(ink)
             .padding(padding)
             .background(fill(pressed: configuration.isPressed), in: RoundedRectangle(cornerRadius: cornerRadius))
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(
-                        hovering && isEnabled
-                            ? RetainPalette.lineControlBorderEmphasised
-                            : RetainPalette.lineControlBorder,
-                        lineWidth: RetainMetrics.borderWidth
-                    )
+                    .strokeBorder(outline, lineWidth: RetainMetrics.borderWidth)
             }
             .opacity(isEnabled ? 1 : RetainInteraction.disabledOpacity)
             .contentShape(.rect)
             .onHover { hovering = $0 }
+    }
+
+    /// A hover lightens the outline by the one step `RetainInteraction`
+    /// derives, which for the default border lands on the emphasised control
+    /// border the export already draws.
+    private var outline: Color {
+        guard let border else {
+            return hovering && isEnabled
+                ? RetainPalette.lineControlBorderEmphasised
+                : RetainPalette.lineControlBorder
+        }
+        return hovering && isEnabled ? RetainInteraction.hovered(border).color : border.color
     }
 
     /// The surface ladder the export already draws, rather than a computed
