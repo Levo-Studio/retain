@@ -393,3 +393,76 @@ struct CourseEditingTests {
         #expect(try await library.courses(in: termID).count == 1, "the course is still where it was")
     }
 }
+
+// MARK: -
+
+/// The first term was the only one that could ever be created. The General
+/// pane's term row had one button that said "New term" while there were none
+/// and "Rename" as soon as there was one, so a second half-year was
+/// unreachable from anywhere in the app — and the row looked complete while
+/// being a dead end.
+@Suite("Creating more than one term")
+struct SecondTermTests {
+
+    @Test("A term draft with nothing in it is a new term, not a rename")
+    func emptyDraftCreates() {
+        let draft = TermDraft()
+        #expect(draft.term().id == nil, "a draft with no identity writes a new row")
+    }
+
+    @Test("A draft made from a term renames that term")
+    func draftFromTermRenames() async throws {
+        let database = try StoreFixture.database()
+        let library = LibraryRepository(database)
+        let term = try await StoreFixture.term(in: database, title: "Winter", isCurrent: true)
+
+        var draft = TermDraft(term)
+        draft.title = "Third year, winter"
+        await LibraryEditing.save(draft, in: library)
+
+        let all = try await library.terms()
+        #expect(all.count == 1, "renaming must not create a second term")
+        #expect(all.first?.title == "Third year, winter")
+    }
+
+    @Test("Several terms can exist side by side, and only one is current")
+    func manyTermsOneCurrent() async throws {
+        let database = try StoreFixture.database()
+        let library = LibraryRepository(database)
+
+        for (title, isCurrent) in [("Winter", true), ("Summer", false), ("Next winter", false)] {
+            var draft = TermDraft()
+            draft.title = title
+            draft.isCurrent = isCurrent
+            await LibraryEditing.save(draft, in: library)
+        }
+
+        let all = try await library.terms()
+        #expect(all.count == 3)
+        #expect(all.filter(\.isCurrent).count == 1)
+        #expect(Set(all.map(\.title)) == ["Winter", "Summer", "Next winter"])
+    }
+
+    /// The database enforces at most one current term with a partial unique
+    /// index, so making a later one current has to clear the earlier one rather
+    /// than fail.
+    @Test("Making a later term current releases the earlier one")
+    func currentMovesRatherThanCollides() async throws {
+        let database = try StoreFixture.database()
+        let library = LibraryRepository(database)
+
+        var winter = TermDraft()
+        winter.title = "Winter"
+        winter.isCurrent = true
+        await LibraryEditing.save(winter, in: library)
+
+        var summer = TermDraft()
+        summer.title = "Summer"
+        summer.isCurrent = true
+        await LibraryEditing.save(summer, in: library)
+
+        let all = try await library.terms()
+        #expect(all.count == 2)
+        #expect(all.filter(\.isCurrent).map(\.title) == ["Summer"])
+    }
+}

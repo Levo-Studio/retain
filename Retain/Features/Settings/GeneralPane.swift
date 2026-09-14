@@ -73,13 +73,30 @@ struct GeneralPane: View {
             }
             .disabled(model.terms.isEmpty)
 
+            // Two buttons, not one that changes its mind.
+            //
+            // It was one: "New term" while there were none, "Rename" as soon as
+            // there was one. Which meant the first term was the only one that
+            // could ever be created — a second half-year was unreachable from
+            // anywhere in the app, and the row looked complete while being a
+            // dead end.
             Button {
-                sheet = .nameTerm(model.selectedTerm)
+                sheet = .nameTerm(nil)
             } label: {
-                Text(model.selectedTerm == nil ? newTermTitle : renameTitle)
+                Text(verbatim: RetainGlyph.add + " " + newTermTitle)
             }
             .buttonStyle(inlineButton)
             .fixedSize()
+
+            if model.selectedTerm != nil {
+                Button {
+                    sheet = .nameTerm(model.selectedTerm)
+                } label: {
+                    Text(renameTitle)
+                }
+                .buttonStyle(inlineButton)
+                .fixedSize()
+            }
         }
     }
 
