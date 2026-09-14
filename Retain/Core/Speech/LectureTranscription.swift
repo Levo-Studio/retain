@@ -6,8 +6,8 @@ import Foundation
 /// Three steps, in this order and for this reason:
 ///
 /// 1. **Batch transcription** of the whole recording. Twice as accurate as the
-///    live pass, and the only source of word-level timings — which is what
-///    makes clicking a line seek to the right second.
+///    live pass, and the only source of word-level timings — which is what puts
+///    the right second beside each line.
 /// 2. **Diarization** over the same file. Offline, because clustering has to
 ///    have heard every voice before it can decide how many there are.
 /// 3. **Assembly**, which is pure and lives in the pipeline: words plus speaker
@@ -17,6 +17,10 @@ import Foundation
 /// Neural Engine work, and running them at once on a laptop makes each slower
 /// while drawing more power than running them in turn. There is nothing to wait
 /// for — the lecture is over.
+///
+/// These two steps are the last things that ever read the file. What deletes it
+/// afterwards is `TransientAudio`, called by `LectureSession` once this pass has
+/// returned and its transcript has been written.
 actor LectureTranscription {
 
     struct Output: Sendable {
