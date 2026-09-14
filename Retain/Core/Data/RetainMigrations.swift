@@ -76,7 +76,8 @@ nonisolated enum RetainMigrations {
             try db.create(index: "courseOnTermID", on: "course", columns: ["termID"])
 
             // There is no lesson and no lesson number. A recording is what
-            // happened, and `date` carries the day **and the time of day**:
+            // happened, and `startedAt` carries the day **and the time of
+            // day** — the column is not called `date` because it is not one:
             // two recordings on one afternoon are ordinary, so nothing indexes
             // or groups by the day alone.
             try db.create(table: "recording") { t in
@@ -84,7 +85,7 @@ nonisolated enum RetainMigrations {
                 t.column("courseID", .integer)
                     .notNull()
                     .references("course", onDelete: .cascade)
-                t.column("date", .datetime).notNull()
+                t.column("startedAt", .datetime).notNull()
                 t.column("duration", .double).notNull().defaults(to: 0)
                 t.column("state", .text).notNull()
                 // Null until the model reads a topic out of the transcript,
@@ -99,9 +100,9 @@ nonisolated enum RetainMigrations {
             // The table is drawn newest first, which is this index read
             // backwards, and it is the lookup for a course's recordings.
             try db.create(
-                index: "recordingOnCourseIDAndDate",
+                index: "recordingOnCourseIDAndStartedAt",
                 on: "recording",
-                columns: ["courseID", "date"]
+                columns: ["courseID", "startedAt"]
             )
         }
 
@@ -198,6 +199,12 @@ nonisolated enum RetainMigrations {
                 // UTF-8 byte offsets, half open. See `Highlight`.
                 t.column("startOffset", .integer).notNull()
                 t.column("endOffset", .integer).notNull()
+                // What was marked, copied out of the block as it was marked.
+                // The offsets alone are unrecoverable once the model has
+                // written the block again; the text is what makes a highlight
+                // re-anchorable, or at the very least showable. It costs a
+                // column now and cannot be backfilled later.
+                t.column("text", .text).notNull()
                 t.column("createdAt", .datetime).notNull()
             }
 

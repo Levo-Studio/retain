@@ -260,9 +260,64 @@ struct TranscriptStoreTests {
         #expect(read.first?.noteBlockID == block.id)
         #expect(read.first?.recordingID == recordingID)
 
-        // And the range still points at what was marked.
+        // The range still points at what was marked …
         let bytes = Array(markdown.utf8)[highlight.startOffset..<highlight.endOffset]
         #expect(String(decoding: bytes, as: UTF8.self) == "Menge der Seiten")
+
+        // … and so does the copy that outlives the block.
+        #expect(read.first?.text == "Menge der Seiten")
+    }
+
+    /// The text is cut out of the block rather than passed in, so the two
+    /// cannot disagree — including where a German sentence puts multi-byte
+    /// characters in the middle of the range.
+    @Test("The marked text is read off the block, umlauts and all")
+    func markedTextComesFromTheBlock() async throws {
+        let database = try StoreFixture.database()
+        let recordingID = try #require(try await StoreFixture.library(in: database).recording.id)
+        let repository = NoteRepository(database)
+
+        let markdown = "## Größe\n\nDie Seitengröße bestimmt die Fragmentierung."
+        let block = try await repository.append(StoreFixture.noteBlock(markdown), to: recordingID)
+
+        let start = try #require(markdown.utf8.firstRange(of: Array("Seitengröße".utf8))?.lowerBound)
+        let startOffset = markdown.utf8.distance(from: markdown.utf8.startIndex, to: start)
+        // "ö" is two bytes, so the length is not the character count.
+        let highlight = try await repository.highlight(
+            block,
+            from: startOffset,
+            to: startOffset + "Seitengröße".utf8.count
+        )
+
+        #expect(highlight.text == "Seitengröße")
+    }
+
+    @Test("A range that runs past the block, or cuts a character in half, is refused")
+    func aBadRangeIsRefused() async throws {
+        let database = try StoreFixture.database()
+        let recordingID = try #require(try await StoreFixture.library(in: database).recording.id)
+        let repository = NoteRepository(database)
+
+        let markdown = "## Größe\n\nDie Seitengröße."
+        let block = try await repository.append(StoreFixture.noteBlock(markdown), to: recordingID)
+        let length = markdown.utf8.count
+
+        // Past the end.
+        await #expect(throws: RetainDatabaseError.invalidHighlightRange) {
+            try await repository.highlight(block, from: 0, to: length + 1)
+        }
+        // Backwards.
+        await #expect(throws: RetainDatabaseError.invalidHighlightRange) {
+            try await repository.highlight(block, from: 10, to: 4)
+        }
+        // Between the two bytes of the "ö" in the heading.
+        let umlaut = try #require(markdown.utf8.firstRange(of: Array("ö".utf8))?.lowerBound)
+        let inside = markdown.utf8.distance(from: markdown.utf8.startIndex, to: umlaut) + 1
+        await #expect(throws: RetainDatabaseError.invalidHighlightRange) {
+            try await repository.highlight(block, from: 0, to: inside)
+        }
+
+        #expect(try await repository.highlights(for: recordingID).isEmpty)
     }
 
     @Test("Highlights come back block by block, in reading order inside each")

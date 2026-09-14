@@ -85,10 +85,10 @@ nonisolated enum StoreFixture {
     static func recording(
         in database: RetainDatabase,
         course: Course,
-        at date: Date = instant(2026, 2, 7, 10, 15)
+        at startedAt: Date = instant(2026, 2, 7, 10, 15)
     ) async throws -> Recording {
         guard let courseID = course.id else { throw StoreFixtureError.unsavedRow }
-        return try await LibraryRepository(database).startRecording(in: courseID, at: date)
+        return try await LibraryRepository(database).startRecording(in: courseID, at: startedAt)
     }
 
     /// A term with one course and one recording in it, which is what most tests

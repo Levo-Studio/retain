@@ -17,9 +17,9 @@ nonisolated struct SearchHit: Identifiable, Hashable, Sendable {
     let source: Source
 
     let recordingID: Int64
-    /// When the recording happened, date and time of day. It is what a
+    /// When the recording started, date and time of day. It is what a
     /// recording is identified by, so it is what the row is labelled with.
-    let recordingDate: Date
+    let recordingStartedAt: Date
     /// `nil` for a recording the model never got a topic out of; the row then
     /// draws the date alone.
     let recordingTopic: String?
@@ -76,8 +76,8 @@ nonisolated struct SearchRepository: Sendable {
             // each is scored against its own corpus.
             return hits
                 .sorted { left, right in
-                    if left.recordingDate != right.recordingDate {
-                        return left.recordingDate > right.recordingDate
+                    if left.recordingStartedAt != right.recordingStartedAt {
+                        return left.recordingStartedAt > right.recordingStartedAt
                     }
                     return left.time < right.time
                 }
@@ -101,7 +101,7 @@ nonisolated struct SearchRepository: Sendable {
                \(contentTable).recordingID AS recordingID,
                \(time) AS time,
                \(text) AS text,
-               recording.date AS recordingDate,
+               recording.startedAt AS recordingStartedAt,
                recording.topic AS recordingTopic,
                course.id AS courseID,
                course.name AS courseName
@@ -110,7 +110,7 @@ nonisolated struct SearchRepository: Sendable {
         JOIN recording ON recording.id = \(contentTable).recordingID
         JOIN course ON course.id = recording.courseID
         WHERE \(searchTable) MATCH ? AND course.termID = ?
-        ORDER BY recording.date DESC, time
+        ORDER BY recording.startedAt DESC, time
         LIMIT ?
         """
     }
@@ -131,7 +131,7 @@ nonisolated struct SearchRepository: Sendable {
                     id: "\(prefix)-\(row["hitID"] as Int64)",
                     source: source,
                     recordingID: row["recordingID"],
-                    recordingDate: row["recordingDate"],
+                    recordingStartedAt: row["recordingStartedAt"],
                     recordingTopic: row["recordingTopic"],
                     courseID: row["courseID"],
                     courseName: row["courseName"],

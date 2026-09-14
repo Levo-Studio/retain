@@ -120,9 +120,12 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     var id: Int64?
     var courseID: Int64
 
-    /// When the recording started, to the second. Not a day: the interface
-    /// draws the time of day beside it and two recordings can share a date.
-    var date: Date
+    /// When the recording started, to the second.
+    ///
+    /// Not a day, which is why it is not called one: the interface draws the
+    /// time of day beside the date, and two recordings can fall on the same
+    /// afternoon.
+    var startedAt: Date
 
     /// Seconds of recorded audio. Zero while the first minute is still running.
     var duration: TimeInterval
@@ -145,7 +148,7 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     init(
         id: Int64? = nil,
         courseID: Int64,
-        date: Date,
+        startedAt: Date,
         duration: TimeInterval = 0,
         state: RecordingState = .recording,
         topic: String? = nil,
@@ -153,7 +156,7 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     ) {
         self.id = id
         self.courseID = courseID
-        self.date = date
+        self.startedAt = startedAt
         self.duration = duration
         self.state = state
         self.topic = topic
@@ -214,6 +217,18 @@ nonisolated struct Highlight: Identifiable, Hashable, Sendable, Codable {
     var startOffset: Int
     var endOffset: Int
 
+    /// What was marked, copied out of the block at the moment of marking.
+    ///
+    /// Redundant while the notes stand still, and the only thing left when they
+    /// do not: a re-summarised block is new Markdown, and offsets into a text
+    /// that no longer exists cannot say what they once covered. With the text
+    /// beside them the passage can be searched for in the new notes and
+    /// re-anchored, and if it is not there at all it can still be shown to the
+    /// user as what they marked. What *should* happen to a highlight when the
+    /// summary is written again is not settled here; this only keeps the
+    /// question answerable.
+    var text: String
+
     var createdAt: Date
 
     init(
@@ -222,6 +237,7 @@ nonisolated struct Highlight: Identifiable, Hashable, Sendable, Codable {
         noteBlockID: Int64,
         startOffset: Int,
         endOffset: Int,
+        text: String,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -229,6 +245,7 @@ nonisolated struct Highlight: Identifiable, Hashable, Sendable, Codable {
         self.noteBlockID = noteBlockID
         self.startOffset = startOffset
         self.endOffset = endOffset
+        self.text = text
         self.createdAt = createdAt
     }
 }
