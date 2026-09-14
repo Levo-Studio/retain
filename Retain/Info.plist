@@ -25,5 +25,13 @@
 	           | grep AudioHardwarePowerHint -->
 	<key>AudioHardwarePowerHint</key>
 	<string>Favor Saving Power</string>
+	<!-- macOS shows this string verbatim in the permission sheet, so it says
+	     where the audio goes rather than restating that the app wants a
+	     microphone. Retain's whole claim is that the recording never leaves the
+	     machine, and the permission sheet is the one moment a user actually
+	     asks that question, so it is answered there rather than in a settings
+	     pane they may never open. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Retain records the lecture through your microphone. The audio, the transcript and the notes stay on this Mac — nothing is uploaded, and only the lectures you keep are stored.</string>
 </dict>
 </plist>
