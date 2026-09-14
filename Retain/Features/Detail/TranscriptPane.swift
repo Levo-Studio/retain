@@ -2,9 +2,14 @@ import SwiftUI
 
 /// Board 04's left column: the full transcript with a find bar over it.
 ///
-/// Every line is a jump target. That is the reason the transcript is kept at
-/// all — the notes are what you read, and the transcript is what you go to when
-/// the notes are not enough and you want to hear it said.
+/// **A line is text, not a control.** It used to be a jump target into the
+/// audio, and there is no audio: it is deleted once this transcript exists. A
+/// row that still highlighted under the pointer and then did nothing would be
+/// worse than a row that never invited the click, so the rows are plain and
+/// what moves the pane is the find bar, a source chip, or a search hit arriving
+/// from the library.
+///
+/// The timestamp stays. It is still when the sentence was said.
 struct TranscriptPane: View {
 
     @Bindable var model: RecordingDetailModel
@@ -26,9 +31,7 @@ struct TranscriptPane: View {
                                     line: line,
                                     isMarked: isMarked(line),
                                     matches: model.find.ranges(inLineAt: index)
-                                ) {
-                                    model.play(line: line)
-                                }
+                                )
                                 .id(line.id)
                             }
                         }
@@ -39,9 +42,19 @@ struct TranscriptPane: View {
                 .scrollContentBackground(.hidden)
                 .onChange(of: model.find) {
                     guard let line = model.lineToScrollTo else { return }
-                    withAnimation(RetainMotion.resolve(.easeInOut(duration: scrollDuration), reduceMotion: reduceMotion)) {
-                        scroll.scrollTo(line.id, anchor: .center)
-                    }
+                    bring(line.id, into: scroll)
+                }
+                // A source chip, or a search hit opened from the library.
+                //
+                // `task(id:)` and not `onChange`: both of those bring this tab
+                // forward, which builds this pane *after* the request was made
+                // — a change `onChange` was never there for. The yield lets the
+                // pane lay itself out before it is asked to scroll inside
+                // itself.
+                .task(id: model.reveal) {
+                    guard case let .line(id) = model.reveal?.target else { return }
+                    await Task.yield()
+                    bring(id, into: scroll)
                 }
             }
         }
@@ -50,10 +63,13 @@ struct TranscriptPane: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Not a drawn value: the export animates four things and scrolling is not
-    /// one of them. It is the shortest move that still reads as a move rather
-    /// than as the list having been replaced.
-    private let scrollDuration: Double = 0.3
+    /// Centred rather than at the top: a line is one sentence of a
+    /// conversation, and it reads with what was said around it.
+    private func bring(_ line: TranscriptLine.ID, into scroll: ScrollViewProxy) {
+        withAnimation(RetainMotion.reveal(reduceMotion: reduceMotion)) {
+            scroll.scrollTo(line, anchor: .center)
+        }
+    }
 
     /// A line the user marked while it was being said. The marker sits at a
     /// second, so the line it belongs to is the one that second falls inside.
@@ -110,48 +126,43 @@ struct TranscriptRow: View {
     let line: TranscriptLine
     let isMarked: Bool
     let matches: [Range<Int>]
-    let seek: () -> Void
 
     var body: some View {
-        Button(action: seek) {
-            HStack(alignment: .top, spacing: 0) {
-                if isMarked {
-                    Rectangle()
-                        .fill(RetainPalette.amber)
-                        .frame(width: RetainMetrics.leftRuleWidth)
-                        .padding(.trailing, RetainMetrics.leftRuleGapMain)
-                }
-
-                HStack(alignment: .top, spacing: RetainMetrics.transcriptLineGap) {
-                    Text(verbatim: RetainTimeFormat.clock(line.start))
-                        .retainStyle(RetainTypography.timestampMain)
-                        .foregroundStyle(isMarked ? RetainPalette.amberInk : RetainPalette.inkLabel)
-                        .frame(width: RetainMetrics.transcriptTimestampColumn, alignment: .leading)
-                        .padding(.top, RetainMetrics.transcriptLabelGapMain)
-
-                    VStack(alignment: .leading, spacing: RetainMetrics.transcriptLabelGapMain) {
-                        Text(verbatim: speakerLabel)
-                            .retainStyle(RetainTypography.uppercaseLabel)
-                            .foregroundStyle(isMarked ? RetainPalette.amberInk : RetainPalette.inkLabel)
-
-                        RetainSearchHitText(
-                            text: line.text,
-                            hits: matches,
-                            style: RetainTypography.transcriptLineMain,
-                            ink: isMarked ? RetainPalette.inkPrimary : RetainPalette.inkBody
-                        )
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
+        HStack(alignment: .top, spacing: 0) {
+            if isMarked {
+                Rectangle()
+                    .fill(RetainPalette.amber)
+                    .frame(width: RetainMetrics.leftRuleWidth)
+                    .padding(.trailing, RetainMetrics.leftRuleGapMain)
             }
-            // The rule hangs out into the pane's own padding, as the export
-            // draws it, so the text under it stays on the same left edge as
-            // every unmarked line.
-            .padding(.leading, isMarked ? -RetainMetrics.transcriptMarkerRuleInset : 0)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
+
+            HStack(alignment: .top, spacing: RetainMetrics.transcriptLineGap) {
+                Text(verbatim: RetainTimeFormat.clock(line.start))
+                    .retainStyle(RetainTypography.timestampMain)
+                    .foregroundStyle(isMarked ? RetainPalette.amberInk : RetainPalette.inkLabel)
+                    .frame(width: RetainMetrics.transcriptTimestampColumn, alignment: .leading)
+                    .padding(.top, RetainMetrics.transcriptLabelGapMain)
+
+                VStack(alignment: .leading, spacing: RetainMetrics.transcriptLabelGapMain) {
+                    Text(verbatim: speakerLabel)
+                        .retainStyle(RetainTypography.uppercaseLabel)
+                        .foregroundStyle(isMarked ? RetainPalette.amberInk : RetainPalette.inkLabel)
+
+                    RetainSearchHitText(
+                        text: line.text,
+                        hits: matches,
+                        style: RetainTypography.transcriptLineMain,
+                        ink: isMarked ? RetainPalette.inkPrimary : RetainPalette.inkBody
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
-        .buttonStyle(RetainSurfaceButtonStyle())
+        // The rule hangs out into the pane's own padding, as the export draws
+        // it, so the text under it stays on the same left edge as every
+        // unmarked line.
+        .padding(.leading, isMarked ? -RetainMetrics.transcriptMarkerRuleInset : 0)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var speakerLabel: String {

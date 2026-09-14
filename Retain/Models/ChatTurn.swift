@@ -9,7 +9,8 @@ import Foundation
 /// it is talking to somebody who was not paying full attention at the time.
 nonisolated enum ChatReference: Hashable, Sendable, Codable {
 
-    /// A second in the recording. The chip is a jump target.
+    /// A second in the recording. The chip brings the transcript forward at
+    /// the line that was said then.
     case transcript(TimeInterval)
 
     /// A note block, by its number.

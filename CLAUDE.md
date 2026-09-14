@@ -17,6 +17,11 @@ running on the same Mac turn the transcript into notes.
 network code at all beyond a connection to `localhost`. That is not a roadmap
 item that has not happened yet. It is the product.
 
+**The audio is not kept.** The recording is working material: it is transcribed
+in batch, diarized, and then deleted. Retain has no playback and no archive of
+recordings — what survives a lesson is the transcript, the notes, the
+annotations and the highlights. See `TransientAudio`.
+
 The audience is students with an open laptop in the room.
 
 What it does:
@@ -28,7 +33,8 @@ What it does:
   speech/silence indicator, and a model size that follows battery versus mains.
 - **Menu-bar popover** — recent lessons with their state, start and stop.
 - **Lesson detail** — written-out notes, the full transcript with timestamps,
-  click a line to jump to that point in the audio, markers as jump targets.
+  a chapter rail and a chat that cites its sources; clicking a chapter or a
+  citation brings that part of the lesson into view.
 - **Library** — courses and terms, full-text search over every lesson in a term.
 - **Settings** — LM Studio connection (base URL, optional API key, model picked
   from `/v1/models`), a connection test, the one-time speech-model download with

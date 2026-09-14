@@ -137,12 +137,20 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
     /// — the interface draws the date and time instead, which is honest.
     var topic: String?
 
-    /// The audio's file name, never its path.
+    /// The audio's file name while there is audio, never its path.
     ///
     /// The folder is `RecordingStore.directory`, which is derived at read time.
     /// Storing the full path would put the user's home directory into the
     /// database and into everything derived from it, and would break the moment
     /// the folder moves.
+    ///
+    /// **`nil` once the recording has been transcribed**, because the file is
+    /// deleted then — see `TransientAudio`. It is cleared rather than kept as a
+    /// record of what the file used to be called: the name's only use is
+    /// finding the file, so a name pointing at nothing would be a promise the
+    /// disk does not keep, and every reader would have to ask the file system
+    /// what this field already answers. A recording with no filename is the
+    /// ordinary, finished state, not a broken row.
     var filename: String?
 
     init(
@@ -171,14 +179,15 @@ nonisolated struct Recording: Identifiable, Hashable, Sendable, Codable {
 ///
 /// It goes to the model with the block it falls in and comes back out in the
 /// notes as "You · 00:52:10". `note` is the text; a marker set without any is
-/// still a point worth jumping to, so it stays optional.
+/// still a point in the lecture worth marking, so it stays optional.
 nonisolated struct Annotation: Identifiable, Hashable, Sendable, Codable {
 
     var id: Int64?
     var recordingID: Int64
 
     /// Seconds from the start of the recording, on the same timeline as
-    /// `TranscriptLine.start`, so an annotation is a seek target like any line.
+    /// `TranscriptLine.start`, so an annotation sits among the lines it was
+    /// typed between.
     var time: TimeInterval
 
     var note: String?

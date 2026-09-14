@@ -285,9 +285,10 @@ struct RecordingWriterTests {
         let handed = collected.all
         #expect(!handed.isEmpty, "nothing was handed to the live transcriber")
 
-        // Frame for frame what the file got. The transcript's times are counted
-        // from this stream and the audio is played from that one, so if the two
-        // ever differ, clicking a line seeks to the wrong second.
+        // Frame for frame what the file got. The live transcript's times are
+        // counted from this stream and the batch pass reads that one, so if the
+        // two ever differ the two transcripts disagree about when a sentence
+        // was said.
         let file = try AVAudioFile(forReading: url)
         #expect(handed.count == Int(file.length), "handed \(handed.count) frames, wrote \(file.length)")
 

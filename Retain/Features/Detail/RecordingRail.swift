@@ -107,7 +107,7 @@ struct ChapterList: View {
                                 isCurrent: chapter.id == model.currentChapter?.id,
                                 isFirst: index == 0
                             ) {
-                                model.play(chapter: chapter)
+                                model.show(chapter: chapter)
                             }
                         }
                     }
@@ -140,15 +140,20 @@ struct ChapterList: View {
 
 /// One chapter: the minute it starts at, its heading, and an amber dot when the
 /// user marked something inside it.
+///
+/// Clicking it brings the notes forward at that card. It used to start the
+/// audio at that minute, and there is no audio — but a rail of chapters is a
+/// list of places to go, so it still goes there, and the minute it draws is
+/// still when that part of the lecture began.
 struct ChapterRow: View {
 
     let chapter: NoteChapter
     let isCurrent: Bool
     let isFirst: Bool
-    let seek: () -> Void
+    let show: () -> Void
 
     var body: some View {
-        Button(action: seek) {
+        Button(action: show) {
             HStack(alignment: .top, spacing: 0) {
                 Rectangle()
                     .fill(isCurrent ? RetainPalette.accent : RetainPalette.lineControlBorderEmphasised)

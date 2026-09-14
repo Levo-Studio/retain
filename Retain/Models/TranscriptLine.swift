@@ -30,8 +30,9 @@ nonisolated struct TranscriptLine: Identifiable, Hashable, Sendable, Codable {
     let id: UUID
 
     /// Seconds from the start of the recording. Not a wall-clock time: the
-    /// recording is the timeline, and it is what a click in the transcript
-    /// seeks to.
+    /// recording is the timeline, and this is where on it the sentence was
+    /// said — which is what the transcript draws beside the line, and what a
+    /// search hit and a chat citation are expressed in.
     var start: TimeInterval
     var end: TimeInterval
 
@@ -78,8 +79,8 @@ nonisolated struct SpeakerSegment: Hashable, Sendable {
 
 /// One word with the time it was said, as the batch pass reports it.
 ///
-/// This is what makes clicking a line in the transcript seek to the right
-/// second, and what lets a speaker segment be matched to the words inside it.
+/// This is what puts the right second beside each line of the transcript, and
+/// what lets a speaker segment be matched to the words inside it.
 nonisolated struct WordTiming: Hashable, Sendable {
     let text: String
     let start: TimeInterval

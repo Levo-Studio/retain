@@ -69,7 +69,21 @@ final class RecordingDetailModel {
 
     private(set) var find = TranscriptFind()
 
-    let player = RecordingPlayer()
+    // MARK: - Where the window is pointed
+
+    /// The last thing the window was asked to bring into view.
+    ///
+    /// The two panes watch it and scroll. It is a request rather than a
+    /// position because the panes are scrolled by the reader as well, and the
+    /// model has no business believing it knows where they are.
+    private(set) var reveal: DetailReveal.Request?
+
+    /// Counts the requests, so that asking for the same place twice is two
+    /// requests. See `DetailReveal.Request`.
+    private var revealCount = 0
+
+    /// The block the chapter rail draws the accent rule on.
+    private(set) var currentBlockNumber: Int?
 
     // MARK: - The chat
 
@@ -127,7 +141,6 @@ final class RecordingDetailModel {
         }
 
         find = TranscriptFind(lines: lines, query: findQuery)
-        player.load(filename: recording.filename)
 
         if let chat {
             await chat.update(
@@ -224,49 +237,70 @@ final class RecordingDetailModel {
         )
     }
 
-    /// The chapter the accent rule sits on: the one playback is inside, and the
-    /// first one before anything has been played. Board 03 draws exactly one
-    /// row picked out, and never none.
+    /// The chapter the accent rule sits on: wherever the window was last taken,
+    /// and the first one before it has been taken anywhere. Board 03 draws
+    /// exactly one row picked out, and never none.
     var currentChapter: NoteChapter? {
         let chapters = self.chapters
-        return chapters.last { $0.time <= player.time } ?? chapters.first
+        return chapters.first { $0.blockNumber == currentBlockNumber } ?? chapters.first
     }
 
     var markerCount: Int { annotations.count }
 
-    var duration: TimeInterval? { recording.duration > 0 ? recording.duration : nil }
+    // MARK: - Moving around the window
 
-    // MARK: - Jumping
-
-    func play(line: TranscriptLine) {
-        player.seek(to: DetailSeek.target(forLineStartingAt: line.start, duration: duration))
-    }
-
-    func play(chapter: NoteChapter) {
-        player.seek(to: DetailSeek.target(forChapterAt: chapter.time, duration: duration))
+    /// A chapter row.
+    ///
+    /// The rail is a list of places in the notes, so a row brings the notes
+    /// forward at its block. That is what a chapter rail is for, and it is all
+    /// it can be now: there is no audio to start playing at that minute.
+    func show(chapter: NoteChapter) {
+        request(.block(chapter.blockNumber))
     }
 
     /// Opens the recording at a moment somebody arrived from — a search hit in
     /// the library, which carries the second it matched at.
     ///
-    /// The transcript tab comes forward with it: a search result is a sentence,
-    /// and landing in the notes with the audio cued to a line the reader cannot
-    /// see is not where they asked to go.
+    /// The transcript comes forward with it: a search result is a sentence, and
+    /// landing in the notes is not where they asked to go.
+    ///
+    /// The name is the one the library calls. Nothing seeks any more; what this
+    /// does is scroll the line that second was said in into view.
     func seek(to time: TimeInterval) {
-        tab = .transcript
-        // A recording still being written has no duration yet, and clamping to
-        // nil would be clamping to zero — which is the one place a search hit
-        // never points.
-        player.seek(to: min(max(0, time), duration ?? time))
+        guard let id = DetailReveal.line(at: time, in: lines) else {
+            // A recording whose transcript is empty still opens, on the tab the
+            // search hit came from, rather than silently staying on the notes.
+            tab = .transcript
+            return
+        }
+        request(.line(id))
     }
 
-    /// A source chip under a chat answer. A transcript chip also brings the
-    /// transcript tab forward — jumping into audio the user cannot see the
-    /// words of is half an answer.
+    /// A source chip under a chat answer.
     func follow(_ reference: ChatReference) {
-        guard let target = DetailSeek.target(for: reference, blocks: blocks, duration: duration) else { return }
-        if case .transcript = reference { tab = .transcript }
-        player.seek(to: target)
+        guard let target = DetailReveal.target(for: reference, lines: lines, blocks: blocks) else { return }
+        request(target)
+    }
+
+    /// The one place the window is pointed somewhere, so the tab, the rail's
+    /// accent rule and the pane that has to scroll can never disagree about
+    /// where that is.
+    private func request(_ target: DetailReveal.Target) {
+        revealCount += 1
+        reveal = DetailReveal.Request(target: target, ordinal: revealCount)
+
+        switch target {
+        case let .line(id):
+            tab = .transcript
+            // The rail follows the reader: the chapter the line falls under is
+            // the one worth picking out while they are reading it.
+            if let line = lines.first(where: { $0.id == id }) {
+                currentBlockNumber = DetailReveal.block(at: line.start, in: blocks) ?? currentBlockNumber
+            }
+        case let .block(number):
+            tab = .notes
+            currentBlockNumber = number
+        }
     }
 
     // MARK: - The find bar

@@ -22,8 +22,8 @@ nonisolated enum ChatAnswering {
     ///   useful answer; a confident wrong one is not.
     /// - *cite* — board 04 draws the chips, and a citation is what makes the
     ///   answer checkable against a transcript the reader can click into.
-    /// - *the exact spellings* — the references are parsed back into jump
-    ///   targets. "ungefähr in der Mitte" is not one.
+    /// - *the exact spellings* — the references are parsed back into places in
+    ///   the transcript and the notes. "ungefähr in der Mitte" is not one.
     /// - *short* — the rail is 330 points wide.
     static let systemPrompt = """
         You answer questions about one recorded class, for the student who recorded it.
@@ -139,7 +139,7 @@ nonisolated enum ChatAnswering {
     ///
     /// - Parameter blocks: the note blocks that exist. A citation of a block
     ///   that does not is dropped rather than drawn — a chip reading "Notiz 9"
-    ///   that jumps nowhere is worse than one chip fewer.
+    ///   that leads nowhere is worse than one chip fewer.
     static func turn(from answer: Answer, blocks: [NoteBlock], duration: TimeInterval?) -> ChatTurn {
         let numbers = Set(blocks.map(\.number))
         var seen: Set<ChatReference> = []

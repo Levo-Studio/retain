@@ -109,7 +109,7 @@ nonisolated struct NoteBlock: Identifiable, Hashable, Sendable, Codable {
 /// when it started — and a model asked for timestamps invents them.
 nonisolated struct NoteChapter: Identifiable, Hashable, Sendable, Codable {
 
-    /// The block this row jumps to.
+    /// The block this row brings into view.
     let blockNumber: Int
 
     var title: String

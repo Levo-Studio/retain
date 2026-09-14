@@ -14,10 +14,15 @@ nonisolated enum NoteItem: Hashable, Sendable, Identifiable {
 
     var id: String {
         switch self {
-        case let .block(block): "block-\(block.number)"
+        case let .block(block): Self.id(ofBlock: block.number)
         case let .annotation(annotation): "annotation-\(annotation.id ?? 0)-\(annotation.time)"
         }
     }
+
+    /// What a chapter row and a chat citation scroll to. They know a block
+    /// number and not the block, so the id is built in one place rather than
+    /// spelled the same way twice.
+    static func id(ofBlock number: Int) -> String { "block-\(number)" }
 }
 
 // MARK: -

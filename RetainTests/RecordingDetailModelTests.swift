@@ -126,10 +126,18 @@ struct RecordingDetailModelTests {
         #expect(model.filteredChapters.count == 2)
     }
 
-    @Test("One chapter is always the current one, and it is the first before anything has played")
+    @Test("One chapter is always the current one, and it is the first before the window is pointed anywhere")
     func currentChapter() async throws {
         let model = try await loaded()
         #expect(model.currentChapter?.blockNumber == 1)
+    }
+
+    @Test("The accent rule follows the chapter the window was last taken to")
+    func currentChapterFollows() async throws {
+        let model = try await loaded()
+
+        model.show(chapter: try #require(model.chapters.last))
+        #expect(model.currentChapter?.blockNumber == 2)
     }
 
     // MARK: - The notes column
@@ -155,23 +163,95 @@ struct RecordingDetailModelTests {
         #expect(model.blocks.map(\.number) == [1, 2])
     }
 
-    // MARK: - Jumping
+    // MARK: - Moving around the window
 
-    @Test("A source chip citing the transcript brings the transcript tab forward")
+    /// The recording this whole suite loads has no audio: it was transcribed,
+    /// and the file went with the transcript being written. That is the
+    /// ordinary state of every finished recording, so every test above this one
+    /// is also the test that a window with no audio still has everything in it.
+    @Test("A recording whose audio is gone still has its notes, its transcript and its timestamps")
+    func nothingNeedsTheAudio() async throws {
+        let model = try await loaded()
+
+        #expect(model.recording.filename == nil)
+        #expect(model.blocks.count == 2)
+        #expect(model.lines.count == 2)
+        #expect(model.annotations.count == 1)
+        #expect(model.chapters.map(\.time) == [240, 2940])
+        #expect(model.lines.map(\.start) == [3130, 3168])
+        #expect(model.annotations.map(\.time) == [3130])
+        #expect(RetainTimeFormat.clock(model.lines[0].start) == "00:52:10")
+    }
+
+    @Test("A chapter row brings the notes forward at its block")
+    func chapterRowRevealsItsBlock() async throws {
+        let model = try await loaded()
+        model.tab = .transcript
+
+        model.show(chapter: try #require(model.chapters.last))
+
+        #expect(model.tab == .notes)
+        #expect(model.reveal?.target == .block(2))
+    }
+
+    /// `onChange` fires on a changed value, so two clicks that produced the
+    /// same request would scroll once and then look broken.
+    @Test("The same chapter clicked twice is asked for twice")
+    func chapterRowAsksAgain() async throws {
+        let model = try await loaded()
+        let chapter = try #require(model.chapters.first)
+
+        model.show(chapter: chapter)
+        let first = try #require(model.reveal)
+        model.show(chapter: chapter)
+
+        #expect(model.reveal != first)
+        #expect(model.reveal?.target == first.target)
+    }
+
+    @Test("A source chip citing the transcript brings the transcript tab forward, at the line")
     func chipOpensTheTranscript() async throws {
         let model = try await loaded()
         #expect(model.tab == .notes)
 
         model.follow(.transcript(3130))
+
         #expect(model.tab == .transcript)
+        #expect(model.reveal?.target == .line(model.lines[0].id))
     }
 
-    @Test("A source chip citing a note stays on the notes")
+    @Test("A source chip citing a note stays on the notes, at that card")
     func noteChipStaysPut() async throws {
         let model = try await loaded()
 
         model.follow(.note(2))
+
         #expect(model.tab == .notes)
+        #expect(model.reveal?.target == .block(2))
+    }
+
+    @Test("A chip citing a note that is not there any more does nothing at all")
+    func chipForAMissingNote() async throws {
+        let model = try await loaded()
+
+        model.follow(.note(9))
+
+        #expect(model.reveal == nil)
+        #expect(model.tab == .notes)
+    }
+
+    /// A search hit in the library carries the second it matched at, and the
+    /// window it opens is a window on a sentence.
+    @Test("A search hit opens the transcript at the line it matched in")
+    func searchHitOpensItsLine() async throws {
+        let model = try await loaded()
+
+        model.seek(to: 3170)
+
+        #expect(model.tab == .transcript)
+        #expect(model.reveal?.target == .line(model.lines[1].id))
+        // The rail follows the reader to the chapter that line falls under.
+        #expect(model.currentChapter?.blockNumber == 2)
     }
 
     // MARK: - The find bar

@@ -42,7 +42,7 @@ struct SearchTests {
         let hit = try #require(hits.first)
         #expect(hit.source == .transcript)
         #expect(hit.recordingID == recordingID)
-        // The seek target: open that recording, play from there.
+        // Where the hit was said: the detail window opens at that line.
         #expect(hit.time == 3168)
         #expect(hit.text.contains("Zeitfenster"))
         #expect(hit.courseName == "Computer science")

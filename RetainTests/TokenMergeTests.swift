@@ -80,8 +80,8 @@ struct TokenMergeTests {
     }
 
     /// A piece whose end time comes back before the one before it must not pull
-    /// the word's end backwards, or the line's duration goes negative and the
-    /// seek target goes with it.
+    /// the word's end backwards, or the line's duration goes negative and its
+    /// timestamps stop making sense.
     @Test("An out-of-order piece cannot shorten the word")
     func endNeverGoesBackwards() {
         let words = TokenMerge.words(from: timed([
