@@ -124,6 +124,17 @@ struct LibrarySidebar: View {
                     CourseRow(listing: listing, isSelected: listing.id == model.selectedCourse?.id) {
                         Task { await model.select(course: listing) }
                     }
+                    // Right-click rather than a button on the row: board 05
+                    // draws the course rows as a colour rail, a name and a
+                    // count, with no action in them, and a visible control
+                    // there would be chrome the export does not have. Settings'
+                    // General pane carries the same action where the term row
+                    // beside it already carries "Rename".
+                    .contextMenu {
+                        Button(LibraryCopy.editCourse) {
+                            Task { await model.edit(listing.course) }
+                        }
+                    }
                 }
             }
 

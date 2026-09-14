@@ -197,6 +197,17 @@ final class LibraryModel {
 
     func colour(of course: Course) -> Int { course.color.rawValue }
 
+    /// Opens the edit dialog for a course, with the terms it runs in already
+    /// ticked.
+    ///
+    /// Read here rather than in the view: the chips have to arrive correct
+    /// rather than filling in a frame later, and the view has no repository.
+    func edit(_ course: Course) async {
+        guard let id = course.id else { return }
+        let termIDs = Set((try? await libraryRepository.terms(of: id))?.compactMap(\.id) ?? [])
+        sheet = .editCourse(course, termIDs: termIDs)
+    }
+
     func open(_ recording: Recording, at time: TimeInterval? = nil) {
         onOpenRecording?(recording, time)
     }

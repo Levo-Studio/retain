@@ -410,6 +410,10 @@
       "comment": "Edit menu title",
       "extractionState": "manual"
     },
+    "Edit course": {
+      "comment": "Edit-course dialog title, and the action that opens it",
+      "extractionState": "manual"
+    },
     "Export": {
       "comment": "Title-bar button on the recording detail window — the export's Exportieren",
       "extractionState": "manual"

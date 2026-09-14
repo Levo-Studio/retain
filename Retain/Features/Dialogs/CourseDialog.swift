@@ -16,18 +16,22 @@ nonisolated extension CourseColor {
 // MARK: -
 
 /// "New course": a name, the terms it runs in, and one of exactly four colours.
-struct NewCourseDialog: View {
+struct CourseDialog: View {
 
     let terms: [Term]
     @State var draft: CourseDraft
 
-    let create: (CourseDraft) -> Void
+    let confirm: (CourseDraft) -> Void
     let cancel: () -> Void
 
     var body: some View {
         RetainDialog(
-            label: String(localized: "New", comment: "Uppercase label above the new-course dialog title"),
-            title: String(localized: "New course", comment: "New-course dialog title, and the button that opens it"),
+            label: draft.isEditing
+                ? String(localized: "Course", comment: "Uppercase label above the edit-course dialog title")
+                : String(localized: "New", comment: "Uppercase label above the new-course dialog title"),
+            title: draft.isEditing
+                ? String(localized: "Edit course", comment: "Edit-course dialog title, and the action that opens it")
+                : String(localized: "New course", comment: "New-course dialog title, and the button that opens it"),
             content: {
                 DialogForm {
                     GridRow {
@@ -55,10 +59,12 @@ struct NewCourseDialog: View {
             footer: {
                 DialogButtons(
                     cancelTitle: String(localized: "Cancel", comment: "Dialog button that closes without saving"),
-                    confirmTitle: String(localized: "Create", comment: "New-course dialog button that creates the course"),
+                    confirmTitle: draft.isEditing
+                        ? String(localized: "Save", comment: "Dialog button that writes what was edited")
+                        : String(localized: "Create", comment: "New-course dialog button that creates the course"),
                     isConfirmEnabled: draft.isSaveable,
                     cancel: cancel,
-                    confirm: { create(draft) }
+                    confirm: { confirm(draft) }
                 )
             }
         )

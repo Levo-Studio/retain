@@ -17,10 +17,19 @@ nonisolated enum LibrarySheet: Identifiable, Equatable, Sendable {
     /// none ticked, and the dialog then refuses to create anything.
     case newCourse(Int64?)
 
+    /// An existing course, with the terms it already runs in.
+    ///
+    /// The same dialog as `newCourse`. Without it a course's name and its terms
+    /// were settled at the moment it was created and never again — so a typo in
+    /// "Informatik" was permanent, and "it also runs in the summer" could only
+    /// be said by making a second course that shares nothing with the first.
+    case editCourse(Course, termIDs: Set<Int64>)
+
     var id: String {
         switch self {
         case .nameTerm(let term): "term-\(term?.id ?? 0)"
         case .newCourse(let termID): "course-\(termID ?? 0)"
+        case .editCourse(let course, _): "edit-course-\(course.id ?? 0)"
         }
     }
 }
@@ -61,6 +70,21 @@ enum LibraryEditing {
         guard let course = draft.course() else { return nil }
         return try? await library.create(course, in: draft.termIDs)
     }
+
+    /// The name, the colour and the terms, in that order.
+    ///
+    /// Two writes rather than one because they are two things: `save` carries
+    /// the row, `setTerms` carries the pairings. Renaming a course renames it
+    /// in every term it runs in — that is the whole point of one course being
+    /// in several — and removing a term unlinks it without touching the
+    /// recordings made in the ones that remain.
+    @discardableResult
+    static func update(_ draft: CourseDraft, in library: LibraryRepository) async -> Course? {
+        guard let course = draft.course(), let id = course.id else { return nil }
+        guard let saved = try? await library.save(course) else { return nil }
+        try? await library.setTerms(of: id, to: draft.termIDs)
+        return saved
+    }
 }
 
 // MARK: - Presenting them
@@ -100,14 +124,29 @@ extension View {
                     )
 
                 case .newCourse(let termID):
-                    NewCourseDialog(
+                    CourseDialog(
                         terms: terms,
                         draft: CourseDraft(termID: termID),
-                        create: { draft in
+                        confirm: { draft in
                             sheet.wrappedValue = nil
                             guard let library else { return }
                             Task {
                                 await LibraryEditing.create(draft, in: library)
+                                await reload()
+                            }
+                        },
+                        cancel: { sheet.wrappedValue = nil }
+                    )
+
+                case .editCourse(let course, let termIDs):
+                    CourseDialog(
+                        terms: terms,
+                        draft: CourseDraft(editing: course, termIDs: termIDs),
+                        confirm: { draft in
+                            sheet.wrappedValue = nil
+                            guard let library else { return }
+                            Task {
+                                await LibraryEditing.update(draft, in: library)
                                 await reload()
                             }
                         },

@@ -44,10 +44,10 @@ struct SettingsSnapshotTests {
     static var dialogs: [(String, AnyView)] {
         [
             ("07-microphone", AnyView(MicrophonePermissionDialog(allow: {}, later: {}))),
-            ("07-new-course", AnyView(NewCourseDialog(
+            ("07-new-course", AnyView(CourseDialog(
                 terms: [Term(id: 1, title: "Third year, winter", startsOn: .now, endsOn: .now)],
                 draft: CourseDraft(name: "Computer networks", termID: 1),
-                create: { _ in },
+                confirm: { _ in },
                 cancel: {}
             ))),
             ("07-name-term", AnyView(NameTermDialog(

@@ -7,6 +7,13 @@ import Foundation
 /// is no teacher, and the segment is gone.
 nonisolated struct CourseDraft: Equatable, Sendable {
 
+    /// The course being edited, or `nil` when one is being created.
+    ///
+    /// The two differ in three words of copy and in which write happens at the
+    /// end; everything a person does in the dialog is the same. Two dialogs
+    /// would be two places for the term chips to drift apart.
+    var id: Int64?
+
     var name: String
 
     /// Every term the course runs in, and there can be several: the same school
@@ -16,11 +23,19 @@ nonisolated struct CourseDraft: Equatable, Sendable {
 
     var color: CourseColor
 
-    init(name: String = "", termIDs: Set<Int64> = [], color: CourseColor = .accent) {
+    init(id: Int64? = nil, name: String = "", termIDs: Set<Int64> = [], color: CourseColor = .accent) {
+        self.id = id
         self.name = name
         self.termIDs = termIDs
         self.color = color
     }
+
+    /// A course that already exists, with the terms it already runs in.
+    init(editing course: Course, termIDs: Set<Int64>) {
+        self.init(id: course.id, name: course.name, termIDs: termIDs, color: course.color)
+    }
+
+    var isEditing: Bool { id != nil }
 
     /// One term preselected — what the library sidebar and the General pane
     /// open the dialog with, since both already have a term chosen.
@@ -42,6 +57,7 @@ nonisolated struct CourseDraft: Equatable, Sendable {
     func course() -> Course? {
         guard isSaveable else { return nil }
         return Course(
+            id: id,
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             color: color
         )

@@ -23,6 +23,10 @@ nonisolated enum LibraryCopy {
     /// Drawn with `RetainGlyph.add` in front of it, which is how the export
     /// writes it — and the same words board 07's sheet is titled with, so it is
     /// the same key.
+    static var editCourse: String {
+        String(localized: "Edit course", comment: "Edit-course dialog title, and the action that opens it")
+    }
+
     static var newCourse: String {
         String(localized: "New course", comment: "Creating a course: the library sidebar's action and the dialog that opens")
     }

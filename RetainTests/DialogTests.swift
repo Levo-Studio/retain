@@ -93,10 +93,13 @@ struct DialogTests {
 
     /// Board 05 draws a teacher in the course header and no dialog offers a
     /// field for one. The owner settled it: there is no teacher.
+    ///
+    /// `id` is not a field of the course — it is which row is being edited,
+    /// and it is nil for a course being created.
     @Test("A course has a name, its terms and a colour, and nothing else")
     func courseHasNoTeacher() {
         let mirror = Mirror(reflecting: CourseDraft())
-        #expect(Set(mirror.children.compactMap(\.label)) == ["name", "termIDs", "color"])
+        #expect(Set(mirror.children.compactMap(\.label)) == ["id", "name", "termIDs", "color"])
     }
 
     // MARK: - The term draft
@@ -286,5 +289,107 @@ struct DialogTests {
     func unreachableDialogAddress() {
         #expect(BaseAddress.displayed("http://localhost:1234/v1") == "http://localhost:1234/v1")
         #expect(BaseAddress.displayed("http://sk-key@localhost:1234/v1") == "http://localhost:1234/v1")
+    }
+}
+
+// MARK: -
+
+/// Before this, a course's name and the terms it ran in were settled the moment
+/// it was created and never again: a typo in "Informatik" was permanent, and
+/// "it also runs in the summer" could only be said by making a second course
+/// that shares nothing with the first — which is the opposite of what one
+/// course in several terms is for.
+@Suite("Editing a course")
+struct CourseEditingTests {
+
+    private func course(_ name: String = "Informatik", id: Int64? = 7) -> Course {
+        Course(id: id, name: name, color: .accent)
+    }
+
+    @Test("A draft for an existing course carries its identity, name, colour and terms")
+    func draftRemembersTheCourse() {
+        let draft = CourseDraft(editing: course(), termIDs: [1, 2])
+
+        #expect(draft.isEditing)
+        #expect(draft.id == 7)
+        #expect(draft.name == "Informatik")
+        #expect(draft.termIDs == [1, 2])
+        #expect(draft.course()?.id == 7, "the write has to land on the row that exists")
+    }
+
+    @Test("A draft for a new course has no identity")
+    func newDraftHasNone() {
+        let draft = CourseDraft(termID: 1)
+        #expect(!draft.isEditing)
+        #expect(draft.course()?.id == nil)
+    }
+
+    @Test("Renaming renames the one course, in every term it runs in")
+    func renamingReachesEveryTerm() async throws {
+        let database = try StoreFixture.database()
+        let library = LibraryRepository(database)
+
+        let winter = try await StoreFixture.term(in: database, title: "Winter", isCurrent: true)
+        let summer = try await StoreFixture.term(in: database, title: "Summer")
+        let ids = try #require(Set([winter.id, summer.id].compactMap { $0 }) as Set<Int64>?)
+
+        let created = try #require(
+            await LibraryEditing.create(CourseDraft(name: "Infromatik", termIDs: ids), in: library)
+        )
+
+        var draft = CourseDraft(editing: created, termIDs: ids)
+        draft.name = "Informatik"
+        await LibraryEditing.update(draft, in: library)
+
+        for termID in ids {
+            let names = try await library.courses(in: termID).map(\.course.name)
+            #expect(names == ["Informatik"], "the typo survived in one of the terms")
+        }
+    }
+
+    @Test("Adding a term adds the course to it and leaves the other alone")
+    func addingATermKeepsTheRest() async throws {
+        let database = try StoreFixture.database()
+        let library = LibraryRepository(database)
+
+        let winter = try await StoreFixture.term(in: database, title: "Winter", isCurrent: true)
+        let summer = try await StoreFixture.term(in: database, title: "Summer")
+        let winterID = try #require(winter.id)
+        let summerID = try #require(summer.id)
+
+        let created = try #require(
+            await LibraryEditing.create(CourseDraft(name: "Informatik", termIDs: [winterID]), in: library)
+        )
+        let courseID = try #require(created.id)
+
+        #expect(try await library.courses(in: summerID).isEmpty)
+
+        var draft = CourseDraft(editing: created, termIDs: [winterID, summerID])
+        draft.termIDs = [winterID, summerID]
+        await LibraryEditing.update(draft, in: library)
+
+        #expect(try await library.courses(in: winterID).count == 1)
+        #expect(try await library.courses(in: summerID).count == 1)
+        #expect(try await library.terms(of: courseID).count == 2)
+    }
+
+    /// The dialog and the repository both refuse it; this is the dialog's half.
+    @Test("Unticking every term is refused rather than orphaning the course")
+    func aCourseInNoTermIsRefused() async throws {
+        let database = try StoreFixture.database()
+        let library = LibraryRepository(database)
+
+        let term = try await StoreFixture.term(in: database, isCurrent: true)
+        let termID = try #require(term.id)
+        let created = try #require(
+            await LibraryEditing.create(CourseDraft(name: "Informatik", termIDs: [termID]), in: library)
+        )
+
+        var draft = CourseDraft(editing: created, termIDs: [])
+        draft.termIDs = []
+
+        #expect(!draft.isSaveable)
+        #expect(await LibraryEditing.update(draft, in: library) == nil)
+        #expect(try await library.courses(in: termID).count == 1, "the course is still where it was")
     }
 }

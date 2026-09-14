@@ -120,7 +120,12 @@ struct GeneralPane: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The library sidebar's own row: a colour rail, the name, the count.
+    /// The library sidebar's own row: a colour rail, the name, the count —
+    /// and, here, the way back into it.
+    ///
+    /// The term row above has "Rename" for the same reason and the export draws
+    /// it; a course had nothing, so its name and the terms it runs in were
+    /// settled the moment it was created and never again.
     private func courseRow(_ listing: CourseListing) -> some View {
         HStack(spacing: RetainMetrics.settingsModelRowGap) {
             RoundedRectangle(cornerRadius: RetainMetrics.radiusCourseColourRail)
@@ -139,8 +144,24 @@ struct GeneralPane: View {
             Text(listing.recordingCount.formatted())
                 .retainStyle(RetainTypography.librarySidebarCount)
                 .foregroundStyle(RetainPalette.inkLabel)
+
+            Button {
+                Task { await openEditor(for: listing.course) }
+            } label: {
+                Text(editTitle)
+            }
+            .buttonStyle(inlineButton)
+            .fixedSize()
         }
         .padding(RetainMetrics.sidebarRowLibrary)
+    }
+
+    /// Reads which terms the course runs in before opening the dialog, so its
+    /// chips arrive already ticked rather than filling in a frame later.
+    private func openEditor(for course: Course) async {
+        guard let library = model.library, let id = course.id else { return }
+        let termIDs = Set((try? await library.terms(of: id))?.compactMap(\.id) ?? [])
+        sheet = .editCourse(course, termIDs: termIDs)
     }
 
     // MARK: -
@@ -160,6 +181,10 @@ struct GeneralPane: View {
 
     private var newTermTitle: String {
         String(localized: "New term", comment: "Button that creates the first term")
+    }
+
+    private var editTitle: String {
+        String(localized: "Edit", comment: "Action beside a course that opens the edit-course dialog")
     }
 
     private var renameTitle: String {
