@@ -40,6 +40,15 @@ final class RecordingEngine {
         didSet { if state == .recording { restartForDeviceChange() } }
     }
 
+    /// Every block of 16 kHz mono float as it is written, for the live
+    /// transcriber.
+    ///
+    /// Set before `start`. It is handed to the writer rather than read from the
+    /// ring buffer because the ring buffer allows exactly one consumer, and
+    /// because by the time the writer has it the audio is already in the format
+    /// the speech models want.
+    var onSamples: (@Sendable ([Float]) -> Void)?
+
     // MARK: - Machinery
 
     private let engine = AVAudioEngine()
@@ -115,7 +124,8 @@ final class RecordingEngine {
             },
             onFailure: { [weak self] failure in
                 Task { @MainActor [weak self] in self?.fail(failure) }
-            }
+            },
+            onSamples: onSamples ?? { _ in }
         )
 
         do {

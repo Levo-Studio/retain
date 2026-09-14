@@ -22,7 +22,19 @@ nonisolated enum CaptureFormat {
 
     static let fileExtension = "caf"
 
-    /// What the writer converts into and writes out.
+    /// What the writer converts into: 16 kHz mono, and still **float**.
+    ///
+    /// The rate and the channel count are the point of the conversion. The
+    /// sample type is not, and float is deliberate even though the file on disk
+    /// is Int16: the same block goes to the live transcriber, which wants float,
+    /// and to `AVAudioFile`, which quantises it on the way out. Converting to
+    /// Int16 here would mean converting straight back to float for every block
+    /// of a ninety-minute lecture, and would lose the only step that is actually
+    /// lossy twice instead of once.
+    ///
+    /// Deinterleaved because that is what one channel of
+    /// `AVAudioFile(forWriting:settings:)`'s processing format is, and
+    /// `write(from:)` accepts nothing else.
     ///
     /// Optional rather than force-unwrapped even though the arguments are
     /// constants AVAudioFormat documents as valid: a nil here would be a crash
@@ -30,10 +42,10 @@ nonisolated enum CaptureFormat {
     /// with a message is always the better end of that.
     static var processing: AVAudioFormat? {
         AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
+            commonFormat: .pcmFormatFloat32,
             sampleRate: sampleRate,
             channels: channelCount,
-            interleaved: true
+            interleaved: false
         )
     }
 

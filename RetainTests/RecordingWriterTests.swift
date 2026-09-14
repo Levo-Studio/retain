@@ -258,6 +258,46 @@ struct RecordingWriterTests {
         #expect(file.fileFormat.sampleRate == CaptureFormat.sampleRate)
     }
 
+    @Test("What goes into the file also goes to the live transcriber, as float")
+    func handsEveryBlockToTheLiveTranscriber() async throws {
+        let url = temporaryURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let collected = SampleCollector()
+        let samples = tone(frequency: 440, seconds: 1.0)
+        let ring = try #require(AudioRingBuffer(capacity: samples.count * MemoryLayout<Float>.size * 2))
+        let writer = RecordingWriter(
+            url: url,
+            ring: ring,
+            onProgress: { _ in },
+            onFailure: { _ in },
+            onSamples: { collected.append($0) }
+        )
+        try writer.open(sourceFormat: try #require(CaptureFormat.tapped(at: Self.hardwareRate)))
+
+        samples.withUnsafeBufferPointer { _ = ring.write($0.baseAddress!, count: samples.count) }
+        writer.drain()
+
+        await withCheckedContinuation { continuation in
+            writer.close { continuation.resume() }
+        }
+
+        let handed = collected.all
+        #expect(!handed.isEmpty, "nothing was handed to the live transcriber")
+
+        // Frame for frame what the file got. The transcript's times are counted
+        // from this stream and the audio is played from that one, so if the two
+        // ever differ, clicking a line seeks to the wrong second.
+        let file = try AVAudioFile(forReading: url)
+        #expect(handed.count == Int(file.length), "handed \(handed.count) frames, wrote \(file.length)")
+
+        // And it is the signal rather than silence. The converter has to land
+        // on float: an Int16 buffer has no float channel data at all, so the
+        // live transcriber would be fed nothing and never notice.
+        let body = Array(handed[1000..<(handed.count - 1000)])
+        #expect(abs(AudioLevel.measure(body).peak - AudioLevel.decibels(0.5)) < 1.0)
+    }
+
     @Test("Progress reports the duration and the level as the file grows")
     func reportsProgress() async throws {
         let url = temporaryURL()
@@ -308,5 +348,26 @@ private nonisolated final class ProgressCollector: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return reports
+    }
+}
+
+// MARK: -
+
+/// Gathers what the writer hands to the live transcriber, in order, so the test
+/// can compare it against the file afterwards.
+private nonisolated final class SampleCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private var samples: [Float] = []
+
+    func append(_ block: [Float]) {
+        lock.lock()
+        defer { lock.unlock() }
+        samples.append(contentsOf: block)
+    }
+
+    var all: [Float] {
+        lock.lock()
+        defer { lock.unlock() }
+        return samples
     }
 }

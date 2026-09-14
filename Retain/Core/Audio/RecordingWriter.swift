@@ -5,11 +5,11 @@ import Foundation
 /// writes the CAF.
 ///
 /// Everything the audio callback is not allowed to do happens here, on a
-/// `.utility` queue — the resample, the Int16 conversion, the file I/O and the
-/// level measurement. `.utility` rather than `.userInitiated` on purpose: this
-/// work has seconds of slack in the ring buffer, and a lower QoS lets the
-/// scheduler keep it on the efficiency cores, which over a whole school day is
-/// the difference the battery notices.
+/// `.utility` queue — the resample, the Int16 quantisation `AVAudioFile` does on
+/// the way to disk, the file I/O and the level measurement. `.utility` rather
+/// than `.userInitiated` on purpose: this work has seconds of slack in the ring
+/// buffer, and a lower QoS lets the scheduler keep it on the efficiency cores,
+/// which over a whole school day is the difference the battery notices.
 nonisolated final class RecordingWriter: @unchecked Sendable {
 
     enum Failure: Error, Sendable {
@@ -33,6 +33,15 @@ nonisolated final class RecordingWriter: @unchecked Sendable {
     private let onProgress: @Sendable (Progress) -> Void
     private let onFailure: @Sendable (Failure) -> Void
 
+    /// Every block of 16 kHz mono float, as it is written.
+    ///
+    /// This is how the live transcriber is fed. It hangs off the writer rather
+    /// than off a second reader of the ring buffer because the ring buffer
+    /// allows exactly one consumer — and because by this point the audio is
+    /// already in the format the speech models want, so a second path would
+    /// only resample it again.
+    private let onSamples: @Sendable ([Float]) -> Void
+
     private let url: URL
     private var file: AVAudioFile?
     private var converter: AVAudioConverter?
@@ -51,12 +60,14 @@ nonisolated final class RecordingWriter: @unchecked Sendable {
         url: URL,
         ring: AudioRingBuffer,
         onProgress: @escaping @Sendable (Progress) -> Void,
-        onFailure: @escaping @Sendable (Failure) -> Void
+        onFailure: @escaping @Sendable (Failure) -> Void,
+        onSamples: @escaping @Sendable ([Float]) -> Void = { _ in }
     ) {
         self.url = url
         self.ring = ring
         self.onProgress = onProgress
         self.onFailure = onFailure
+        self.onSamples = onSamples
         self.scratch = [Float](repeating: 0, count: Self.drainSamples)
     }
 
@@ -75,15 +86,21 @@ nonisolated final class RecordingWriter: @unchecked Sendable {
                 try FileManager.default.createDirectory(
                     at: url.deletingLastPathComponent(), withIntermediateDirectories: true
                 )
-                // commonFormat Int16 and interleaved true so the file on disk is
-                // exactly what the converter produces and no second pass sits
-                // between them.
-                file = try AVAudioFile(
-                    forWriting: url,
-                    settings: CaptureFormat.fileSettings,
-                    commonFormat: .pcmFormatInt16,
-                    interleaved: true
-                )
+                // `settings` describes the file — Int16 CAF. The buffers handed
+                // to write(from:) are float, and AVAudioFile quantises them on
+                // the way out, so the single resample lands on float and both
+                // the file and the live transcriber read the same block rather
+                // than converting to Int16 and straight back out again for
+                // every block of a ninety-minute lecture.
+                //
+                // No `commonFormat:`/`interleaved:` here, and that is load
+                // bearing. This initialiser's processing format is
+                // deinterleaved float32, which is exactly what the converter
+                // produces. Naming the format explicitly and getting it wrong
+                // does not fail as an error: AVAudioFile asserts inside
+                // `writeFromBuffer:` and takes the process with it, in the
+                // middle of a lecture.
+                file = try AVAudioFile(forWriting: url, settings: CaptureFormat.fileSettings)
             } catch {
                 throw Failure.couldNotCreateFile(url, underlying: error.localizedDescription)
             }
@@ -162,6 +179,13 @@ nonisolated final class RecordingWriter: @unchecked Sendable {
             }
 
             guard let converted = convert(input, with: converter) else { break }
+
+            // The live transcriber's feed. Handed over before the write so a
+            // disk that has filled up still leaves the lecture transcribed on
+            // screen for as long as the app is open.
+            if let channel = converted.floatChannelData?[0], converted.frameLength > 0 {
+                onSamples(Array(UnsafeBufferPointer(start: channel, count: Int(converted.frameLength))))
+            }
 
             do {
                 try file.write(from: converted)
