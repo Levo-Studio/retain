@@ -43,6 +43,39 @@ nonisolated struct OKLCH: Sendable, Equatable, Hashable {
 
     /// The colour in sRGB, each channel 0…1, gamma-encoded — the numbers a hex
     /// triple holds.
+    /// The inverse of `sRGB`: the same colour read back onto the OKLCH axes.
+    ///
+    /// It exists so a colour can be moved along one axis and left alone on the
+    /// others — which is the whole of `RetainInteraction`'s hover and pressed
+    /// rule. Going through hex instead would mean guessing what "a bit
+    /// lighter" means in a space where it does not mean anything consistent.
+    ///
+    /// Round-tripping is exact to within floating-point noise, which the tests
+    /// assert across the palette rather than on one value.
+    init(from colour: RetainColor) {
+        let linearRed = Self.gammaDecoded(colour.red)
+        let linearGreen = Self.gammaDecoded(colour.green)
+        let linearBlue = Self.gammaDecoded(colour.blue)
+
+        // Linear sRGB to the LMS cone responses, then to their cube roots.
+        let l = 0.4122214708 * linearRed + 0.5363325363 * linearGreen + 0.0514459929 * linearBlue
+        let m = 0.2119034982 * linearRed + 0.6806995451 * linearGreen + 0.1073969566 * linearBlue
+        let s = 0.0883024619 * linearRed + 0.2817188376 * linearGreen + 0.6299787005 * linearBlue
+
+        let lRoot = Foundation.cbrt(l)
+        let mRoot = Foundation.cbrt(m)
+        let sRoot = Foundation.cbrt(s)
+
+        let lightness = 0.2104542553 * lRoot + 0.7936177850 * mRoot - 0.0040720468 * sRoot
+        let a = 1.9779984951 * lRoot - 2.4285922050 * mRoot + 0.4505937099 * sRoot
+        let b = 0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.8086757660 * sRoot
+
+        var degrees = atan2(b, a) * 180 / .pi
+        if degrees < 0 { degrees += 360 }
+
+        self.init(lightness, (a * a + b * b).squareRoot(), degrees, alpha: colour.alpha)
+    }
+
     var sRGB: (red: Double, green: Double, blue: Double) {
         let radians = hue * .pi / 180
         let a = chroma * cos(radians)
@@ -71,6 +104,14 @@ nonisolated struct OKLCH: Sendable, Equatable, Hashable {
     /// The sRGB transfer function, applied to a signed value so that a negative
     /// channel comes back negative and is visibly out of gamut rather than
     /// folded back into range.
+    /// The inverse of `gammaEncoded`, for reading a colour back onto the
+    /// OKLCH axes.
+    private static func gammaDecoded(_ channel: Double) -> Double {
+        channel <= 0.04045
+            ? channel / 12.92
+            : pow((channel + 0.055) / 1.055, 2.4)
+    }
+
     private static func gammaEncoded(_ channel: Double) -> Double {
         let magnitude = abs(channel)
         let sign: Double = channel < 0 ? -1 : 1
