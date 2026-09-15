@@ -128,6 +128,19 @@ nonisolated enum RetainMetrics {
     static let dialogWidth: CGFloat = 430
 
     static let titleBarHeight: CGFloat = 38
+
+    /// Room under the title bar's contents, in **every** window.
+    ///
+    /// **Not drawn.** The export draws the bar 38 points flat, and at that
+    /// height the pill and the buttons in it sit against the rule below with
+    /// nothing between them. The owner asked for the gap on one window; it is
+    /// applied to all of them, because a bar that is 38 in three windows and 52
+    /// in the fourth is the kind of difference that is invisible until two of
+    /// them are open side by side.
+    ///
+    /// It is inside `RetainTitleBar` rather than a parameter on it, so a window
+    /// cannot forget it.
+    static let titleBarBottomRoom: CGFloat = 14
     static let titleBarPadding = horizontal(14)
     static let titleBarGap: CGFloat = 9
 

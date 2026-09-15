@@ -217,6 +217,10 @@ struct RecordingTitleBar: View {
         }
         .padding(RetainMetrics.titleBarPadding)
         .frame(height: RetainMetrics.titleBarHeight)
+        // The same room under it as every other window's bar. This one is its
+        // own view rather than a `RetainTitleBar` — it carries a level meter, a
+        // clock and two controls — so the value is taken rather than inherited.
+        .padding(.bottom, RetainMetrics.titleBarBottomRoom)
         .background(RetainPalette.surfaceTitleBar)
         .overlay(alignment: .bottom) { RetainDivider() }
     }

@@ -34,6 +34,10 @@ struct SettingsTitleBar: View {
         }
         .padding(RetainMetrics.titleBarPadding)
         .frame(height: RetainMetrics.titleBarHeight)
+        // The same room under it as every other window's bar. This one is its
+        // own view because Settings draws the traffic lights itself when it is
+        // hosted without them, so the value is taken rather than inherited.
+        .padding(.bottom, RetainMetrics.titleBarBottomRoom)
         .background(RetainPalette.surfaceTitleBar)
         .overlay(alignment: .bottom) {
             Rectangle()

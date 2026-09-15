@@ -171,6 +171,7 @@ struct RetainTitleBar<Trailing: View>: View {
         }
         .padding(RetainMetrics.titleBarPadding)
         .frame(height: RetainMetrics.titleBarHeight)
+        .padding(.bottom, RetainMetrics.titleBarBottomRoom)
         .background(RetainPalette.surfaceTitleBar)
         .overlay(alignment: .bottom) { RetainDivider() }
     }
