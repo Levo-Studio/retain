@@ -67,10 +67,6 @@ nonisolated enum DetailCopy {
         String(localized: "Chat", comment: "Rail segment showing the conversation about this recording")
     }
 
-    static var examRelevant: String {
-        String(localized: "exam relevant", comment: "Footer of the chapters rail — the export's klausurrelevant")
-    }
-
     static var noChapters: String {
         String(localized: "No chapters yet.",
                comment: "Chapters rail with nothing in it, because no note block has been written")

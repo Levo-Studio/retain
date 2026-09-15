@@ -1198,10 +1198,6 @@
       "comment": "Speech model card caption with a time estimate",
       "extractionState": "manual"
     },
-    "exam relevant": {
-      "comment": "Footer of the chapters rail — the export's klausurrelevant",
-      "extractionState": "manual"
-    },
     "from %@": {
       "comment": "A term's period whose end was left empty",
       "extractionState": "manual"

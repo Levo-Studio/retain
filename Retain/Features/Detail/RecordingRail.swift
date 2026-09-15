@@ -87,6 +87,13 @@ struct RecordingRail: View {
 /// a second level would mean asking the model for something it was deliberately
 /// never asked for. `RetainMetrics.chapterIndent` is still in the design layer
 /// for the day the notes gain a structure that earns it.
+///
+/// **No footer.** The export draws a strip along the bottom reading the marker
+/// count and the words "klausurrelevant", and the second half of that was never
+/// true — nothing in Retain decides that a recording is exam relevant, and a
+/// label that is always there says nothing about the recording it is under. The
+/// marker count went with it: it is in the meta strip, where the recording's
+/// other facts are, and twice is not better than once.
 struct ChapterList: View {
 
     let model: RecordingDetailModel
@@ -116,25 +123,8 @@ struct ChapterList: View {
                 .padding(RetainMetrics.railBodyDetail)
             }
             .scrollContentBackground(.hidden)
-
-            footer
         }
         .frame(maxHeight: .infinity)
-    }
-
-    /// What the rail says about the recording as a whole. The export draws two
-    /// pieces of text and no control, so that is what this is: the count of
-    /// what the user marked, and the word the design puts at the other end.
-    private var footer: some View {
-        HStack(spacing: 0) {
-            Text(verbatim: DetailCopy.markers(model.markerCount))
-            Spacer(minLength: 0)
-            Text(verbatim: DetailCopy.examRelevant)
-        }
-        .retainStyle(RetainTypography.chaptersFooter)
-        .foregroundStyle(RetainPalette.inkLabel)
-        .padding(RetainMetrics.chaptersFooterPadding)
-        .overlay(alignment: .top) { RetainDivider() }
     }
 }
 
