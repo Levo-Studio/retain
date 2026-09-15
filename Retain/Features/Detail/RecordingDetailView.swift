@@ -21,14 +21,6 @@ struct RecordingDetailView: View {
         VStack(spacing: 0) {
             titleBar
 
-            // Under the bar rather than in it, so the name lines up with the
-            // meta strip and the tabs below it. See `RetainWindowTitle`.
-            RetainWindowTitle(
-                title: DetailCopy.joined(courseName, started),
-                inset: RetainMetrics.detailWindowTitle,
-                bottomGap: 0
-            )
-
             DetailMetaStrip(model: model)
             tabBar
 
@@ -70,7 +62,12 @@ struct RecordingDetailView: View {
     // MARK: - Chrome
 
     private var titleBar: some View {
-        RetainTitleBar {
+        // The name sits in the bar rather than on a line of its own under it.
+        // That line was a whole row of window for one sentence, and the bar it
+        // sat under was empty on the left — the owner asked for the two to be
+        // one, with the name where it already was and the controls where they
+        // already were.
+        RetainTitleBar(title: DetailCopy.joined(courseName, started)) {
             // The chat and the notes both live off this model, and this window
             // is where a reader asks it questions. Whether it is going to
             // answer belongs where they are looking.
