@@ -30,12 +30,23 @@ struct RecordingRoot: View {
     /// in memory, and a fade on a local change is Retain adding a delay to
     /// something that is already there.
     var body: some View {
-        VStack(spacing: 0) {
-            RecordingTitleBar(shell: shell)
-            RecordingMetaStrip(session: shell.session, courses: shell.courses)
+        Group {
+            if let finished {
+                // **The finished lecture alone.** It brings its own title bar,
+                // its own meta strip and its own tabs, so keeping the recording
+                // chrome above it drew two of each: two topics, two courses,
+                // two model pills, and a clock still counting a lecture that
+                // had stopped.
+                RecordingDetailView(model: finished)
+            } else {
+                VStack(spacing: 0) {
+                    RecordingTitleBar(shell: shell)
+                    RecordingMetaStrip(session: shell.session, courses: shell.courses)
 
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    content
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
         }
         .background(RetainPalette.surfaceWindow)
         .task { await shell.courses.follow() }
@@ -70,14 +81,10 @@ struct RecordingRoot: View {
             ProcessingPane(phase: shell.session.phase, title: lectureTitle)
 
         case .finished:
-            // The lecture itself, in the window it was recorded in. It used to
-            // be a line saying the notes were somewhere else, which is a screen
-            // whose only content is a reference to another screen.
-            if let detail = finished {
-                RecordingDetailView(model: detail)
-            } else {
-                FinishedPane(phase: shell.session.phase)
-            }
+            // Only reached while the lecture is still being read back, or when
+            // there is no store to read it from. Once it is loaded the window
+            // shows it instead of this, chrome and all — see `body`.
+            FinishedPane(phase: shell.session.phase)
         }
     }
 
