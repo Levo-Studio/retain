@@ -73,7 +73,14 @@ final class RetainApp: NSObject, NSApplicationDelegate {
         // because an interrupted deletion is not a reason to delay the status
         // item appearing.
         if let database {
-            Task { await TransientAudio(database).sweep() }
+            Task {
+                // A row still claiming to be recording, transcribing or
+                // summarising is claiming that a process which no longer
+                // exists is working on it. Settled before the sweep, so the
+                // sweep sees the states it expects.
+                try? await LibraryRepository(database).settleInterruptedRecordings()
+                await TransientAudio(database).sweep()
+            }
         }
     }
 
