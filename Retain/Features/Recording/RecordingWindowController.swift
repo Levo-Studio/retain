@@ -22,14 +22,12 @@ final class RecordingWindowController: NSObject, NSWindowDelegate {
 
     // MARK: - Showing it
 
-    /// Opens the lecture that has just finished, in its own window.
+    /// Where the finished lecture is read from.
     ///
-    /// Filled in by the shell, which is the only object that can see both this
-    /// window and the library's. The recording window says it is finished and
-    /// the detail window comes up over it, which is the hand-over the owner
-    /// asked for: the transcript while it runs, then what was done to it, then
-    /// the notes, the chapters and the tabs.
-    var onFinished: ((Int64) -> Void)?
+    /// The window shows the lecture itself once everything has run — the
+    /// transcript while it runs, then what is being done to it, then the notes
+    /// — so it needs the store the detail view reads.
+    var database: RetainDatabase?
 
     func show() {
         let window = window ?? makeWindow()
@@ -64,7 +62,14 @@ final class RecordingWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.delegate = self
         var root = RecordingRoot(shell: shell)
-        root.openFinished = { [weak self] id in self?.onFinished?(id) }
+        // `nil` only where there is no store at all — a preview, or a launch
+        // whose database would not open. The window then keeps its "finished"
+        // line, which is the honest fallback: there is nothing to read.
+        if let database {
+            root.makeDetail = { recording in
+                RecordingDetailModel(recording: recording, database: database)
+            }
+        }
         window.contentView = NSHostingView(rootView: root)
         window.setContentSize(size)
 

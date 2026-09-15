@@ -443,6 +443,17 @@ final class LectureSession {
 
     // MARK: - Note blocks
 
+    /// The row this session just finished, read back from the store.
+    ///
+    /// For the window, which shows the lecture where it was recorded once
+    /// everything has run. It reads rather than keeps: the row has been written
+    /// to twice since the microphone opened — the duration, the state, the
+    /// topic — and the copy this object started with is none of those.
+    func finishedRecording() async -> Recording? {
+        guard let store, let recordingID else { return nil }
+        return try? await store.library.recording(recordingID)
+    }
+
     // MARK: - The notes the lecture is left with
 
     /// Rewrites the notes from the batch transcript, once it exists.

@@ -9,10 +9,14 @@ struct RecordingRoot: View {
 
     let shell: ShellModel
 
-    /// Opens the finished lecture in its own window once everything has run.
-    /// Filled in by the window controller, which is the only object that can
-    /// see both this window and the library's.
-    var openFinished: ((Int64) -> Void)?
+    /// Builds the detail model for the lecture that has just finished.
+    ///
+    /// Handed in by the window controller, which is the only object here with a
+    /// database. `nil` in a preview and in the board snapshot, where there is
+    /// no store at all.
+    var makeDetail: ((Recording) -> RecordingDetailModel)?
+
+    @State private var finished: RecordingDetailModel?
 
     /// **One window, three states, in the order a lecture goes through them.**
     ///
@@ -35,9 +39,12 @@ struct RecordingRoot: View {
         }
         .background(RetainPalette.surfaceWindow)
         .task { await shell.courses.follow() }
-        .onChange(of: shell.session.phase) { _, phase in
-            guard case .done = phase, let id = shell.session.recordingID else { return }
-            openFinished?(id)
+        .task(id: stage) {
+            guard stage == .finished, finished == nil else { return }
+            guard let recording = await shell.session.finishedRecording() else { return }
+            let model = makeDetail?(recording)
+            await model?.load()
+            finished = model
         }
     }
 
@@ -63,7 +70,14 @@ struct RecordingRoot: View {
             ProcessingPane(phase: shell.session.phase, title: lectureTitle)
 
         case .finished:
-            FinishedPane(phase: shell.session.phase)
+            // The lecture itself, in the window it was recorded in. It used to
+            // be a line saying the notes were somewhere else, which is a screen
+            // whose only content is a reference to another screen.
+            if let detail = finished {
+                RecordingDetailView(model: detail)
+            } else {
+                FinishedPane(phase: shell.session.phase)
+            }
         }
     }
 
@@ -150,6 +164,11 @@ struct RecordingTitleBar: View {
             Text(verbatim: microphoneLine)
                 .retainStyle(RetainTypography.titleBarStatus)
                 .foregroundStyle(RetainPalette.inkLabel)
+
+            // Beside the microphone's state, because they are the same question
+            // about the other half of the pipeline. It was lost when this bar
+            // was rewritten to carry Pause and Finish.
+            ModelStatusPill()
 
             // Pause and Finish were in the transcript rail's footer, and the
             // rail is gone — the transcript has the window. They belong with
