@@ -22,58 +22,65 @@ nonisolated enum NoteReduction {
 
     // MARK: - Prompts, map step
 
-    /// **These are meeting notes, not an encyclopedia entry.**
+    /// **These are meeting notes, not an encyclopedia entry — and not a story.**
     ///
-    /// The prompt used to say "explaining the matter itself the way a textbook
-    /// would" and "never write about the class". Read literally, that is an
-    /// instruction to leave the room: the model was handed three minutes of a
-    /// biology lesson about corals and wrote a tidy paragraph of general
-    /// knowledge about coral symbiosis — accurate, plausible, and not what the
-    /// teacher had said. Which is exactly how it was reported: the model just
-    /// puts something out.
+    /// Two faults are corrected here, both seen in what the model produced.
     ///
-    /// What is wanted is the other thing. Somebody who missed the lesson should
-    /// be able to read the note and know **what was covered and what was said
-    /// about it** — the definition as it was given, the example that was used,
-    /// the number that was named, the question somebody asked. Nothing from
-    /// outside the transcript, however true.
+    /// The first was "explaining the matter itself the way a textbook would".
+    /// Read literally, that is an instruction to leave the room: handed three
+    /// minutes of a biology lesson about corals, the model wrote a tidy,
+    /// accurate paragraph of general knowledge, with terms that appear nowhere
+    /// in the transcript.
     ///
-    /// The shape is unchanged; only the job is.
+    /// The second is that the shape was shown as fillable German — a line
+    /// reading `Ein Absatz.` under a heading reading `Überschrift`. The model
+    /// copied it. A note went out with the literal words "Ein Absatz." as its
+    /// paragraph, which is the template answering instead of the model. The
+    /// shape is described now and never demonstrated in the language the answer
+    /// is written in.
+    ///
+    /// And the balance has moved: fewer sentences, more points. A lesson is
+    /// mostly a list of things that were said, and prose is the form that hides
+    /// them.
     static let blockSystemPrompt = """
         You take one stretch of a recorded class and write down what was said in it.
 
-        These are notes of the lesson, not an article about the subject. Somebody who \
-        missed this stretch reads them to find out what was covered and what was said \
-        about it. Write your answer in German.
+        These are notes of the lesson, not an article about the subject, and not a \
+        retelling of it. Somebody who missed this stretch reads them to find out what \
+        was covered and what was said about it. Write your answer in German.
 
         The transcript is German and comes from automatic speech recognition, so it \
         contains recognition errors, filler words and false starts. Read through them.
 
-        The note is Markdown, in exactly this shape and using nothing else:
+        Answer with Markdown in this order and nothing else:
 
-        ## Überschrift
-        Ein Absatz.
-        - höchstens drei Stichpunkte
+        1. one heading line beginning with "## "
+        2. one or two sentences of plain text
+        3. between two and six list items, each beginning with "- "
 
         Rules:
-        - The heading is one line starting with "## ". Never "#", never "###". It names \
-        what this stretch was about: a noun phrase, no verb, no full stop.
-        - One paragraph of two to four sentences saying what was actually said: the \
-        definition as it was given, the example that was used, the point that was made. \
-        Follow the order it was said in.
-        - **Take nothing from outside the transcript.** If the teacher explained \
-        something incompletely, write it as incompletely as they did. Adding what you \
-        know about the subject is the one mistake that makes these notes worthless, \
-        because the reader cannot tell it from what was said.
-        - Do not narrate the lesson either: no "der Lehrer sagt", no "in diesem \
-        Abschnitt", no "es wurde besprochen". Write the content, in the room's own \
-        terms.
-        - Mark the one technical term the stretch turns on with **double asterisks**, \
-        once, inside the paragraph. Never mark a second term.
-        - The list is optional and holds at most three items, each something worth \
-        keeping that was actually named: a number, a definition, a condition, an \
-        exception, a question from the room. Leave it out when nothing of that kind was \
-        said. Never restate the paragraph.
+        - The heading names what this stretch was about: a German noun phrase, no \
+        verb, no full stop. Never "#", never "###".
+        - The sentences say what the stretch was about at all — the one thing a reader \
+        needs before the list makes sense. Two sentences at most. Everything else \
+        belongs in the list.
+        - **The list carries the content.** One item per thing that was said: a \
+        definition, a rule, a date, a figure, a name, a condition, an exception, a task \
+        that was set, a question from the room. Short — a phrase, not a sentence. \
+        Never restate the sentences above.
+        - **Every number that was said goes in.** Dates, weights, percentages, counts, \
+        pages, deadlines, marks. A number is the one thing a reader cannot reconstruct \
+        and the first thing they came for.
+        - **Take nothing from outside the transcript.** If something was explained \
+        incompletely, leave it incomplete. Adding what you know about the subject is \
+        the one mistake that makes these notes worthless, because the reader cannot \
+        tell it from what was said.
+        - Do not narrate: no "der Lehrer sagt", no "in diesem Abschnitt", no "es wurde \
+        besprochen", no "zunächst … dann …". Write the content, in the room's own terms.
+        - Mark the one term the stretch turns on with **double asterisks**, once. Never \
+        mark a second term.
+        - Never write placeholder text. If a part has nothing to hold, leave that part \
+        out entirely.
         - No tables, no code fences, no images, no links, no horizontal rules.
 
         If a word was obviously misrecognised and the context makes it clear what was \
@@ -115,7 +122,7 @@ nonisolated enum NoteReduction {
                 (
                     "markdown",
                     JSONSchema.string(
-                        "The note as Markdown: a '## ' heading naming what this stretch was about, one paragraph saying what was said about it with one **bold** term, and an optional list of at most three '- ' items that were actually named. No other Markdown."
+                        "The note as Markdown: a '## ' heading naming what this stretch was about, then one or two sentences, then two to six '- ' items carrying the content — every definition, rule, date, figure, name and task that was said, with every number kept. One **bold** term. No other Markdown, and never placeholder text."
                     )
                 )
             ]
@@ -141,8 +148,9 @@ nonisolated enum NoteReduction {
         You write the finished notes of one recorded class: what was covered, and \
         what was said about it.
 
-        These are notes of the lesson, not an article about the subject. Somebody who \
-        was not there reads them instead of the recording. Write in German.
+        These are notes of the lesson, not an article about the subject, and not a \
+        retelling of it. Somebody who was not there reads them instead of the \
+        recording. Write in German.
 
         You are given the transcript of record and the draft notes that were written \
         while the recording ran. The drafts are drafts: each was written from three \
@@ -154,28 +162,34 @@ nonisolated enum NoteReduction {
         characters. No verb, no sentence, no full stop. Never a generic label such as \
         "Zusammenfassung", "Vorlesung" or "Notizen".
 
-        markdown — the notes, as three to eight sections in the order things were said. \
-        Merge consecutive drafts that turned out to be about the same thing; split one \
-        that covered two. Each section is:
+        markdown — three to eight sections in the order things were said. Merge \
+        consecutive drafts that turned out to be about the same thing; split one that \
+        covered two. Each section is, in this order and nothing else:
 
-        ## Überschrift
-        Ein Absatz von drei bis sechs Sätzen.
-        - höchstens drei Stichpunkte
+        1. one heading line beginning with "## "
+        2. one or two sentences of plain text
+        3. between two and six list items, each beginning with "- "
 
         Rules:
-        - Headings start with "## ". Never "#", never "###". Each names what that part \
-        of the lesson was about: a noun phrase, no verb, no full stop.
-        - Each paragraph says what was said: the definition as it was given, the \
-        example that was used, the argument that was made, in the order it came.
+        - Each heading names what that part of the lesson was about: a German noun \
+        phrase, no verb, no full stop. Never "#", never "###".
+        - The sentences say what the part was about at all — what a reader needs \
+        before the list makes sense. Two at most. Everything else belongs in the list.
+        - **The list carries the content.** One item per thing that was said: a \
+        definition, a rule, a date, a figure, a name, a condition, an exception, a task \
+        that was set, a question from the room. Short — a phrase, not a sentence.
+        - **Every number that was said goes in.** Dates, weights, percentages, counts, \
+        pages, deadlines, marks. A number is the one thing a reader cannot reconstruct \
+        and the first thing they came for.
         - **Take nothing from outside the transcript.** If something was explained \
         incompletely, leave it incomplete. Filling the gap with what you know about \
         the subject is the one mistake that makes these notes worthless, because the \
         reader cannot tell it from what was said.
-        - Do not narrate the lesson either: no "der Lehrer sagt", no "in dieser \
-        Stunde", no "es wurde besprochen". Write the content, in the room's own terms.
-        - Mark the one technical term of each section with **double asterisks**, once.
-        - The list is optional and holds at most three items, each something worth \
-        keeping that was actually named.
+        - Do not narrate: no "der Lehrer sagt", no "in dieser Stunde", no "es wurde \
+        besprochen", no "zunächst … dann …". Write the content, in the room's own terms.
+        - Mark the one term of each section with **double asterisks**, once.
+        - Never write placeholder text. If a part has nothing to hold, leave that part \
+        out entirely.
         - No tables, no code fences, no images, no links, no horizontal rules.
         """
 
@@ -213,7 +227,7 @@ nonisolated enum NoteReduction {
                 (
                     "markdown",
                     JSONSchema.string(
-                        "The notes as Markdown: three to eight sections in the order things were said, each a '## ' heading naming that part of the lesson, one paragraph saying what was said about it with one **bold** term, and an optional list. No other Markdown."
+                        "The notes as Markdown: three to eight sections in the order things were said, each a '## ' heading naming that part of the lesson, then one or two sentences, then two to six '- ' items carrying the content — every definition, rule, date, figure, name and task that was said, with every number kept. One **bold** term per section. No other Markdown, and never placeholder text."
                     )
                 ),
             ]
@@ -461,9 +475,30 @@ nonisolated extension NoteReduction {
     /// clearing its throat.
     static let shortestUsableNote = 20
 
+    /// Lines a model writes when it is answering with the shape instead of the
+    /// content.
+    ///
+    /// These were in the prompt as an example of the form, in German, and the
+    /// model copied them: a note went out whose entire paragraph was the words
+    /// "Ein Absatz.". The prompt no longer demonstrates the shape in the
+    /// language of the answer, and a reply that still contains one of these is
+    /// a rung that failed — the ladder has a better one below it.
+    static let templateEchoes = ["ein absatz", "überschrift", "höchstens drei stichpunkte"]
+
     static func isUsableNote(_ markdown: String) -> Bool {
         let trimmed = markdown.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
+
+        // A whole line that is nothing but one of the template's own words.
+        // Matched per line rather than anywhere in the text, so a note that
+        // genuinely discusses a heading is not thrown away.
+        let echoed = trimmed.split(separator: "\n").contains { line in
+            let bare = line
+                .trimmingCharacters(in: CharacterSet(charactersIn: " \t#-*.").union(.whitespaces))
+                .lowercased()
+            return templateEchoes.contains(bare)
+        }
+        guard !echoed else { return false }
 
         let body = trimmed
             .split(separator: "\n", omittingEmptySubsequences: false)

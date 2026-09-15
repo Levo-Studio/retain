@@ -36,6 +36,22 @@ struct UsableAnswerTests {
         #expect(NoteReduction.BlockAnswer(markdown: "## Korallen\n\nJa.").isUsable == false)
     }
 
+    @Test("A note that copied the template out of the prompt is rejected")
+    func aTemplateEchoIsRejected() {
+        // Seen on screen: the prompt showed the shape as German filler, and the
+        // model filled the shape in with the filler. The paragraph of a real
+        // note read "Ein Absatz." under a heading the model had written itself.
+        let echoed = NoteReduction.BlockAnswer(markdown: """
+            ## Kursbeteiligung und Erwartungen
+
+            Ein Absatz.
+
+            - Beteiligung
+            - Gewichtung mündlich/schriftlich
+            """)
+        #expect(echoed.isUsable == false)
+    }
+
     @Test("A short but real note passes")
     func aShortNotePasses() {
         // A three-minute block honestly summarised in one sentence is a note,
