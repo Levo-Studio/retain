@@ -349,8 +349,12 @@ final class RetainDropdownController {
         }
         // An empty list has nothing to open. Every picker in Retain is disabled
         // while its options are empty, so this is the second line of defence
-        // rather than the first.
-        guard !titles.isEmpty, let parent = anchor.window else { return }
+        // rather than the first — and the field is told, or it would sit there
+        // wearing the border of a control whose list is down.
+        guard !titles.isEmpty, let parent = anchor.window else {
+            close()
+            return
+        }
 
         highlight = RetainDropdownHighlight(count: titles.count, selected: selected)
         height = nil
