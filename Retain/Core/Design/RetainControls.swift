@@ -148,12 +148,14 @@ struct RetainTextField: View {
 
 // MARK: - Picker field
 
-/// A field that opens a menu: the model picker, the input picker, the term
-/// picker in the new-course dialog.
+/// A field that opens a list: the model picker, the input picker, the term
+/// picker, the course field, the two month fields of a term's period.
 ///
-/// A `Menu` in a box rather than SwiftUI's `Picker`, because every `Picker`
-/// style on macOS draws its own chrome — an `NSPopUpButton`'s bezel, arrows and
-/// system accent — and none of it is what the export draws.
+/// Neither SwiftUI's `Picker` nor a `Menu`, because both hand the list to
+/// AppKit: a `Picker` draws an `NSPopUpButton`'s bezel and arrows around the
+/// field, and a `Menu` opens an `NSMenu` — system grey, system type, system
+/// highlight, none of which is in `docs/design/`. The field is drawn here and
+/// the list is drawn in `RetainDropdown`, and both are Retain's.
 struct RetainPickerField<Value: Hashable, Label: View>: View {
 
     @Binding var selection: Value
@@ -173,11 +175,14 @@ struct RetainPickerField<Value: Hashable, Label: View>: View {
 
     @ViewBuilder let label: () -> Label
 
+    /// Whether the list is down. The dropdown shuts itself on Escape, on a
+    /// click outside it and on a row being chosen, and says so through `close`,
+    /// which is what keeps this in step with what is on screen.
+    @State private var isOpen = false
+
     var body: some View {
-        Menu {
-            ForEach(options, id: \.self) { option in
-                Button(title(option)) { selection = option }
-            }
+        Button {
+            isOpen.toggle()
         } label: {
             HStack(spacing: 0) {
                 label()
@@ -190,17 +195,28 @@ struct RetainPickerField<Value: Hashable, Label: View>: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .retainFieldChrome(cornerRadius: cornerRadius, padding: padding)
+            // A field with its list open is the field being worked in, which is
+            // the state the emphasised border already means.
+            .retainFieldChrome(isFocused: isOpen, cornerRadius: cornerRadius, padding: padding)
             .contentShape(.rect)
         }
-        // `.button` rather than `.borderlessButton`: the borderless style draws
-        // the label itself, keeping the text and dropping everything around it,
-        // so the field's fill and border never appear. The button style is then
-        // `.plain` so that AppKit adds no bezel of its own on top.
-        .menuStyle(.button)
         .buttonStyle(.plain)
-        .menuIndicator(.hidden)
         .fixedSize(horizontal: false, vertical: true)
+        // Behind the field rather than over it: the anchor takes the field's own
+        // frame, which is what the list is positioned and sized against.
+        .background(
+            RetainDropdownAnchor(
+                isOpen: isOpen,
+                titles: options.map(title),
+                selected: options.firstIndex(of: selection),
+                choose: { row in
+                    isOpen = false
+                    guard options.indices.contains(row) else { return }
+                    selection = options[row]
+                },
+                close: { isOpen = false }
+            )
+        )
     }
 }
 
