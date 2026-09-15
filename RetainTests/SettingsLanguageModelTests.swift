@@ -257,7 +257,7 @@ struct SettingsLanguageModelTests {
     /// said the key had not been taken.
     @Test("Pasting a key stores it there and then")
     func typingStoresImmediately() {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-immediate")
+        let item = KeychainItem.forTest("settings-immediate")
         defer { try? item.delete() }
         try? item.delete()
 
@@ -272,7 +272,7 @@ struct SettingsLanguageModelTests {
 
     @Test("A stored key is in the field when the window opens")
     func theStoredKeyIsLoaded() {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-loaded")
+        let item = KeychainItem.forTest("settings-loaded")
         defer { try? item.delete() }
         try? item.write("sk-stored")
 
@@ -288,7 +288,7 @@ struct SettingsLanguageModelTests {
 
     @Test("The field keeps what was typed rather than emptying itself")
     func theFieldIsNotCleared() {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-keeps")
+        let item = KeychainItem.forTest("settings-keeps")
         defer { try? item.delete() }
         try? item.delete()
 
@@ -302,7 +302,7 @@ struct SettingsLanguageModelTests {
 
     @Test("A key is stored trimmed")
     func theKeyIsTrimmed() {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-trimmed")
+        let item = KeychainItem.forTest("settings-trimmed")
         defer { try? item.delete() }
         try? item.delete()
 
@@ -314,7 +314,7 @@ struct SettingsLanguageModelTests {
 
     @Test("Clearing the field removes the item")
     func clearingRemovesTheItem() {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-cleared")
+        let item = KeychainItem.forTest("settings-cleared")
         defer { try? item.delete() }
         try? item.write("sk-stored")
 
@@ -328,7 +328,7 @@ struct SettingsLanguageModelTests {
 
     @Test("A key pasted before the test is the one the test uses")
     func testingUsesThePastedKey() async {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-test-uses")
+        let item = KeychainItem.forTest("settings-test-uses")
         defer { try? item.delete() }
         try? item.delete()
 
@@ -351,7 +351,7 @@ struct SettingsLanguageModelTests {
     /// it.
     @Test("Building the model does not touch the Keychain")
     func theKeychainIsNotReadAtLaunch() {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-not-at-launch")
+        let item = KeychainItem.forTest("settings-not-at-launch")
         defer { try? item.delete() }
         try? item.write("sk-stored")
 
@@ -366,7 +366,7 @@ struct SettingsLanguageModelTests {
 
     @Test("Testing the connection does not disturb a stored key")
     func testingLeavesAStoredKeyAlone() async {
-        let item = KeychainItem(service: "apps.levo-studio.Retain.tests", account: "settings-test-keeps")
+        let item = KeychainItem.forTest("settings-test-keeps")
         defer { try? item.delete() }
         try? item.write("sk-stored")
 
@@ -379,5 +379,26 @@ struct SettingsLanguageModelTests {
 
         #expect((try? item.read()) == "sk-stored")
         #expect(model.hasStoredKey)
+    }
+}
+
+// MARK: -
+
+nonisolated extension KeychainItem {
+
+    /// A keychain item for one test, under an account nothing else will use.
+    ///
+    /// The account carries a fresh UUID because the item's access control
+    /// records the **code signature** of the process that created it, and every
+    /// ad-hoc signed test build has a different one. An item left behind by a
+    /// run that was interrupted is therefore unreadable to the next run's
+    /// binary — macOS puts a password sheet in front of the read, the test
+    /// blocks on it for as long as the timeout allows, and then fails for a
+    /// reason that has nothing to do with what it was testing. That happened.
+    static func forTest(_ name: String) -> KeychainItem {
+        KeychainItem(
+            service: "apps.levo-studio.Retain.tests",
+            account: "\(name)-\(UUID().uuidString)"
+        )
     }
 }

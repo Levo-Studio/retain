@@ -20,8 +20,21 @@ import Testing
 @Suite("Keychain", .serialized)
 struct KeychainTests {
 
+    /// A keychain item nothing else will touch, under a service name that is
+    /// new every run.
+    ///
+    /// The UUID is not decoration. An item's access control records the **code
+    /// signature** of the process that created it, and every ad-hoc signed test
+    /// build has a different one — so an item left behind by a run that was
+    /// interrupted is unreadable to the next run's binary. macOS puts a
+    /// password sheet in front of the read, the test blocks on it until it
+    /// times out, and then fails for a reason that has nothing to do with what
+    /// it was testing. That happened.
     private func scratch(_ name: String = #function) -> KeychainItem {
-        KeychainItem(service: "apps.levo-studio.Retain.tests.\(name)", account: "language-model-api-key")
+        KeychainItem(
+            service: "apps.levo-studio.Retain.tests.\(name).\(UUID().uuidString)",
+            account: "language-model-api-key"
+        )
     }
 
     @Test("Nothing stored is not an error")
@@ -84,7 +97,7 @@ struct KeychainTests {
 
     @Test("Two accounts do not see each other")
     func itemsAreSeparate() throws {
-        let service = "apps.levo-studio.Retain.tests.separate"
+        let service = "apps.levo-studio.Retain.tests.separate.\(UUID().uuidString)"
         let first = KeychainItem(service: service, account: "one")
         let second = KeychainItem(service: service, account: "two")
         defer {
