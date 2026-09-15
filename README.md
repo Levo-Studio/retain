@@ -9,9 +9,9 @@ Lecture transcription for macOS · SwiftUI · offline
 
 ---
 
-Retain sits in the menu bar, records the lecture through the microphone,
-transcribes it on the Neural Engine while it runs, and has a language model on
-the same Mac turn the transcript into notes.
+Retain records the lecture through the microphone, transcribes it on the Neural
+Engine while it runs, and has a language model on the same Mac turn the
+transcript into notes.
 
 Nothing leaves the machine. There is no account, no cloud, no backend, no
 telemetry, and no network code beyond a connection to `localhost`.
@@ -21,18 +21,24 @@ telemetry, and no network code beyond a connection to `localhost`.
 
 ## Status
 
-**Phase 1 of 7.** The project builds and runs, puts an item in the menu bar, and
-does nothing else yet. Recording, transcription, summarization, storage and the
-interface are the phases after this one.
+**Phases 0 to 6 are done.** Recording, transcription, summarization, storage and
+the interface work. What is outstanding is phase 7: Developer ID signing,
+notarization, updates and a Homebrew tap. Until then Retain is built from
+source.
 
-## What it will do
+## What it does
 
 | | |
 |---|---|
 | **While the lecture runs** | Live transcript, note blocks that close every few minutes, speaker separation between the lecturer and a question from the room, an annotation hotkey, elapsed time |
-| **Afterwards** | The lecture re-transcribed in batch for an authoritative transcript, diarization, written-out notes with timestamps, chapters and a chat about the lesson |
-| **Library** | Courses and terms, full-text search across a whole term |
-| **Settings** | The LM Studio connection, the speech model, the microphone |
+| **Afterwards** | The lecture re-transcribed in batch for the authoritative transcript, diarization, the notes written again from it, timestamps, chapters and a chat about the lesson |
+| **Library** | Courses and terms, full-text search across a whole term, and a recording started or ended without leaving the window |
+| **Settings** | The LM Studio connection, the speech models, the microphone |
+
+Terms, courses and recordings can all be deleted. A recording is the only copy
+of a lecture once its audio has gone, so the confirmation counts what is lost
+before it asks — how many recordings, how many lines of transcript, how many
+passages you marked.
 
 ## What it deliberately does not have
 
@@ -43,6 +49,8 @@ interface are the phases after this one.
 - No sync and no export to a service.
 - No system-audio capture. Retain records the microphone. It does not tap other
   applications' audio.
+- No menu bar item. Retain is an ordinary window app: the library is its home
+  window, and the global shortcuts work from any app without one.
 - No archive of recordings. The audio is deleted once it has been transcribed,
   and there is no playback anywhere in the app. What Retain keeps is the
   transcript, the notes and what you marked.
@@ -56,9 +64,17 @@ of speech a block closes and a small language model summarises that block alone,
 so notes appear during the lecture rather than after it.
 
 When the lecture ends, the raw recording is transcribed again in one batch pass,
-which is roughly twice as accurate as the streaming pass, and the block
-summaries are reduced into the final notes against that transcript. **The live
-transcript is feedback, not the record.**
+which is roughly twice as accurate as the streaming pass. Then the speakers are
+separated, and then the notes are written again from that transcript — the
+cards from during the lecture are drafts, each written from three minutes in
+isolation, and the finished notes replace them. **The live transcript is
+feedback, not the record, and neither are the live notes.**
+
+The batch pass uses Apple's own on-device model where the Mac has it — it ships
+in macOS 26 — and NVIDIA's Parakeet TDT everywhere else. Both are local, both
+produce word-level timings, and everything after that point is the same code. If
+Apple's model is unavailable or fails, Parakeet runs instead rather than the
+lecture being lost.
 
 **The audio is not kept.** Once the batch pass and the speaker separation have
 both read the file and the transcript has been written, the recording is
@@ -73,8 +89,11 @@ when the Mac is plugged in.
 
 ## Requirements
 
-- macOS 15.0 or later, Apple Silicon
-- [LM Studio](https://lmstudio.ai) running locally, with a model loaded
+- macOS 15.0 or later, Apple Silicon. On macOS 26 the batch transcription uses
+  Apple's on-device speech model; below it, Parakeet TDT.
+- [LM Studio](https://lmstudio.ai) running locally, with a model loaded, for the
+  notes and the chat. Recording and transcription do not need it. An API key is
+  only needed if your own server asks for one.
 - Xcode 26 to build
 
 ## Building
@@ -124,14 +143,14 @@ to be touched for that.
 Retain/
   Core/Design/     RetainPalette, RetainTypography, RetainMetrics, RetainMotion
   Core/Audio/      the engine, the tap, the ring buffer, device listeners
-  Core/Speech/     FluidAudio wrappers: streaming, batch, voice activity, diarization
+  Core/Speech/     FluidAudio wrappers plus Apple's SpeechAnalyzer: streaming, batch, voice activity, diarization
   Core/LLM/        SummarizationBackend and the LM Studio conformer
   Core/Data/       the GRDB store, migrations, full-text search
   Core/Keychain/   the API-key wrapper
   Core/Power/      power source, low-power mode, the model-size decision
   Models/          plain Sendable record types
   Pipeline/        pure logic: block boundaries, map and reduce, transcript merging
-  Features/        Shell, plus one folder per screen area
+  Features/        the shell that owns the windows, plus one folder per screen area
   Resources/       fonts, Localizable.xcstrings
 RetainTests/       Swift Testing
 docs/design/       the design export — read-only, never edited to match the code
@@ -166,7 +185,12 @@ notices ship with the app.
 The interface is drawn before it is built. `docs/design/` holds the export —
 seven boards, a render of each, and `docs/design/README.md` with every colour,
 size, radius, padding and timing as a concrete value. The folder is read-only:
-if the code and the design disagree, the code is wrong.
+where the code and the design disagree, the code is wrong.
+
+Retain departs from it in two places, both on the owner's decision and both
+named in the tests so they cannot drift quietly: the window's title bar and meta
+strip are drawn in the window's own colour rather than a shade lighter, and
+there is no menu bar item — the library is the app's home window.
 
 ## App icon
 
