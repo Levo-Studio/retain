@@ -63,7 +63,40 @@ unusable.
 
 ---
 
-## 4. The traps, each of which has already cost a day
+## 4. Design, which is not decoration here
+
+`docs/design/` **is** the design, and it is read-only. Every colour, size,
+radius, padding, weight, line-height and timing is in it as a concrete value.
+Take them exactly: no rounding to a 4- or 8-point grid, no "close enough", no
+improving a ladder that is not a ladder. CSS pixels transfer 1:1 to SwiftUI
+points. Where the HTML and the README disagree, **the HTML wins**, because it is
+what was drawn. The export is dark-only; there is no light appearance, because
+none was drawn, and inventing one is not a decision to make here.
+
+**If a value you need is not in the export, that is a question for the owner —
+not a gap to fill with taste.** In practice several values now exist that the
+export does not draw (a reading line for the chapter rail, the room above a
+title bar, the tick in a selected row). Every one of them carries a comment
+saying it is not drawn and what it was derived from. That is the bar: a number
+nobody can trace is worse than a number that is slightly wrong.
+
+Three rules that come out of this and get broken by accident:
+
+- **No numeric or colour literal in a feature file.** No `.padding(17)`, no
+  `Color(hex:)`, no hand-rolled curve. A missing value goes into the design
+  layer, not into the call site.
+- **One component, not four copies.** When two screens draw the same thing, it
+  is one view in `Core/Design/`. Two `AnnotationCard` types once ended up in one
+  target and disagreed only about the measure — which was the one thing the
+  boards genuinely drew differently.
+- **Departures from the export are deliberate and written down.** Three exist:
+  the annotation card is no longer drawn (annotations go to the model instead),
+  the chapters rail has no footer ("exam relevant" was never true), and the
+  window's name sits in the title bar rather than beside the traffic lights.
+  Each is commented where it happens. Anything else that differs from the export
+  is a bug.
+
+## 5. The traps, each of which has already cost a day
 
 **Swift 6 actor isolation.** `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` makes
 closure literals `@MainActor`. Passing one to a `@Sendable` parameter through a
@@ -104,7 +137,7 @@ without touching the Keychain when `Defaults[.hasLanguageModelKey]` is false.
 
 ---
 
-## 5. What this session changed
+## 6. What this session changed
 
 Twenty-two commits, all on `main`. Grouped by what they were about.
 
@@ -181,7 +214,148 @@ model already writing both.
 
 ---
 
-## 6. How to work in this repository
+## 7. The owner, and how work is delivered to them
+
+This section is the part that cannot be reconstructed from the code. It is
+long on purpose: nearly every rule in it was learned by getting it wrong first.
+
+### Who they are
+
+Julius Grimm, Levo Studio. A student who uses this app in lessons and also
+writes it, on a Mac with 24 GB of memory running LM Studio locally. High
+technical knowledge — skip beginner explanations, name trade-offs, and say what
+you would do rather than listing options. Once a decision is made, stop arguing
+and build it.
+
+The company name is **Levo Studio**, both words, always. Never "Levo" alone,
+anywhere: not in code, comments, commits, docs, UI copy or service names.
+
+### How they report
+
+In German, fast, typed on the run — spelling and word boundaries suffer and
+that is not a signal about anything. Reports come as screenshots with a
+sentence, usually while the app is open in front of them. They test every build
+themselves; nobody else does.
+
+**They mean something more specific than the words carry.** Two rounds of this
+session were spent building the wrong thing because *"die Leiste"* (the bar) was
+read as *"die Liste"* (the list), and another two because "the name should be
+in the bar with the model, fully left" sounds impossible — macOS owns the
+top-left of a title bar — until you realise the answer is to keep room clear
+above the row so the buttons sit in it.
+
+The rule that came out of that: **when a request could mean two materially
+different things and the screenshot does not settle it, build the reading you
+believe and say in one sentence which one you built.** They correct in four
+words. Guessing twice costs a round each time; asking a blocking question
+mid-flow annoys them more than a wrong build they can redirect.
+
+They interrupt mid-turn with corrections and additions. Take them as they
+arrive, fold them into what is already running, and do not restart.
+
+### Their standards, in their own words
+
+- *"mache hardcode nicht bist du deppert? warum hadocodest du da was"* — do not
+  guess structure in code. When a shape is needed, **ask the model for it**
+  rather than reverse-engineering it from strings. This killed a version of the
+  notes that recovered sections by string-matching Markdown and searching the
+  transcript for bold terms; the replacement has the model say where each
+  section starts.
+- *"das muss alles instant da sein kommt ja direkt vom pc"* — content that is
+  already in memory appears with **no transition**. Cross-fades between panes
+  were built and rejected. Motion is for work that is actually happening: the
+  processing steps, the typing dots, the rail folding, a scroll. Nothing else.
+- *"die ui wie sie gerade ist ist perfekt ändere daran nichts"* — when adding
+  something, add **only** that. Padding, alignment, edges and everything not
+  named stay exactly as they are.
+- *"mache das alles einheitlich"* — **consistency is a requirement, not a
+  preference.** Four title bars that are 38 points in three windows and 52 in
+  the fourth is a bug to them. When a value is shared, it goes in the design
+  layer *inside* the component so a window cannot be given it and the others
+  forgotten. They notice a four-point difference across two windows open side
+  by side.
+- *"aber das model ist super und die prompts"* — praise is rare and specific.
+  Take it as a marker of what not to touch.
+
+### Accuracy, which is the product
+
+Retain's value is that a student can trust the notes without re-listening —
+and the audio is deleted, so there is no re-listening. Everything follows from
+that:
+
+- **Invent nothing.** The prompts say it three times over. A single made-up
+  sentence makes the whole page worthless, because the reader cannot tell which
+  one it is.
+- **Every number survives.** Dates, percentages, page numbers, deadlines — the
+  one thing a reader cannot reconstruct.
+- **Never lose audio on the way to the model.** A missing word is
+  unrecoverable; a stray one is visible and ignorable. That asymmetry decided
+  the whole voice-activity design.
+- **Never lose data.** Deleting anything asks first and the dialog states what
+  is lost, counted before it opens. A merge keeps the earliest recording's id so
+  nothing pointing at it breaks.
+- **Nothing may lag the machine during a lecture.** No model loaded into RAM,
+  nothing sent to it, no polling. This is why the live pipeline looks the way it
+  does, and it is also the reason given for several other decisions — expect it
+  to be the answer to "why not just…".
+
+### The process rules, as given
+
+Quoted because the wording matters, and because each one followed something
+going wrong.
+
+- *"teste die app nicht … mache einfach nur code änderung und schau das das
+  syntax mäßig passt und wenn ich sage jetzt dann erst in apps folder aber nie
+  testen oder bauen in debugger"* — **never run the app from a debugger.** Build,
+  type-check, and when it is finished, install it.
+- *"mach nicht diese komischen sachen mit debugger oder so einfach direkt als app
+  installieren und sage mir bescheid was du genau gemacht hast"* — install by
+  replacing `/Applications/Retain.app`, then report precisely what was done.
+- *"lasse keine apps im debug folder bevor du immer fertig bist und mache immer
+  die neuste version in apps rein"* — **exactly one `Retain.app` on the
+  machine**, in `/Applications`. Delete
+  `DerivedData/Retain-*/Build/Products/Debug/Retain.app` *and* the copy under
+  `Index.noindex/`. They have twice found two Retains and it reads as a broken
+  app.
+- *"aber schaue das du nicht daten löschst oder so und keine pakete und auch das
+  meine api keys da bleiben"* — never touch the database, the Swift packages or
+  the Keychain item while installing.
+- *"ich will nicht jedes mal nach pw gefragt werden wenn ich die app öffne"* —
+  no Keychain prompt on launch. `LanguageModelKey.value()` does not touch the
+  Keychain at all when no key has been stored.
+- *"mache eigene commits"* — **one commit per logical change**, even when four
+  corrections arrive in one message. Splitting afterwards with a soft reset is
+  the price of having batched them; do it rather than shipping a mixed commit.
+- No AI attribution anywhere — commits, PR bodies, code comments, branch names,
+  this file.
+- Never push to `main` without being told. They say so explicitly when they want
+  it.
+
+### What to do at the end of a piece of work
+
+In this order, every time:
+
+1. Build clean.
+2. Type-check the test target without running anything.
+3. Run the suites the change touches. **Run them for real when the change writes
+   to or deletes user data** — the merge SQL had two wrong column names and only
+   a real run found them.
+4. Commit, one logical change at a time.
+5. Release build, frameworks re-signed inside out, then the app; `ditto` into
+   `/Applications`; verify `AudioHardwarePowerHint` with `plutil -p`; relaunch.
+6. Delete every build bundle. Confirm exactly one `Retain.app` and one process.
+7. Report in German, plainly: what changed, **why it was broken**, and anything
+   you found on the way that they did not ask about. They read the reasoning and
+   respond to it.
+
+### Tone
+
+Write back in German, direct, no hedging and no apologising. Say what was wrong
+and why, not that you are sorry. When they are angry — and they will be, in
+capitals — the useful reply is the fix and one sentence naming what you actually
+got wrong, not an apology.
+
+## 8. How to work in this repository
 
 **Build** (`xcode-select` points at CommandLineTools on this machine, so the
 prefix is required):
@@ -193,37 +367,25 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-**Type-check the tests without running anything** — `build-for-testing` with a
+**Type-check the tests without running anything**: `build-for-testing` with a
 `-derivedDataPath` in a scratch directory, deleted afterwards. **Run** a suite
 with `xcodebuild test -only-testing:RetainTests/<Suite>`; tests are ad-hoc signed
-on purpose (see `CLAUDE.md`).
+on purpose (see `CLAUDE.md`), and `xcodebuild test` launches a host app — which
+is why the bundle cleanup afterwards is not optional.
 
-### What the owner has asked for, repeatedly
+**Install:**
 
-- **Never leave a build bundle behind.** After installing, delete
-  `DerivedData/Retain-*/Build/Products/Debug/Retain.app` *and* the copy under
-  `Index.noindex/`. Exactly one `Retain.app`, in `/Applications`.
-- **Install by replacing `/Applications/Retain.app`**, never by running from a
-  debugger. Release build, frameworks re-signed inside out, then the app, then
-  `ditto`, then relaunch. Verify `AudioHardwarePowerHint` with `plutil -p`.
-- **Never delete data, packages or the API key.**
-- **One commit per logical change**, even when four corrections arrive in one
-  message. Splitting afterwards is the price of having batched them.
-- **No AI attribution anywhere** — not in commits, PR bodies, code comments or
-  this file.
-- Say plainly what was done. If a test failed, say so with the output.
+```bash
+for f in Retain.app/Contents/Frameworks/*.framework; do
+    codesign --force --sign - --timestamp=none "$f"
+done
+codesign --force --sign - --timestamp=none Retain.app
+```
 
-### A judgement call worth knowing
+Inside out, because dyld refuses a framework whose Team ID differs from the
+process's and the app then dies at launch before any Retain code runs.
 
-The owner reports in German, quickly, and often means something more specific
-than the words carry. Two rounds were spent on the wrong reading of *"die Leiste"*
-(the bar) as *"die Liste"* (the list). When a request could mean two materially
-different things and the screenshot does not settle it, say which one you built
-in one sentence rather than guessing twice.
-
----
-
-## 7. What is not done
+## 9. What is not done
 
 - **Phase 7: distribution.** Developer ID signing, notarization, Sparkle feed,
   Homebrew tap. The owner does the Apple ID steps themselves — never ask for or
