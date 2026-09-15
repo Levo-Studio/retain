@@ -215,46 +215,65 @@ final class SettingsModel {
 
     // MARK: - The API key
 
-    /// Writes the field to the Keychain, or removes the item when it is empty.
-    ///
-    /// Runs on every change to the field, so pasting a token stores it there
-    /// and then. Nothing is deferred to Return, to losing focus or to the
-    /// window closing — each of those was a moment the user had no reason to
-    /// expect, and the connection test in between went out with no key.
     /// Reads the stored key into the field, once, when the pane opens.
     ///
-    /// The stored key is loaded rather than hidden behind a placeholder: it is
-    /// drawn as dots by a `SecureField`, and a field that shows nothing while a
-    /// key exists cannot be told apart from one that lost it.
+    /// The stored key is loaded rather than hidden behind a placeholder: drawn
+    /// as dots by a `SecureField`, and a field that shows nothing while a key
+    /// exists cannot be told apart from one that lost it.
+    ///
+    /// **`hasLoadedAPIKey` is set only when the read succeeded**, and that is
+    /// the whole point of it. An empty field means two different things — "you
+    /// have no key" and "your key could not be read" — and the code that
+    /// deleted the item could not tell them apart. A read that failed (a
+    /// Keychain the user declined, a signature it did not recognise) left the
+    /// field empty, and the next write took that emptiness at face value and
+    /// removed the item. It deleted a real key off a real machine.
     func loadAPIKey() {
         guard !hasLoadedAPIKey else { return }
-        hasLoadedAPIKey = true
 
         do {
             apiKeyText = try keychain.read() ?? ""
             hasStoredKey = !apiKeyText.isEmpty
-            // One read, shared: the pane and the backend now ask the same
-            // cache, so opening Settings does not cost a second prompt.
+            hasLoadedAPIKey = true
+            // One read, shared: the pane and the backend ask the same cache, so
+            // opening Settings does not cost a second prompt.
             keyCache?.replace(with: apiKeyText.isEmpty ? nil : apiKeyText)
             apiKeyProblem = nil
         } catch {
+            // Deliberately still `false`. The field does not mirror the item,
+            // so nothing typed into it may remove the item.
             apiKeyProblem = Self.message(for: error)
         }
     }
 
+    /// Writes what is in the field to the Keychain.
+    ///
+    /// Runs on every change, so pasting a token stores it there and then —
+    /// nothing is deferred to Return, to losing focus or to the window closing,
+    /// each of which was a moment the user had no reason to expect and the
+    /// connection test in between went out with no key.
     private func storeAPIKey() {
         let trimmed = apiKeyText.trimmingCharacters(in: .whitespacesAndNewlines)
+
         do {
             if trimmed.isEmpty {
+                // **Only when the field is known to mirror the item.** An empty
+                // field whose read failed says nothing about what is stored,
+                // and acting on it is how a key gets deleted by an app that was
+                // only trying to display it.
+                guard hasLoadedAPIKey else { return }
                 try keychain.delete()
                 hasStoredKey = false
             } else {
                 try keychain.write(trimmed)
                 hasStoredKey = true
+                // What is in the field is now what is stored, whatever the read
+                // did or did not manage earlier.
+                hasLoadedAPIKey = true
             }
             // The backend reads the key once per launch and holds it, so a key
-            // changed here has to be handed over rather than left for a read
-            // that will not happen again.
+            // changed here is handed over rather than left for a read that will
+            // not happen again.
             keyCache?.replace(with: trimmed.isEmpty ? nil : trimmed)
             apiKeyProblem = nil
         } catch {
@@ -262,11 +281,14 @@ final class SettingsModel {
         }
     }
 
-    /// Kept for the places that used to commit a draft — the window closing,
-    /// Return in the field. The field is already stored by then, so this only
-    /// catches a write that had failed.
+    /// Retries a write that failed, for the places that used to commit a draft:
+    /// Return in the field, and the window closing.
+    ///
+    /// It never deletes. A retry is for a key somebody typed that did not make
+    /// it into the Keychain; an empty field here is not an instruction.
     func commitAPIKey() {
         guard apiKeyProblem != nil else { return }
+        guard !apiKeyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         storeAPIKey()
     }
 
