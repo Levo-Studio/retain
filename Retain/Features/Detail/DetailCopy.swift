@@ -84,11 +84,18 @@ nonisolated enum DetailCopy {
                comment: "Label above a note the user typed during the recording, with the second they typed it at")
     }
 
-    /// The button under that sentence. "Write" rather than "Retry": for most
-    /// readers the notes were never attempted, because the model was not
-    /// reachable when the lecture ran.
+    /// The button under that sentence.
+    ///
+    /// It said "Write notes", and the owner looked straight at it and asked
+    /// where the button was — twice. "Write" describes the result and says
+    /// nothing about who does the writing, and what somebody looks for after a
+    /// lecture with no notes is the word for handing it to the model. So the
+    /// label names the action and the actor, and "Retry" is still wrong: for
+    /// most readers nothing was ever attempted, because the model was not
+    /// reachable while the lecture ran.
     static var writeNotes: String {
-        String(localized: "Write notes", comment: "Button that runs the language model over a finished recording's transcript")
+        String(localized: "Analyse with the model",
+               comment: "Button that runs the language model over a finished recording's transcript")
     }
 
     static func writingNotes(done: Int, total: Int) -> String {
@@ -96,8 +103,13 @@ nonisolated enum DetailCopy {
                comment: "Progress while the language model works through a finished recording")
     }
 
+    /// The sentence above the button.
+    ///
+    /// It said only that the notes had not been written, which left a reader
+    /// with a full transcript and no idea that anything could be done about
+    /// it. It now says what the button under it is for.
     static var emptyNotes: String {
-        String(localized: "The notes for this recording have not been written yet.",
+        String(localized: "No notes yet. The transcript is here — the model has not read it.",
                comment: "Notes tab of a recording the model has not summarised")
     }
 

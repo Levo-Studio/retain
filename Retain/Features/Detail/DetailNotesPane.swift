@@ -55,14 +55,11 @@ struct DetailNotesPane: View {
         } label: {
             Text(verbatim: DetailCopy.writeNotes)
         }
-        .buttonStyle(
-            RetainSecondaryButtonStyle(
-                textStyle: RetainTypography.titleBarButton,
-                padding: RetainMetrics.titleBarButtonPadding,
-                cornerRadius: RetainMetrics.radiusExportButton,
-                isFilled: true
-            )
-        )
+        // The accent button, not the outlined one. It is the only thing to do
+        // on an empty notes column, and it was drawn as quietly as the Export
+        // button in the title bar — quiet enough that the owner looked at it
+        // and asked where the button was.
+        .buttonStyle(RetainPrimaryButtonStyle())
         .disabled(!model.canWriteNotes)
         .fixedSize()
     }

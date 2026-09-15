@@ -346,6 +346,10 @@
       "comment": "Name of the third course colour",
       "extractionState": "manual"
     },
+    "Analyse with the model": {
+      "comment": "Button that runs the language model over a finished recording's transcript",
+      "extractionState": "manual"
+    },
     "Ask a question …": {
       "comment": "Placeholder of the chat composer — the export's Frage stellen …",
       "extractionState": "manual"
@@ -660,6 +664,10 @@
     },
     "No month": {
       "comment": "A month field of a term's period that has been left empty, and the menu entry that empties it",
+      "extractionState": "manual"
+    },
+    "No notes yet. The transcript is here — the model has not read it.": {
+      "comment": "Notes tab of a recording the model has not summarised",
       "extractionState": "manual"
     },
     "No recordings in this course yet.": {
@@ -1042,10 +1050,6 @@
       "comment": "The model stopped for a reason other than finishing",
       "extractionState": "manual"
     },
-    "The notes for this recording have not been written yet.": {
-      "comment": "Notes tab of a recording the model has not summarised",
-      "extractionState": "manual"
-    },
     "The recording is processed only on this Mac. Nothing is uploaded, and only what you keep is stored.": {
       "comment": "Microphone permission dialog body",
       "extractionState": "manual"
@@ -1096,10 +1100,6 @@
     },
     "Window": {
       "comment": "Window menu title",
-      "extractionState": "manual"
-    },
-    "Write notes": {
-      "comment": "Button that runs the language model over a finished recording's transcript",
       "extractionState": "manual"
     },
     "Writing an answer": {
