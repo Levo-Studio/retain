@@ -273,6 +273,21 @@ struct PromptTests {
         }
     }
 
+    /// Everything the microphone hears is decoded now, so nonsense reaches the
+    /// model. Both halves have to be said: read through it, and do not invent
+    /// your way past it. Saying only the first produces a smooth, wrong page,
+    /// and the reader cannot tell which sentence was made up.
+    @Test("Both prompts say the transcript is dirty and that guessing is not the fix")
+    func promptsSayTheTranscriptIsDirty() {
+        for prompt in [NoteReduction.blockSystemPrompt, NoteReduction.reduceSystemPrompt] {
+            #expect(prompt.contains("not clean"))
+            #expect(prompt.contains("make no sense"))
+            #expect(prompt.contains("Invent nothing"))
+            #expect(prompt.contains("leave it out"))
+            #expect(prompt.contains("fits nowhere"))
+        }
+    }
+
     @Test("The block prompt carries the block and nothing else")
     func blockPromptCarriesTheBlock() {
         let conversation = NoteReduction.blockPrompt(for: block())

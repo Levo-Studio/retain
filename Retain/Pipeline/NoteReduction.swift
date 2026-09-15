@@ -42,6 +42,13 @@ nonisolated enum NoteReduction {
     /// And the balance has moved: fewer sentences, more points. A lesson is
     /// mostly a list of things that were said, and prose is the form that hides
     /// them.
+    ///
+    /// The paragraph about the transcript being dirty is there because the live
+    /// gate came off the audio path: everything the microphone hears is
+    /// decoded now, so a cough, a chair and a corridor all arrive as words.
+    /// The model is told to read through that and told, in the same breath,
+    /// that reading through it is not licence to invent — the one failure that
+    /// cannot be spotted by the person reading the notes.
     static let blockSystemPrompt = """
         You take one stretch of a recorded class and write down what was said in it.
 
@@ -49,8 +56,24 @@ nonisolated enum NoteReduction {
         retelling of it. Somebody who missed this stretch reads them to find out what \
         was covered and what was said about it. Write your answer in German.
 
-        The transcript is German and comes from automatic speech recognition, so it \
-        contains recognition errors, filler words and false starts. Read through them.
+        The transcript is German, comes from automatic speech recognition, and is \
+        not clean. It carries filler words and false starts; read through those. \
+        Beyond them, whole sentences in it may make no sense, and words may appear that nobody \
+        said — every sound in the room reaches the recogniser and it writes a word \
+        for some of them. Expect that, and think:
+
+        - Where the sentences around it make it clear what was meant, write what was \
+        meant. A mangled technical term standing next to its own definition is not a \
+        mystery.
+        - Where they do not, leave it out. A passage you cannot follow is not a \
+        passage to guess at, and never the basis for a point in the notes.
+        - **Invent nothing.** Do not repair a sentence with a word you cannot get \
+        from the transcript itself, and do not write down anything you had to make up \
+        to make a broken passage read well. One invented sentence makes the whole \
+        page worthless, because the reader cannot tell which one it is.
+        - A fragment that fits nowhere — a stray word, a sentence with no subject, a \
+        line of noise — does not go in at all. Finding a home for every line is not \
+        the job.
 
         Answer with Markdown in this order and nothing else:
 
@@ -83,8 +106,6 @@ nonisolated enum NoteReduction {
         out entirely.
         - No tables, no code fences, no images, no links, no horizontal rules.
 
-        If a word was obviously misrecognised and the context makes it clear what was \
-        meant, correct it. If you cannot tell, leave it out rather than guess.
         """
 
     /// The user turn for one block.
@@ -144,6 +165,11 @@ nonisolated enum NoteReduction {
     /// - *the topic constraints* — see `topic(from:)`. They are in the prompt
     ///   and enforced afterwards, because a model that is told twice still
     ///   sometimes answers "Zusammenfassung der Vorlesung".
+    /// - *the transcript is dirty* — it had none of this and needed it most,
+    ///   because the finished notes are written here. Everything the microphone
+    ///   hears is decoded now, so nonsense reaches the model, and a model that
+    ///   meets nonsense with no instruction smooths it into something readable
+    ///   and wrong.
     static let reduceSystemPrompt = """
         You write the finished notes of one recorded class: what was covered, and \
         what was said about it.
@@ -156,6 +182,25 @@ nonisolated enum NoteReduction {
         word to the last. Read all of it before you write anything — the point of \
         being given it whole is that you can see where a subject started and where it \
         was dropped, which is not visible three minutes at a time.
+
+        The transcript comes from automatic speech recognition and is not clean. \
+        It carries filler words and false starts; read through those. Beyond them, \
+        whole sentences in it may make no sense, and words may appear that nobody \
+        said — every sound in the room reaches the recogniser and it writes a word \
+        for some of them. Expect that, and think:
+
+        - Where the sentences around it make it clear what was meant, write what was \
+        meant. A mangled technical term standing next to its own definition is not a \
+        mystery.
+        - Where they do not, leave it out. A passage you cannot follow is not a \
+        passage to guess at, and never the basis for a point in the notes.
+        - **Invent nothing.** Do not repair a sentence with a word you cannot get \
+        from the transcript itself, and do not write down anything you had to make up \
+        to make a broken passage read well. One invented sentence makes the whole \
+        page worthless, because the reader cannot tell which one it is.
+        - A fragment that fits nowhere — a stray word, a sentence with no subject, a \
+        line of noise — does not go in at all. Finding a home for every line is not \
+        the job.
 
         topic — a German noun phrase naming what the lesson was about, at most 60 \
         characters. No verb, no sentence, no full stop. Never a generic label such as \

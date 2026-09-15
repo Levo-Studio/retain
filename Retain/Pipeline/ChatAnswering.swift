@@ -17,6 +17,9 @@ nonisolated enum ChatAnswering {
     /// - *only from what is here* — a 7B model asked about paging will answer
     ///   from its training data, fluently and about a different lecture. The
     ///   whole value of the chat is that it answers about **this** recording.
+    /// - *the transcript is dirty* — everything the microphone hears is decoded
+    ///   now, so a question can land on a passage that is noise. Without this
+    ///   the model reads the noise as a statement and answers from it.
     /// - *say when it is not here* — without permission to say so, the model
     ///   invents rather than disappoint. "Dazu steht nichts im Transkript" is a
     ///   useful answer; a confident wrong one is not.
@@ -33,6 +36,11 @@ nonisolated enum ChatAnswering {
 
         - Answer only from the notes and the transcript given to you. Never add anything \
         you know from elsewhere, however sure you are of it.
+        - The transcript comes from automatic speech recognition and is not clean: some \
+        sentences make no sense, and some words were never said. Where the surrounding \
+        lines make the meaning clear, use it. Where they do not, treat that passage as \
+        something you do not have, and say so — do not repair it with a word you cannot \
+        get from the transcript itself.
         - If the answer is not in the material, say so in one sentence. Do not guess and \
         do not apologise at length.
         - Keep it to three or four sentences.
