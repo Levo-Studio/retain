@@ -216,7 +216,15 @@ final class StatusItemController {
             object: panel,
             queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.close() }
+            MainActor.assumeIsolated {
+                // Except when the popover gave key to one of its own children.
+                // The course field opens its list in a panel attached to this
+                // one — see `RetainDropdownPanel` — and a popover that shut the
+                // moment a picker opened would be a course field that cannot be
+                // used.
+                guard panel.childWindows?.isEmpty != false else { return }
+                self?.close()
+            }
         }
 
         return panel
