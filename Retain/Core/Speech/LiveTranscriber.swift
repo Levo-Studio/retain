@@ -28,6 +28,16 @@ actor LiveTranscriber {
         case line(TranscriptLine)
     }
 
+    /// The durations in `SpeechModels`, in samples, at the capture rate.
+    private static let hangoverSamples = Int(SpeechModels.speechHangover * CaptureFormat.sampleRate)
+    private static let preRollSamples = Int(SpeechModels.speechPreRoll * CaptureFormat.sampleRate)
+
+    /// The longest a single line may run before it is cut and the decoder is
+    /// reset. Nothing in FluidAudio enforces this while streaming — its
+    /// `maxSpeechDuration` is read by the batch segmenter only — so the gate
+    /// enforces it.
+    private static let longestLineSamples = Int(20 * CaptureFormat.sampleRate)
+
     private let streaming: StreamingNemotronMultilingualAsrManager
     private let vad: VadManager
     private let onUpdate: @Sendable (Update) -> Void
@@ -37,13 +47,23 @@ actor LiveTranscriber {
     private var pending: [Float] = []
 
     private var vadState: VadStreamState
-    private var speaking = false
 
-    /// Where the current utterance began, in samples from the start of the
+    /// Where a line starts, continues and ends. See `LiveGate` for why that is
+    /// not the same question as what the voice-activity model thinks.
+    private var gate = LiveGate(
+        hangoverSamples: LiveTranscriber.hangoverSamples,
+        preRollSamples: LiveTranscriber.preRollSamples,
+        longestLineSamples: LiveTranscriber.longestLineSamples
+    )
+
+    /// The tail of the silence, bounded by `preRollSamples`, kept so a line
+    /// does not begin mid-word.
+    private var preRoll: [Float] = []
+
+    /// Where the current line began, in samples from the start of the
     /// recording. Times come from the sample count rather than from a clock:
     /// the recording is the timeline, and a wall clock would drift from it.
-    private var utteranceStartSample = 0
-    private var processedSamples = 0
+    private var lineStartSample = 0
 
     init(models: SpeechModels.Prepared, onUpdate: @escaping @Sendable (Update) -> Void) async {
         self.streaming = StreamingNemotronMultilingualAsrManager()
@@ -75,10 +95,13 @@ actor LiveTranscriber {
     }
 
     private func consume(_ chunk: [Float]) async {
-        let chunkStart = processedSamples
-        processedSamples += chunk.count
+        let result = try? await vad.processStreamingChunk(
+            chunk,
+            state: vadState,
+            config: SpeechModels.segmentation
+        )
 
-        guard let result = try? await vad.processStreamingChunk(chunk, state: vadState) else {
+        guard let result else {
             // A VAD failure must not silence the lecture. Falling through to
             // the ASR costs power and decodes some silence; dropping the audio
             // would lose words, and only one of those is recoverable.
@@ -93,36 +116,52 @@ actor LiveTranscriber {
         }
         vadState = result.state
 
+        let signal: LiveGate.Signal
         switch result.event?.kind {
-        case .speechStart:
-            speaking = true
-            utteranceStartSample = chunkStart
+        case .speechStart: signal = .start
+        case .speechEnd: signal = .end
+        default: signal = .quiet
+        }
+
+        await perform(gate.advance(signal, chunk: chunk.count), on: chunk)
+    }
+
+    /// Does what the gate decided.
+    private func perform(_ step: LiveGate.Step, on chunk: [Float]) async {
+        switch step {
+        case .keep:
+            preRoll.append(contentsOf: chunk)
+            let excess = preRoll.count - Self.preRollSamples
+            if excess > 0 { preRoll.removeFirst(excess) }
+
+        case .open(let lineStart):
+            lineStartSample = lineStart
+            let roll = preRoll
+            preRoll = []
+            if !roll.isEmpty { _ = try? await streaming.process(samples: roll) }
             _ = try? await streaming.process(samples: chunk)
 
-        case .speechEnd:
-            _ = try? await streaming.process(samples: chunk)
-            await endUtterance(at: processedSamples)
-
-        case .none:
-            guard speaking else { return }
+        case .feed:
             _ = try? await streaming.process(samples: chunk)
 
-        @unknown default:
-            guard speaking else { return }
+        case .close(let endSample):
             _ = try? await streaming.process(samples: chunk)
+            await endLine(at: endSample)
+
+        case .cut(let endSample):
+            _ = try? await streaming.process(samples: chunk)
+            await endLine(at: endSample)
+            lineStartSample = endSample
         }
     }
 
-    /// Closes the utterance, emits it, and puts the model back to a clean
-    /// state.
+    /// Closes the line, emits it, and puts the model back to a clean state.
     ///
     /// The reset is not optional. A streaming RNN-T carries its decoder state
-    /// forward, so without it the next utterance is decoded as a continuation
-    /// of the last one and the transcript drifts further from the audio the
-    /// longer the lecture runs.
-    private func endUtterance(at endSample: Int) async {
-        speaking = false
-
+    /// forward, so without it the next line is decoded as a continuation of the
+    /// last one and the transcript drifts further from the audio the longer the
+    /// lecture runs.
+    private func endLine(at endSample: Int) async {
         guard let text = try? await streaming.finish() else {
             await streaming.reset()
             return
@@ -136,7 +175,7 @@ actor LiveTranscriber {
         onUpdate(
             .line(
                 TranscriptLine(
-                    start: Double(utteranceStartSample) / rate,
+                    start: Double(lineStartSample) / rate,
                     end: Double(endSample) / rate,
                     text: trimmed,
                     speaker: .unknown,
@@ -149,14 +188,16 @@ actor LiveTranscriber {
     /// Flushes whatever is still in hand. Called when the recording stops, so
     /// the last sentence of the lecture is not the one that goes missing.
     func finish() async {
-        if !pending.isEmpty {
-            let remainder = pending
-            pending = []
-            processedSamples += remainder.count
-            _ = try? await streaming.process(samples: remainder)
-        }
-        if speaking {
-            await endUtterance(at: processedSamples)
+        // What is in hand never filled a VAD chunk, so it was never classified.
+        // It goes to the model if a line is open — the last sentence of a
+        // lecture is the one worth not losing — and is dropped if one is not,
+        // because then it is the silence after the lecture.
+        let remainder = pending
+        pending = []
+
+        if gate.isOpen {
+            if !remainder.isEmpty { _ = try? await streaming.process(samples: remainder) }
+            await endLine(at: gate.processed + remainder.count)
         }
         await streaming.cleanup()
     }
