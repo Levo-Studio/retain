@@ -142,17 +142,16 @@ struct RecordingDetailModelTests {
 
     // MARK: - The notes column
 
-    @Test("The annotation the user typed sits under the card it falls in")
-    func annotationInTheNotes() async throws {
+    /// The column is the model's cards and nothing else. What the student typed
+    /// is still counted, still flags its chapter, and reaches the notes through
+    /// the model rather than beside it — see `NotesComposition`.
+    @Test("The notes column is the cards, and what the user typed is not parked in it")
+    func theColumnIsTheCards() async throws {
         let model = try await loaded()
 
-        #expect(model.noteItems.count == 3)
+        #expect(model.noteItems == model.blocks.map(NoteItem.block))
         #expect(model.markerCount == 1)
-        if case let .annotation(found) = model.noteItems[2] {
-            #expect(found.time == 3130)
-        } else {
-            Issue.record("the annotation belongs under the second card")
-        }
+        #expect(model.markers.contains { $0.time == 3130 })
     }
 
     /// The store numbers blocks from zero and everything else — a chapter row,

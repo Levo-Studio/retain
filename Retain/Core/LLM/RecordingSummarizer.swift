@@ -70,7 +70,10 @@ actor RecordingSummarizer {
     /// - Parameters:
     ///   - notes: the cards written while the recording ran.
     ///   - transcript: the batch transcript. The record, never the live pass.
-    ///   - markers: every `⌘⇧M`, which the notes draw and the chapters flag.
+    ///   - markers: every `⌘⇧M`. They go to the model, which has to work their
+    ///     meaning into the notes without quoting them, and they flag their
+    ///     chapter on the rail. They are not drawn as cards of their own — see
+    ///     `NotesComposition`.
     ///   - size: from `ModelSizeDecision`. Hard rule 7 lives there, not here.
     func reduce(
         notes: [NoteBlock],
@@ -79,7 +82,11 @@ actor RecordingSummarizer {
         using size: ModelSize
     ) async throws -> RecordingNotes {
         let model = configuration.model(for: size)
-        let conversation = NoteReduction.reducePrompt(notes: notes, transcript: transcript)
+        let conversation = NoteReduction.reducePrompt(
+            notes: notes,
+            transcript: transcript,
+            markers: markers
+        )
 
         try await checkItFits(conversation, model: model)
 

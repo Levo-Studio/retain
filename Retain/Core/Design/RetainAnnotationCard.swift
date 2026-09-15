@@ -15,6 +15,12 @@ import SwiftUI
 ///
 /// Takes formatted strings rather than a model, so it belongs to neither the
 /// recording's markers nor the stored annotations.
+///
+/// **Nothing draws it at the moment.** A remark the student types now goes to
+/// the model instead of onto the page — see `NotesComposition.items` for why —
+/// and this is the export's shape for it, kept in the design layer where the
+/// export's shapes live rather than deleted and redrawn from the HTML if it is
+/// ever asked for again.
 struct RetainAnnotationCard: View {
 
     /// Which board's measure to set the body to.

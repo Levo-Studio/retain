@@ -4,18 +4,24 @@ import Foundation
 
 /// One thing in the notes column.
 ///
-/// Board 03 draws two shapes: the model's cards, and an annotation the user
-/// typed during the lecture sitting between them behind a blue rule. They are
-/// one list rather than two columns, so they are one list here.
+/// One case, and it used to be two. Board 03 draws an annotation the student
+/// typed sitting between the cards behind a blue rule, and that is how it
+/// worked until the owner asked for the opposite: a remark is not a thing to
+/// park at the end of the notes in the words it was typed in, it is something
+/// the model has to have understood. It now goes to the model instead — see
+/// `NoteReduction.reduceSystemPrompt`, which has to work its meaning into the
+/// section covering its timestamp and is forbidden from quoting it.
+///
+/// The enum stays an enum rather than collapsing to `NoteBlock`, because the
+/// column is a list of things that are drawn and there is no reason to believe
+/// it will only ever hold one kind.
 nonisolated enum NoteItem: Hashable, Sendable, Identifiable {
 
     case block(NoteBlock)
-    case annotation(Annotation)
 
     var id: String {
         switch self {
         case let .block(block): Self.id(ofBlock: block.number)
-        case let .annotation(annotation): "annotation-\(annotation.id ?? 0)-\(annotation.time)"
         }
     }
 
@@ -29,45 +35,29 @@ nonisolated enum NoteItem: Hashable, Sendable, Identifiable {
 
 nonisolated enum NotesComposition {
 
-    /// Lays the cards and the annotations out on one timeline.
+    /// The cards, in order.
     ///
-    /// An annotation belongs after the card whose stretch of the lecture it
-    /// falls in — that is where board 03 puts the one at 00:52:10, under the
-    /// block that starts at 00:49 — because that is the passage it is a remark
-    /// about. Anything falling in the gap between two cards goes before the
-    /// next one rather than after the previous, so a remark typed at the moment
-    /// a new topic started introduces it.
+    /// The annotations are taken and not drawn. They are the student's own
+    /// remarks, and the owner's instruction is that they reach the notes
+    /// through the model rather than beside it: their meaning belongs inside
+    /// the section they were typed during, in the notes' own voice, not parked
+    /// at the bottom of the column in the shorthand they were typed in.
+    /// `NoteReduction.reducePrompt` is where they go, and the rule that none of
+    /// them may be dropped is in the system prompt beside it.
     ///
-    /// An annotation outside every block — typed in the first seconds, or after
-    /// the last card closed — still appears, because the user wrote it and the
-    /// notes are the only place it is ever shown.
+    /// **This is a departure from board 03**, which draws the blue-ruled card
+    /// between the blocks. It is a deliberate one, asked for by the owner, and
+    /// it is not licence to move anything else the export draws.
     ///
-    /// The one thing that does not appear is a **bare marker**: `⌘⇧M` pressed
-    /// without anything typed after it. It is a real thing — it counts in the
-    /// meta strip and it puts the amber dot on its chapter — but it has no text,
-    /// and board 03 draws an annotation as a label above a sentence. A blue
-    /// rule with nothing beside it is not that.
+    /// Nothing about a remark is lost by not drawing it: it is still stored,
+    /// still counted in the meta strip, and still puts the amber dot on the
+    /// chapter it falls in — see `NoteChapters.entries(from:markers:)`.
+    ///
+    /// - Parameter annotations: unused, and kept in the signature because the
+    ///   caller has them and the question "where do these go" is answered here
+    ///   rather than at the call site.
     static func items(blocks: [NoteBlock], annotations: [Annotation]) -> [NoteItem] {
-        var pending = annotations
-            .filter { !($0.note ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .sorted { $0.time < $1.time }
-        var items: [NoteItem] = []
-
-        func drain(while include: (Annotation) -> Bool) {
-            while let first = pending.first, include(first) {
-                items.append(.annotation(first))
-                pending.removeFirst()
-            }
-        }
-
-        for block in blocks.sorted(by: { $0.number < $1.number }) {
-            drain { $0.time < block.start }
-            items.append(.block(block))
-            drain { $0.time <= block.end }
-        }
-
-        items.append(contentsOf: pending.map(NoteItem.annotation))
-        return items
+        blocks.sorted { $0.number < $1.number }.map(NoteItem.block)
     }
 }
 

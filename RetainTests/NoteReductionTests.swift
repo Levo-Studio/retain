@@ -288,6 +288,54 @@ struct PromptTests {
         }
     }
 
+    /// They reached the model nowhere at all: the map step carried them, and
+    /// nothing is summarised while a lecture runs any more. `⌘⇧M` wrote to a
+    /// file and to a dot on the chapter rail and to nothing else.
+    @Test("The reduce prompt carries what the student typed, with its time")
+    func reducePromptCarriesTheRemarks() {
+        let conversation = NoteReduction.reducePrompt(
+            notes: [],
+            transcript: [TranscriptLine(start: 0, end: 4, text: "Ein Satz.", speaker: .lecturer)],
+            markers: [
+                RecordingMarker(time: 3130, text: "kommt in der Klausur dran"),
+                RecordingMarker(time: 10, text: "Definition nochmal anschauen"),
+                RecordingMarker(time: 900, text: "   "),
+            ]
+        )
+        let user = conversation.messages[1].content
+
+        #expect(user.contains("52:10: kommt in der Klausur dran"))
+        #expect(user.contains("00:10: Definition nochmal anschauen"))
+        // In time order, and after the transcript: it is the part that has to
+        // survive everything else in a prompt tens of thousands of tokens long.
+        #expect(user.range(of: "00:10")!.lowerBound < user.range(of: "52:10")!.lowerBound)
+        #expect(user.range(of: "Transcript of record")!.lowerBound < user.range(of: "00:10")!.lowerBound)
+    }
+
+    /// A bare `⌘⇧M` has no text in it, and an empty bullet reads as a remark
+    /// the student made and then said nothing in.
+    @Test("A marker with nothing typed after it is not given to the model")
+    func bareMarkersAreNotSent() {
+        let conversation = NoteReduction.reducePrompt(
+            notes: [],
+            transcript: [TranscriptLine(start: 0, end: 4, text: "Ein Satz.", speaker: .lecturer)],
+            markers: [RecordingMarker(time: 900, text: "  ")]
+        )
+
+        #expect(!conversation.messages[1].content.contains("Remarks the student typed"))
+    }
+
+    /// Both halves, because either one alone is wrong: dropped remarks make the
+    /// annotation bar a lie, and quoted ones put the student's shorthand in the
+    /// middle of the notes.
+    @Test("The prompt demands every remark and forbids quoting one")
+    func promptBindsTheRemarks() {
+        let prompt = NoteReduction.reduceSystemPrompt
+        #expect(prompt.contains("Every remark reaches the notes"))
+        #expect(prompt.contains("Never quote one"))
+        #expect(prompt.contains("None of them is dropped"))
+    }
+
     @Test("The block prompt carries the block and nothing else")
     func blockPromptCarriesTheBlock() {
         let conversation = NoteReduction.blockPrompt(for: block())

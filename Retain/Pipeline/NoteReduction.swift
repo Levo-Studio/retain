@@ -165,6 +165,12 @@ nonisolated enum NoteReduction {
     /// - *the topic constraints* — see `topic(from:)`. They are in the prompt
     ///   and enforced afterwards, because a model that is told twice still
     ///   sometimes answers "Zusammenfassung der Vorlesung".
+    /// - *the student's remarks* — they reached the model nowhere at all once
+    ///   nothing was summarised while the lecture ran: the map step carried
+    ///   them and the map step stopped happening, so `⌘⇧M` wrote to a file and
+    ///   to a dot on the chapter rail and to nothing else. They are handed over
+    ///   here, last, with the rule that their meaning has to land in the notes
+    ///   and their wording must not.
     /// - *the transcript is dirty* — it had none of this and needed it most,
     ///   because the finished notes are written here. Everything the microphone
     ///   hears is decoded now, so nonsense reaches the model, and a model that
@@ -240,6 +246,24 @@ nonisolated enum NoteReduction {
         - Never write placeholder text. If a part has nothing to hold, leave that part \
         out entirely.
         - No tables, no code fences, no images, no links, no horizontal rules.
+
+        The lesson may come with remarks the student typed while listening, each \
+        with the time it was typed at. They are not transcript and they are not \
+        optional:
+
+        - **Every remark reaches the notes.** Its content goes into the section \
+        covering its time, as one of that section's list items or worked into its \
+        sentences. None of them is dropped, whatever else the lesson was about.
+        - **Never quote one.** It was typed in a hurry in the student's own \
+        shorthand, and the notes are not where that reappears word for word. Write \
+        what it means, in the same voice as everything around it, so a reader cannot \
+        tell it apart from the rest.
+        - If it says something the transcript does not — a correction, a piece of \
+        context, that something is coming up in an exam — take it as true and write \
+        it down. The student was in the room.
+        - If it only points at something — "wichtig", "nochmal anschauen" — then it \
+        is telling you which part of the lesson matters most, and the section \
+        covering that time carries that part in full.
         """
 
     /// - Parameters:
@@ -247,7 +271,15 @@ nonisolated enum NoteReduction {
     ///   - transcript: the batch transcript, which is the record. The live one
     ///     is never used here — it sits around 10 % word error against the
     ///     batch pass's 5.9 %, and the final notes are the thing that lasts.
-    static func reducePrompt(notes: [NoteBlock], transcript: [TranscriptLine]) -> ChatConversation {
+    ///   - markers: what the student typed during the lecture. Last in the
+    ///     prompt on purpose — it is the part that must survive everything
+    ///     else, and the end of a long prompt is where a model is still
+    ///     reading.
+    static func reducePrompt(
+        notes: [NoteBlock],
+        transcript: [TranscriptLine],
+        markers: [RecordingMarker] = []
+    ) -> ChatConversation {
         var parts: [String] = []
 
         // Only when there are any. Nothing is summarised while a lecture runs
@@ -261,6 +293,20 @@ nonisolated enum NoteReduction {
 
         parts.append("Transcript of record:")
         parts.append(self.transcript(of: transcript))
+
+        // A bare `⌘⇧M` has no text in it. It marks its chapter with a dot and
+        // it counts in the meta strip, but there is nothing here to tell the
+        // model, and an empty bullet would read as a remark the student made
+        // and then said nothing in.
+        let annotations = markers.filter(\.hasText).sorted { $0.time < $1.time }
+        if !annotations.isEmpty {
+            parts.append("Remarks the student typed while listening:")
+            parts.append(
+                annotations
+                    .map { "- \(timestamp($0.time)): \($0.text)" }
+                    .joined(separator: "\n")
+            )
+        }
 
         return ChatConversation([
             .system(reduceSystemPrompt),

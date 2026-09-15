@@ -79,6 +79,9 @@ nonisolated enum DetailCopy {
     // MARK: - The notes
 
     /// "You · 00:52:10" above an annotation the user typed during the lecture.
+    ///
+    /// Unused while annotations go to the model rather than onto the page, and
+    /// kept with `RetainAnnotationCard`, which is the thing it labels.
     static func annotationLabel(time: String) -> String {
         String(localized: "You · \(time)",
                comment: "Label above a note the user typed during the recording, with the second they typed it at")

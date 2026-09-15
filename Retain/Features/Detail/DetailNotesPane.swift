@@ -131,12 +131,6 @@ struct DetailNotesPane: View {
                     horizontalPadding: RetainInteraction.highlightHorizontalPadding
                 )
             )
-        case let .annotation(annotation):
-            RetainAnnotationCard(
-                label: DetailCopy.annotationLabel(time: RetainTimeFormat.clock(annotation.time)),
-                text: annotation.note ?? "",
-                layout: .detail
-            )
         }
     }
 
@@ -146,7 +140,6 @@ struct DetailNotesPane: View {
         guard index > 0 else { return 0 }
         switch item {
         case .block: return RetainMetrics.noteBlockGapDetail
-        case .annotation: return RetainMetrics.noteAnnotationGap
         }
     }
 }

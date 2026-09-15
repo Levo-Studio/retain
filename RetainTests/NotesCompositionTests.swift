@@ -21,86 +21,28 @@ struct NotesCompositionTests {
         block(2, "Working Set und Thrashing", start: 2940, end: 5520),
     ]
 
-    @Test("An annotation sits under the card whose stretch it falls in")
-    func annotationUnderItsBlock() {
+    /// The owner's instruction: a remark is not parked at the end of the notes
+    /// in the words it was typed in. It goes to the model, which has to have
+    /// worked its meaning into the section it belongs to — see
+    /// `NoteReductionTests.reducePromptCarriesTheRemarks`.
+    @Test("Annotations are not drawn in the notes column")
+    func annotationsAreNotDrawn() {
         let items = NotesComposition.items(
             blocks: blocks,
-            annotations: [annotation(1, at: 3130, "Übungsblatt 5, Aufgabe 3 rechnet genau diesen Fall durch.")]
+            annotations: [
+                annotation(1, at: 10, "ganz früh"),
+                annotation(2, at: 3130, "Übungsblatt 5, Aufgabe 3 rechnet genau diesen Fall durch."),
+                annotation(3, at: 9_000, "ganz spät"),
+            ]
         )
 
-        #expect(items.count == 3)
-        #expect(items[0] == .block(blocks[0]))
-        #expect(items[1] == .block(blocks[1]))
-        if case let .annotation(found) = items[2] {
-            #expect(found.time == 3130)
-        } else {
-            Issue.record("the annotation should be the last item")
-        }
+        #expect(items == [.block(blocks[0]), .block(blocks[1])])
     }
 
-    @Test("Several annotations in one card keep their time order")
-    func severalInOneBlock() {
-        let items = NotesComposition.items(
-            blocks: blocks,
-            annotations: [annotation(2, at: 4000, "zweite"), annotation(1, at: 3130, "erste")]
-        )
-
-        let times = items.compactMap { item -> TimeInterval? in
-            if case let .annotation(found) = item { return found.time }
-            return nil
-        }
-        #expect(times == [3130, 4000])
-    }
-
-    /// A remark typed at the moment a new topic started introduces that topic;
-    /// it does not belong under the one that just ended.
-    @Test("An annotation in the gap between two cards introduces the next one")
-    func inTheGap() {
-        let spaced = [
-            block(1, "Erstes", start: 0, end: 600),
-            block(2, "Zweites", start: 1200, end: 1800),
-        ]
-        let items = NotesComposition.items(blocks: spaced, annotations: [annotation(1, at: 900, "dazwischen")])
-
-        #expect(items[0] == .block(spaced[0]))
-        if case .annotation = items[1] {} else { Issue.record("the annotation should come before the second card") }
-        #expect(items[2] == .block(spaced[1]))
-    }
-
-    @Test("An annotation outside every card is still drawn")
-    func outsideEveryBlock() {
-        let items = NotesComposition.items(
-            blocks: blocks,
-            annotations: [annotation(1, at: 10, "ganz früh"), annotation(2, at: 9_000, "ganz spät")]
-        )
-
-        #expect(items.count == 4)
-        if case .annotation = items.first {} else { Issue.record("the early one comes first") }
-        if case .annotation = items.last {} else { Issue.record("the late one comes last") }
-    }
-
-    @Test("Cards with no annotations are just the cards, in order")
-    func noAnnotations() {
-        #expect(NotesComposition.items(blocks: blocks, annotations: []).count == 2)
-    }
-
-    /// `⌘⇧M` with nothing typed after it is a real marker — it counts in the
-    /// meta strip and puts the amber dot on its chapter — but board 03 draws an
-    /// annotation as a label above a sentence, and there is no sentence.
-    @Test("A marker with nothing typed after it draws no annotation")
-    func bareMarker() {
-        let bare = Annotation(id: 1, recordingID: 1, time: 3130, note: nil)
-        let blank = Annotation(id: 2, recordingID: 1, time: 3200, note: "   ")
-        let real = Annotation(id: 3, recordingID: 1, time: 3300, note: "etwas")
-
-        let items = NotesComposition.items(blocks: blocks, annotations: [bare, blank, real])
-
-        #expect(items.count == 3)
-        if case let .annotation(found) = items[2] {
-            #expect(found.id == 3)
-        } else {
-            Issue.record("only the marker that was written on should be drawn")
-        }
+    @Test("The cards are drawn in their own order, whatever order they arrive in")
+    func cardsInOrder() {
+        let items = NotesComposition.items(blocks: blocks.reversed(), annotations: [])
+        #expect(items == [.block(blocks[0]), .block(blocks[1])])
     }
 }
 
