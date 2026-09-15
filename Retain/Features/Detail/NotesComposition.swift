@@ -61,6 +61,37 @@ nonisolated enum NotesComposition {
     }
 }
 
+// MARK: - Which block the reader is looking at
+
+/// The chapter rail follows the reader down the page.
+///
+/// It used to move only when something moved it — a chapter clicked, a chat
+/// citation followed — so scrolling through an hour of notes left the accent
+/// rule on whichever row was last pressed, which is a rail describing where the
+/// reader has been rather than where they are.
+///
+/// A pure function over where the blocks sit, so the rule that decides it is
+/// testable without a scroll view.
+nonisolated enum NotesScroll {
+
+    /// - Parameters:
+    ///   - readingLine: how far below the top of the visible area counts as
+    ///     being read. Not the very top edge: a block whose heading has only
+    ///     just appeared at the bottom is not the block anybody is reading, and
+    ///     a rule that jumps on the first pixel jumps back on the next.
+    ///   - tops: every block's number against the y of its top edge, in the
+    ///     scroll view's own space — zero at the top of the visible area and
+    ///     negative once it has scrolled past.
+    /// - Returns: the block that has most recently crossed the line, or the
+    ///   first one before any has. Never `nil` for a non-empty page, because
+    ///   board 03 draws exactly one row picked out and never none.
+    static func block(at readingLine: CGFloat, tops: [Int: CGFloat]) -> Int? {
+        let begun = tops.filter { $0.value <= readingLine }
+        if let current = begun.max(by: { $0.value < $1.value }) { return current.key }
+        return tops.min(by: { $0.value < $1.value })?.key
+    }
+}
+
 // MARK: - Anchoring a highlight to the text as it is drawn
 
 /// Turns stored highlights into the ranges `RetainMarkdownView` paints.

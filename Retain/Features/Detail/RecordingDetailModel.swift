@@ -400,6 +400,18 @@ final class RecordingDetailModel {
 
     var markerCount: Int { annotations.count }
 
+    /// The reader scrolled, and this block is now the one in front of them.
+    ///
+    /// Deliberately not `request(_:)`. That one *points* the window somewhere
+    /// and the panes scroll to obey it; this is the opposite direction — the
+    /// window reporting where the reader already is. Routing it through
+    /// `request` would scroll the notes in response to the notes being
+    /// scrolled, which is a fight the reader loses.
+    func reader(reached number: Int?) {
+        guard let number, number != currentBlockNumber else { return }
+        currentBlockNumber = number
+    }
+
     // MARK: - Moving around the window
 
     /// A chapter row.

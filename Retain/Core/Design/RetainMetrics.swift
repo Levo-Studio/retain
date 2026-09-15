@@ -458,6 +458,15 @@ nonisolated enum RetainMetrics {
 
     /// The annotation card inside the notes.
     static let noteAnnotationGap: CGFloat = 13
+
+    /// How far below the top of the notes column a block counts as the one
+    /// being read, for the chapter rail's accent rule.
+    ///
+    /// Not a dimension the export draws — it is not drawn at all — but it is a
+    /// number, and numbers live here. It is the column's own top padding plus
+    /// about a heading's height: a block whose heading has just appeared is not
+    /// the block anybody is reading yet.
+    static let notesReadingLine: CGFloat = 140
     static let noteAnnotationLabelGap: CGFloat = 3
 
     /// Paragraph width caps, in `ch`. Resolved against the paragraph's own

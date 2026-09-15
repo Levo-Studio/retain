@@ -46,6 +46,42 @@ struct NotesCompositionTests {
     }
 }
 
+// MARK: - Which block the reader is looking at
+
+@Suite("Notes scrolling")
+struct NotesScrollTests {
+
+    /// The line is 140 points down, so a block whose heading has only just
+    /// appeared at the bottom of the window is not the one being read.
+    let line: CGFloat = 140
+
+    @Test("Before anything has been scrolled past, it is the first block")
+    func atTheTop() {
+        let tops: [Int: CGFloat] = [1: 24, 2: 900, 3: 1800]
+        #expect(NotesScroll.block(at: line, tops: tops) == 1)
+    }
+
+    @Test("It is the block that most recently crossed the line")
+    func whileScrolling() {
+        #expect(NotesScroll.block(at: line, tops: [1: -1400, 2: -300, 3: 620]) == 2)
+        #expect(NotesScroll.block(at: line, tops: [1: -2100, 2: -1000, 3: -80]) == 3)
+    }
+
+    /// A block that has appeared but has not reached the line yet does not take
+    /// the rule — otherwise it would jump forward on the first pixel of the
+    /// next heading and jump back on the next frame.
+    @Test("A block below the line has not been reached")
+    func belowTheLine() {
+        #expect(NotesScroll.block(at: line, tops: [1: -200, 2: 141]) == 1)
+        #expect(NotesScroll.block(at: line, tops: [1: -200, 2: 139]) == 2)
+    }
+
+    @Test("An empty page picks nothing")
+    func nothingToPick() {
+        #expect(NotesScroll.block(at: line, tops: [:]) == nil)
+    }
+}
+
 // MARK: - Anchoring a highlight
 
 @Suite("Highlight anchoring")

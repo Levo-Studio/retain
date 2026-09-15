@@ -1,14 +1,28 @@
 import SwiftUI
 
-/// Board 03's left column: the written-out notes, with the annotations the user
-/// typed during the lecture standing between them.
+/// Board 03's left column: the written-out notes.
 ///
 /// It is also where a chapter row and a chat citation land, which is why it
 /// scrolls: with no audio to start playing, pointing at a block means putting
-/// that block in front of the reader.
+/// that block in front of the reader. And it scrolls the other way too — the
+/// rail's accent rule follows the reader down the page, which is `tops` and
+/// `NotesScroll` below.
 struct DetailNotesPane: View {
 
     let model: RecordingDetailModel
+
+    /// The scroll view's own space, for measuring where the blocks sit in the
+    /// visible area rather than in the content.
+    ///
+    /// `nonisolated` because the geometry transform below is `@Sendable` — the
+    /// view is on the main actor by default, and a main-actor constant read
+    /// from a `@Sendable` closure through a `@preconcurrency` declaration is
+    /// how this app trapped at runtime twice already.
+    nonisolated private static let space = "notes"
+
+    /// Each block's number against the y of its top edge. Filled by the
+    /// geometry reader on each card and read by nothing else.
+    @State private var tops: [Int: CGFloat] = [:]
 
     /// The steps, while the model is working — **wherever it is working from**.
     ///
@@ -89,13 +103,30 @@ struct DetailNotesPane: View {
                         ForEach(Array(model.noteItems.enumerated()), id: \.element.id) { index, item in
                             view(for: item)
                                 .padding(.top, topGap(for: item, at: index))
+                                .onGeometryChange(for: CGFloat.self) { @Sendable proxy in
+                                    proxy.frame(in: .named(Self.space)).minY
+                                } action: { top in
+                                    if case let .block(block) = item { tops[block.number] = top }
+                                }
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(RetainMetrics.notesPaneDetail)
             }
+            .coordinateSpace(.named(Self.space))
             .scrollContentBackground(.hidden)
+            // The rail follows the reader. `tops` changes on every frame of a
+            // scroll, and the model refuses a number it is already on, so this
+            // is one comparison per frame and a write only when the rule
+            // actually moves.
+            .onChange(of: tops) { _, measured in
+                model.reader(reached: NotesScroll.block(at: RetainMetrics.notesReadingLine, tops: measured))
+            }
+            // Notes written again are different blocks at different heights,
+            // and a measurement of the old ones would point the rail at a card
+            // that is no longer there.
+            .onChange(of: model.blocks.map(\.number)) { _, _ in tops = [:] }
             // `task(id:)` and not `onChange`: a chat citation clicked on the
             // transcript tab brings this tab forward, which builds this pane
             // *after* the request was made — a change `onChange` was never
