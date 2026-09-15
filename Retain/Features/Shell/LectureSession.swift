@@ -368,6 +368,11 @@ final class LectureSession {
                 await TransientAudio(store.database).discardAudio(of: recordingID, passFinished: true)
             }
 
+            // One last attempt for the blocks nothing came after. A lecture
+            // whose last minutes were recorded with the model unreachable has
+            // cards that no further line will ever nudge.
+            await retryDeferredBlocks()
+
             phase = .done
         } catch {
             // The recording itself is not lost because the pass over it failed,
@@ -416,6 +421,12 @@ final class LectureSession {
             }
 
             closeBlocks()
+
+            // Every finished line is also a chance to catch up on a block the
+            // model could not be reached for. It costs nothing when none is
+            // waiting, and it means a lecture that started before LM Studio was
+            // running fills itself in rather than staying half empty.
+            Task { [weak self] in await self?.retryDeferredBlocks() }
         }
     }
 
@@ -473,6 +484,46 @@ final class LectureSession {
             }
         } else {
             notes[index].state = .deferred
+        }
+    }
+
+
+    // MARK: - Catching up
+
+    /// Sends the blocks the model could not be reached for, again.
+    ///
+    /// **This is the promise the code had been making and not keeping.** The
+    /// comment beside `replaceNote` says a deferred block is kept rather than
+    /// dropped because board 07's dialog tells the user that "summaries are
+    /// caught up once the connection is back" — and nothing ever caught them
+    /// up. A lecture recorded while LM Studio was unreachable ended with every
+    /// card still saying it was being written, for the rest of the hour and
+    /// then for ever.
+    ///
+    /// Called on a timer while the lecture runs, and once more when it stops.
+    /// It costs one request per outstanding block and only when there are any,
+    /// so a lecture with a working model never sends a second request for
+    /// anything.
+    func retryDeferredBlocks() async {
+        guard let summarizer else { return }
+
+        let waiting = notes.filter { $0.state == .deferred }
+        guard !waiting.isEmpty else { return }
+
+        // Rebuilt rather than kept from the first attempt: the transcript has
+        // grown since, and the batch pass may have replaced the live lines that
+        // the first attempt was made from.
+        let blocks = BlockBoundaries.blocks(from: lines, markers: markers, finished: phase != .recording)
+
+        for note in waiting {
+            guard let block = blocks.first(where: { $0.number == note.number }) else { continue }
+
+            // One at a time, and stopping at the first failure. A server that
+            // refused one block refuses the next, and a burst of requests at a
+            // model that is still being read off disk makes the wait longer
+            // rather than shorter.
+            guard let written = try? await summarizer.summarise(block) else { return }
+            replaceNote(note.number, with: written)
         }
     }
 

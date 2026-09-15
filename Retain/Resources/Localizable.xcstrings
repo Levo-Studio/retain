@@ -1210,6 +1210,10 @@
       "comment": "A term's period whose start was left empty",
       "extractionState": "manual"
     },
+    "waiting for the model": {
+      "comment": "Shown beside a note block whose summary could not be fetched and is queued",
+      "extractionState": "manual"
+    },
     "writing …": {
       "comment": "Shown beside the heading of a note block the model has not finished",
       "extractionState": "manual"

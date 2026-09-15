@@ -71,23 +71,45 @@ struct NoteBlockView: View {
     let block: NoteBlock
     let markers: [RecordingMarker]
 
-    private var isBeingWritten: Bool { block.state != .written }
+    /// The model is working on this one right now.
+    private var isBeingWritten: Bool { block.state == .summarising }
+
+    /// The model could not be reached for this one and it is waiting.
+    ///
+    /// **These were the same thing**, and that is what made a lecture look
+    /// frozen: `state != .written` covered both, so a block whose request had
+    /// already failed went on saying "writing …" beside a set of dots for the
+    /// rest of the hour. Waiting for a model that is coming and waiting for one
+    /// that is not there are different sentences.
+    private var isWaiting: Bool { block.state == .deferred }
+
+    private var isUnfinished: Bool { block.state != .written }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: RetainMetrics.noteHeadingNumberGap) {
                 Text(verbatim: NoteBlockLayout.number(block.number))
                     .retainStyle(RetainTypography.noteBlockNumber)
-                    .foregroundStyle(isBeingWritten ? RetainPalette.inkDisabled : RetainPalette.inkFaintest)
+                    .foregroundStyle(isUnfinished ? RetainPalette.inkDisabled : RetainPalette.inkFaintest)
 
                 Text(verbatim: block.heading ?? "")
                     .retainStyle(RetainTypography.noteHeading)
-                    .foregroundStyle(isBeingWritten ? RetainPalette.inkDim : RetainPalette.inkPrimary)
+                    .foregroundStyle(isUnfinished ? RetainPalette.inkDim : RetainPalette.inkPrimary)
 
                 if isBeingWritten {
+                    // The dots move. A still indicator beside a card that never
+                    // changes is the whole of "it froze".
+                    TypingIndicator()
+
                     Text(verbatim: String(localized: "writing …", comment: "Shown beside the heading of a note block the model has not finished"))
                         .retainStyle(RetainTypography.writingLabel)
                         .foregroundStyle(RetainPalette.inkLabel)
+                }
+
+                if isWaiting {
+                    Text(verbatim: RecordingNotesCopy.waitingForModel)
+                        .retainStyle(RetainTypography.writingLabel)
+                        .foregroundStyle(RetainPalette.amberInk)
                 }
             }
 
@@ -96,7 +118,7 @@ struct NoteBlockView: View {
                 RetainMarkdownView(
                     markdown: body,
                     layout: .recording,
-                    isBeingWritten: isBeingWritten,
+                    isBeingWritten: isUnfinished,
                     showsTrailingCaret: isBeingWritten
                 )
                 .padding(.top, RetainMetrics.noteParagraphGapRecording)
@@ -240,5 +262,19 @@ nonisolated enum NoteBlockLayout {
     static var paragraphWidth: CGFloat {
         RetainTypography.chWidth(of: RetainTypography.noteParagraphRecording)
             * RetainMetrics.noteParagraphWidthRecording
+    }
+}
+
+
+// MARK: -
+
+nonisolated enum RecordingNotesCopy {
+
+    /// Beside a block whose request already failed. Amber, not red: nothing is
+    /// lost — the block is queued and goes out again as soon as the model
+    /// answers. See `LectureSession.retryDeferredBlocks`.
+    static var waitingForModel: String {
+        String(localized: "waiting for the model",
+               comment: "Shown beside a note block whose summary could not be fetched and is queued")
     }
 }
