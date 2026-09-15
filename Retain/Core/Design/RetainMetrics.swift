@@ -286,6 +286,28 @@ nonisolated enum RetainMetrics {
     /// The recording window's name, on the same left edge as its tabs and its
     /// meta strip. It has no sidebar to sit at the top of, so it is its own row
     /// under the title bar instead.
+    /// The seam between two merged recordings in the transcript.
+    ///
+    /// **Not drawn.** The room above is what separates it from the last line of
+    /// the part before — enough that it reads as a break and not as a caption
+    /// on that line — and the gap is the one between a label and its value
+    /// everywhere else.
+    static var transcriptPartHeadingGap: CGFloat { metaValueGap }
+    static let transcriptPartHeadingRoom: CGFloat = 26
+
+    /// The corner of the tick's box. The smallest radius in the export, which
+    /// is what a 16-point box wants — anything rounder reads as a pill.
+    static let radiusCheckbox: CGFloat = 4
+
+    /// The tick in front of a recording's title while several are being picked.
+    ///
+    /// **Not drawn.** The export's table has no selection state. The box is the
+    /// status dot's size taken up to something a pointer can hit, and the gap
+    /// is the table's own column gap, so the title moves right by one column
+    /// gap and lands on a rhythm the table already has.
+    static let selectionTickSize: CGFloat = 16
+    static var selectionTickGap: CGFloat { libraryTableGap }
+
     static let tabGap: CGFloat = 22
     static let tabPadding = edges(11, 0)
 

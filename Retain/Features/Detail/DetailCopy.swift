@@ -78,6 +78,13 @@ nonisolated enum DetailCopy {
                      comment: "Button in the tab bar that folds the chapters and chat rail away")
     }
 
+    /// "Recording 2" over the seam where a merged transcript moves from one of
+    /// the recordings it was made of to the next.
+    static func transcriptPart(_ number: Int) -> String {
+        String(localized: "Recording \(number)",
+               comment: "Heading in a merged transcript where the next of the joined recordings begins")
+    }
+
     static var renameRecording: String {
         String(localized: "Rename recording",
                comment: "Accessibility label of the editable topic in the detail meta strip")

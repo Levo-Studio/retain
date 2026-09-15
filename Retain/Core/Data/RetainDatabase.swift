@@ -125,6 +125,15 @@ nonisolated enum RetainDatabaseError: Error, Hashable, Sendable {
     /// nothing in the interface can reach — every list of courses there is is a
     /// term's list.
     case courseWithoutTerm
+
+    /// Fewer than two recordings were handed to `merge`. One recording is
+    /// already merged with itself, and none is nothing to do.
+    case nothingToMerge
+
+    /// A merge included the lecture being recorded right now. The microphone is
+    /// open and the writer is appending to it, so its transcript is not a thing
+    /// to move rows out of.
+    case cannotMergeWhileRecording
 }
 
 nonisolated extension RetainDatabaseError: LocalizedError {
@@ -134,13 +143,18 @@ nonisolated extension RetainDatabaseError: LocalizedError {
         case .cannotOpen:
             String(localized: "Retain could not open its library.",
                    comment: "The database file could not be opened or created")
-        case .migrationHasNoRollback, .unsavedRow, .invalidHighlightRange, .courseWithoutTerm:
+        case .cannotMergeWhileRecording:
+            String(localized: "A recording that is still running cannot be merged.",
+                   comment: "Shown when a merge included the lecture being recorded right now")
+        case .migrationHasNoRollback, .unsavedRow, .invalidHighlightRange, .courseWithoutTerm,
+             .nothingToMerge:
             // None of these is a user-facing state: nothing in the interface
             // rolls a migration back, saves against a row that was never
             // written, marks a range outside the text it is marking, or offers
             // a Create button for a course with no term ticked. Each is a
             // mistake in the caller, and a message about one would mean nothing
-            // to the person reading it.
+            // to the person reading it. `nothingToMerge` is the same: the Merge
+            // button is disabled below two.
             nil
         }
     }

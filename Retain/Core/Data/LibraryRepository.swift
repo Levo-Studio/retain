@@ -170,6 +170,125 @@ nonisolated struct LibraryRepository: Sendable {
         }
     }
 
+    // MARK: - Merging
+
+    /// Joins several recordings of one lesson into one, in the order they
+    /// happened.
+    ///
+    /// The microphone gets stopped at a break and started again afterwards, and
+    /// what was one lesson is two rows in the library with half a transcript
+    /// each. The notes are then written twice, each from half the material, and
+    /// neither is the lesson.
+    ///
+    /// **The earliest recording survives and the others are emptied into it.**
+    /// Not a new row: the survivor keeps its id, so every highlight, every
+    /// chapter and every window already open on it stay pointed at something
+    /// that exists. Its start time is therefore the lesson's start time, which
+    /// is the answer somebody looking for that lesson in the library will have
+    /// in their head.
+    ///
+    /// Times are laid end to end. Part two's transcript moves forward by
+    /// everything before it, so the merged timeline is continuous even where
+    /// the afternoon was not — the gap between two sittings is not recorded
+    /// audio and there is nothing to lay in it. `recordingPart` keeps each
+    /// part's own start, which is the only thing that can say the second half
+    /// began twenty minutes later.
+    ///
+    /// The notes are **not** merged. Two sets of notes over two halves do not
+    /// add up to notes over the lesson, and stitching them would read as one
+    /// document written by two people who had not met. They are dropped, the
+    /// recording is left ready to be analysed again, and the model is given the
+    /// whole transcript once — which is the same thing that happens to any
+    /// recording whose notes are rewritten.
+    ///
+    /// - Returns: the merged recording, and the file names of any audio the
+    ///   emptied rows still had, for the caller to unlink.
+    @discardableResult
+    func merge(recordings ids: [Int64]) async throws -> (recording: Recording, orphanedAudio: [String]) {
+        try await database.writer.write { db in
+            let recordings = try Recording
+                .filter(ids.contains(Recording.Columns.id))
+                .order(Recording.Columns.startedAt, Recording.Columns.id)
+                .fetchAll(db)
+
+            guard recordings.count > 1 else { throw RetainDatabaseError.nothingToMerge }
+
+            // A lecture that is still being recorded is not a lecture to move
+            // rows out of: the microphone is open and the writer is appending
+            // to it.
+            guard !recordings.contains(where: { $0.state == .recording }) else {
+                throw RetainDatabaseError.cannotMergeWhileRecording
+            }
+
+            guard var survivor = recordings.first, let survivorID = survivor.id else {
+                throw RetainDatabaseError.nothingToMerge
+            }
+
+            // Every part, including the survivor's own, so a merged recording
+            // always says where all of it came from rather than only where the
+            // joins are.
+            var offset: TimeInterval = 0
+            var orphanedAudio: [String] = []
+
+            for recording in recordings {
+                guard let id = recording.id else { continue }
+
+                var part = RecordingPart(
+                    recordingID: survivorID,
+                    offset: offset,
+                    startedAt: recording.startedAt,
+                    duration: recording.duration
+                )
+                try part.insert(db)
+
+                if id != survivorID {
+                    try db.execute(
+                        sql: """
+                            UPDATE transcriptLine
+                            SET recordingID = ?, startTime = startTime + ?, endTime = endTime + ?
+                            WHERE recordingID = ?
+                            """,
+                        arguments: [survivorID, offset, offset, id]
+                    )
+                    try db.execute(
+                        sql: "UPDATE annotation SET recordingID = ?, time = time + ? WHERE recordingID = ?",
+                        arguments: [survivorID, offset, id]
+                    )
+                    if let filename = recording.filename, !filename.isEmpty {
+                        orphanedAudio.append(filename)
+                    }
+                    // Cascades to whatever is left under it: the notes and the
+                    // highlights, which are deliberately not carried over.
+                    try db.execute(sql: "DELETE FROM recording WHERE id = ?", arguments: [id])
+                }
+
+                offset += recording.duration
+            }
+
+            // The survivor's own notes go too. See the note above: two sets
+            // over two halves are not notes over the lesson.
+            try db.execute(sql: "DELETE FROM noteBlock WHERE recordingID = ?", arguments: [survivorID])
+
+            survivor.duration = offset
+            survivor.topic = nil
+            survivor.state = .done
+            try survivor.update(db)
+
+            return (survivor, orphanedAudio)
+        }
+    }
+
+    /// Where the parts of a merged recording begin, in order. Empty for a
+    /// recording made in one sitting, which is the ordinary case.
+    func parts(of recordingID: Int64) async throws -> [RecordingPart] {
+        try await database.writer.read { db in
+            try RecordingPart
+                .filter(RecordingPart.Columns.recordingID == recordingID)
+                .order(RecordingPart.Columns.offset)
+                .fetchAll(db)
+        }
+    }
+
     /// What deleting one recording would take with it.
     ///
     /// Counted before the confirmation rather than after, for the same reason

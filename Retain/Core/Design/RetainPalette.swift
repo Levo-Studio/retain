@@ -210,6 +210,17 @@ nonisolated enum RetainPalette {
     /// The surfaces a control sits on: a field and a secondary button, a
     /// selected sidebar row or segment, and the strip a table's current row is
     /// filled with.
+    /// The outlines of the two actions that act on several recordings at once.
+    ///
+    /// **Not drawn.** The export has no selection mode. They take the two
+    /// colours the export already uses to mean something: the accent, which
+    /// marks the thing the window is about, and amber, which marks what the
+    /// user themselves put there. Against the red of Cancel and of the
+    /// recording controls, three actions in one bar are told apart by colour
+    /// rather than by reading all three labels.
+    static var accentSwatch: RetainColor { accentBase }
+    static var amberSwatch: RetainColor { amberValue }
+
     static var insetControlSwatch: RetainColor { insetControl }
     static var selectedRowSwatch: RetainColor { selectedRow }
     static var metaStripSwatch: RetainColor { metaStrip }

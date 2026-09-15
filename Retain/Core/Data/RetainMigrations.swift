@@ -25,6 +25,15 @@ nonisolated enum RetainMigration: String, CaseIterable, Sendable {
     /// edited after it had shipped, which is the one thing the note above says
     /// never to do.
     case coursesAcrossTerms = "v4.courses-across-terms"
+
+    /// Where each part of a merged recording begins.
+    ///
+    /// Two lessons recorded by accident as two recordings become one, and the
+    /// transcript then has to be able to say where the second one started —
+    /// otherwise it reads as a single lecture with an unexplained jump in the
+    /// middle of it. The rows are a fact about the recording, not transcript
+    /// content, which is why they are not lines.
+    case mergedRecordings = "v5.merged-recordings"
 }
 
 // MARK: -
@@ -325,6 +334,30 @@ nonisolated enum RetainMigrations {
             try repairCoursesAcrossTerms(db)
         }
 
+        // MARK: v5 — merged recordings
+
+        // One row per part of a recording that was merged out of several, and
+        // no rows at all for a recording that was made in one sitting. The
+        // offset is where that part begins inside the merged timeline, in
+        // seconds, which is the unit every other time in Retain is in.
+        //
+        // `startedAt` is the part's own original start, kept because it is the
+        // only thing that says a lesson was recorded in two sittings twenty
+        // minutes apart rather than continuously — the offsets alone cannot,
+        // since the gap between two recordings is not recorded audio.
+        migrator.registerMigration(RetainMigration.mergedRecordings.rawValue) { db in
+            try db.create(table: "recordingPart") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("recordingID", .integer)
+                    .notNull()
+                    .indexed()
+                    .references("recording", onDelete: .cascade)
+                t.column("offset", .double).notNull()
+                t.column("startedAt", .datetime).notNull()
+                t.column("duration", .double).notNull().defaults(to: 0)
+            }
+        }
+
         return migrator
     }
 
@@ -502,6 +535,17 @@ nonisolated enum RetainMigrations {
         switch migration {
         case .library, .recordingContent, .coursesAcrossTerms:
             throw RetainDatabaseError.migrationHasNoRollback(migration.rawValue)
+
+        case .mergedRecordings:
+            // The only migration here with a real inverse: the table holds
+            // where the parts of a merged recording begin, and dropping it
+            // loses that and nothing else. The merge itself is not undone by
+            // it and never could be — the recordings it joined are gone.
+            try db.drop(table: "recordingPart")
+            try db.execute(
+                sql: "DELETE FROM grdb_migrations WHERE identifier = ?",
+                arguments: [migration.rawValue]
+            )
 
         case .search:
             for table in ["transcriptLineSearch", "noteBlockSearch", "annotationSearch"] {

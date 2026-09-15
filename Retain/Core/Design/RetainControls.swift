@@ -28,6 +28,10 @@ nonisolated enum RetainGlyph {
     /// button's text, one space in front of the label.
     static let add = "+"
 
+    /// The tick in a selected row. Drawn as a character for the same reason as
+    /// the chevron: it sits on the text's baseline at the text's weight.
+    static let tick = "✓"
+
     /// The button that folds the rail away, and the one that brings it back.
     ///
     /// **Not in the export**, which has no state without the rail. Characters

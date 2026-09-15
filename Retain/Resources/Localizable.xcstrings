@@ -338,6 +338,10 @@
         }
       }
     },
+    "A recording that is still running cannot be merged.": {
+      "comment": "Shown when a merge included the lecture being recorded right now",
+      "extractionState": "manual"
+    },
     "A term is the stretch of time the library is filtered by. Pick what yours are called and which courses they hold.": {
       "comment": "Settings section description under the general heading",
       "extractionState": "manual"
@@ -452,6 +456,10 @@
     },
     "Delete": {
       "comment": "Button beside the term picker that opens the delete-term confirmation",
+      "extractionState": "manual"
+    },
+    "Delete %lld": {
+      "comment": "Title bar button that deletes the picked recordings; the number is how many",
       "extractionState": "manual"
     },
     "Delete recording": {
@@ -596,6 +604,10 @@
     },
     "Local language model": {
       "comment": "Settings section heading",
+      "extractionState": "manual"
+    },
+    "Merge %lld": {
+      "comment": "Title bar button that joins the picked recordings into one; the number is how many",
       "extractionState": "manual"
     },
     "Microphone": {
@@ -826,6 +838,10 @@
       "comment": "Popover header while a lecture is being recorded, and the title of the recording window",
       "extractionState": "manual"
     },
+    "Recording %lld": {
+      "comment": "Heading in a merged transcript where the next of the joined recordings begins",
+      "extractionState": "manual"
+    },
     "Recording for %lld minutes": {
       "comment": "Label above the stop confirmation, saying how long the recording has run",
       "extractionState": "manual",
@@ -960,6 +976,10 @@
     },
     "Search notes and transcript …": {
       "comment": "Placeholder of the field above the chapters rail, searching inside one recording",
+      "extractionState": "manual"
+    },
+    "Select": {
+      "comment": "Title bar button that starts picking several recordings at once",
       "extractionState": "manual"
     },
     "Select All": {

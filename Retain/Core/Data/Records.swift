@@ -118,6 +118,25 @@ nonisolated extension Recording: FetchableRecord, MutablePersistableRecord {
     }
 }
 
+// MARK: - Recording part
+
+nonisolated extension RecordingPart: FetchableRecord, MutablePersistableRecord {
+
+    static var databaseTableName: String { "recordingPart" }
+
+    enum Columns {
+        static let id = Column("id")
+        static let recordingID = Column("recordingID")
+        static let offset = Column("offset")
+        static let startedAt = Column("startedAt")
+        static let duration = Column("duration")
+    }
+
+    mutating func didInsert(_ inserted: InsertionSuccess) {
+        id = inserted.rowID
+    }
+}
+
 // MARK: - Annotation
 
 nonisolated extension Annotation: FetchableRecord, MutablePersistableRecord {

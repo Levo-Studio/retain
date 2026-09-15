@@ -23,6 +23,65 @@ final class LibraryModel {
     private(set) var selectedCourse: CourseListing?
 
 
+    // MARK: - Picking several at once
+
+    /// Whether the recordings table is in selection mode.
+    ///
+    /// A mode rather than a modifier key, because the two things it leads to —
+    /// deleting several lectures, and joining several into one — are both
+    /// things somebody should have to mean. Leaving it clears what was ticked:
+    /// a selection that survives being cancelled is a selection that acts on
+    /// something later.
+    private(set) var isSelecting = false
+
+    /// The recordings ticked, by id.
+    private(set) var selection: Set<Int64> = []
+
+    /// The ticked recordings, in the order they were recorded — which is the
+    /// order a merge lays them end to end in, so it is the order the
+    /// confirmation has to show them in.
+    var selectedRecordings: [Recording] {
+        recordings
+            .filter { $0.id.map(selection.contains) ?? false }
+            .sorted { $0.startedAt < $1.startedAt }
+    }
+
+    /// Two or more, none of them still running. One recording is already
+    /// merged with itself, and the microphone is still writing into a running
+    /// one.
+    var canMergeSelection: Bool {
+        let picked = selectedRecordings
+        return picked.count > 1 && !picked.contains { $0.state == .recording }
+    }
+
+    var canDeleteSelection: Bool {
+        let picked = selectedRecordings
+        return !picked.isEmpty && !picked.contains { $0.state == .recording }
+    }
+
+    func startSelecting() {
+        isSelecting = true
+        selection = []
+    }
+
+    func stopSelecting() {
+        isSelecting = false
+        selection = []
+    }
+
+    func toggle(_ recording: Recording) {
+        guard let id = recording.id else { return }
+        if selection.contains(id) {
+            selection.remove(id)
+        } else {
+            selection.insert(id)
+        }
+    }
+
+    func isSelected(_ recording: Recording) -> Bool {
+        recording.id.map(selection.contains) ?? false
+    }
+
     // MARK: - Searching
 
     var query = "" {
@@ -227,6 +286,9 @@ final class LibraryModel {
     /// nothing is shared between them but the name and the colour.
     func select(course: CourseListing) async {
         selectedCourse = course
+        // What was ticked belonged to the course being left. Carrying it would
+        // mean a Delete that reaches into a course nobody is looking at.
+        selection = []
         guard let courseID = course.id, let termID = selectedTerm?.id else {
             recordings = []
             return
@@ -314,6 +376,53 @@ final class LibraryModel {
     func confirmDeletion(of term: Term) async {
         guard let impact = await LibraryEditing.impact(of: term, in: libraryRepository) else { return }
         sheet = .deleteTerm(term, impact)
+    }
+
+    // MARK: - Acting on several at once
+
+    /// Deletes every ticked recording, and the audio any of them still had.
+    ///
+    /// One at a time through the same path a single deletion takes, rather than
+    /// one `DELETE ... IN (...)`: the file on disk is not the database's to
+    /// remove, and the rule about a running lecture is written down once, in
+    /// the repository. A batch that skipped either would be a second set of
+    /// rules for the same act.
+    func deleteSelection() async {
+        let library = LibraryRepository(database)
+        for recording in selectedRecordings {
+            guard let id = recording.id else { continue }
+            let filename = (try? await library.delete(recording: id)) ?? nil
+            guard let filename, !filename.isEmpty else { continue }
+            try? FileManager.default.removeItem(
+                at: RecordingStore.directory.appendingPathComponent(filename)
+            )
+        }
+        stopSelecting()
+        await refresh()
+    }
+
+    /// Joins the ticked recordings into one, in the order they happened.
+    ///
+    /// The transaction is in the repository, where the rules about what
+    /// survives are. What is left here is the part the database cannot do:
+    /// unlinking the audio the emptied rows still had.
+    func mergeSelection() async {
+        guard canMergeSelection else { return }
+        let ids = selectedRecordings.compactMap(\.id)
+
+        guard let merged = try? await LibraryRepository(database).merge(recordings: ids) else {
+            stopSelecting()
+            return
+        }
+
+        for filename in merged.orphanedAudio where !filename.isEmpty {
+            try? FileManager.default.removeItem(
+                at: RecordingStore.directory.appendingPathComponent(filename)
+            )
+        }
+
+        stopSelecting()
+        await refresh()
     }
 
     func edit(_ course: Course) async {

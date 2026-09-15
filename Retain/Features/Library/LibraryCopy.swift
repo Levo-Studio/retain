@@ -195,6 +195,28 @@ nonisolated enum LibraryCopy {
         String(localized: "in your note",
                comment: "A search hit that is in something the user typed during the recording")
     }
+
+    // MARK: - Picking several at once
+
+    static var selectRecordings: String {
+        String(localized: "Select",
+               comment: "Title bar button that starts picking several recordings at once")
+    }
+
+    static var cancelSelection: String {
+        String(localized: "Cancel",
+               comment: "Title bar button that leaves selection mode without acting on what was picked")
+    }
+
+    static func deleteSelected(_ count: Int) -> String {
+        String(localized: "Delete \(count)",
+               comment: "Title bar button that deletes the picked recordings; the number is how many")
+    }
+
+    static func mergeSelected(_ count: Int) -> String {
+        String(localized: "Merge \(count)",
+               comment: "Title bar button that joins the picked recordings into one; the number is how many")
+    }
 }
 
 // MARK: - A term's period, however much of it there is
@@ -230,4 +252,5 @@ nonisolated enum TermPeriod {
             nil
         }
     }
+
 }

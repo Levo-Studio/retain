@@ -9,6 +9,8 @@ struct RecordingTable: View {
 
     let model: LibraryModel
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             courseHeading
@@ -28,9 +30,21 @@ struct RecordingTable: View {
                             ForEach(Array(model.recordings.enumerated()), id: \.element.id) { index, recording in
                                 RecordingTableRow(
                                     recording: recording,
-                                    isLast: index == model.recordings.count - 1
+                                    isLast: index == model.recordings.count - 1,
+                                    isSelecting: model.isSelecting,
+                                    isSelected: model.isSelected(recording)
                                 ) {
-                                    model.open(recording)
+                                    // While several are being picked, a row is
+                                    // a tick rather than a door. Opening one
+                                    // would leave the selection behind in a
+                                    // window nobody is looking at.
+                                    if model.isSelecting {
+                                        withAnimation(RetainMotion.selection(reduceMotion: reduceMotion)) {
+                                            model.toggle(recording)
+                                        }
+                                    } else {
+                                        model.open(recording)
+                                    }
                                 }
                                 // Right-click rather than a button in the row:
                                 // board 05 draws the table as four columns of
@@ -88,15 +102,31 @@ struct RecordingTableRow: View {
 
     let recording: Recording
     let isLast: Bool
+
+    /// Whether the table is picking several at once.
+    var isSelecting = false
+    var isSelected = false
+
     let open: () -> Void
 
     var body: some View {
         Button(action: open) {
             RecordingTableColumns {
-                Text(verbatim: RecordingPresentation.title(of: recording))
-                    .retainStyle(RetainTypography.tableCellTitle)
-                    .foregroundStyle(titleInk)
-                    .lineLimit(1)
+                HStack(spacing: 0) {
+                    // Width rather than presence, so the title slides over and
+                    // the tick grows into the space instead of the row being
+                    // re-laid out around a view that appeared.
+                    tick
+                        .frame(width: isSelecting ? RetainMetrics.selectionTickSize : 0)
+                        .padding(.trailing, isSelecting ? RetainMetrics.selectionTickGap : 0)
+                        .clipped()
+
+                    Text(verbatim: RecordingPresentation.title(of: recording))
+                        .retainStyle(RetainTypography.tableCellTitle)
+                        .foregroundStyle(titleInk)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(verbatim: RecordingPresentation.started(of: recording))
                     .retainStyle(RetainTypography.tableCellOther)
@@ -124,6 +154,32 @@ struct RecordingTableRow: View {
                 resting: isRunning ? RetainPalette.metaStripSwatch : nil
             )
         )
+    }
+
+    /// An empty box until the row is ticked.
+    ///
+    /// A box and not only a mark: with nothing drawn, a row that is not ticked
+    /// and a table that is not selecting look the same, and the reader has
+    /// nowhere to aim.
+    private var tick: some View {
+        RoundedRectangle(cornerRadius: RetainMetrics.radiusCheckbox, style: .continuous)
+            .fill(isSelected ? RetainPalette.accent : .clear)
+            .overlay {
+                RoundedRectangle(cornerRadius: RetainMetrics.radiusCheckbox, style: .continuous)
+                    .strokeBorder(
+                        isSelected ? RetainPalette.accent : RetainPalette.lineControlBorderEmphasised,
+                        lineWidth: RetainMetrics.borderWidth
+                    )
+            }
+            .overlay {
+                if isSelected {
+                    Text(verbatim: RetainGlyph.tick)
+                        .retainStyle(RetainTypography.captionSmall)
+                        .foregroundStyle(RetainPalette.surfaceWindow)
+                }
+            }
+            .aspectRatio(1, contentMode: .fit)
+            .accessibilityHidden(true)
     }
 
     private var isRunning: Bool { RecordingPresentation.isRunning(recording) }

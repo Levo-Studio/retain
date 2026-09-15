@@ -133,6 +133,7 @@ struct MigrationTests {
             RetainMigration.library.rawValue,
             RetainMigration.recordingContent.rawValue,
             RetainMigration.coursesAcrossTerms.rawValue,
+            RetainMigration.mergedRecordings.rawValue,
         ])
 
         // The transcript is untouched, which is the whole point: the index was

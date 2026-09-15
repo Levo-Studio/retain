@@ -4,6 +4,8 @@ import SwiftUI
 /// table.
 struct LibraryView: View {
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @Bindable var model: LibraryModel
 
     var body: some View {
@@ -49,9 +51,26 @@ struct LibraryView: View {
             // the term, the courses and "New course" all begin.
             titleLeading: RetainMetrics.sidebarPadding.leading + RetainMetrics.sidebarRowLibrary.leading
         ) {
-            ModelStatusPill()
+            // Selecting replaces the bar's controls and nothing else: the same
+            // row, the same padding, the same edges. What is in it changes
+            // because none of the three things it usually holds — the model,
+            // Record, the term — is an answer to "what should happen to these
+            // four recordings".
+            if model.isSelecting {
+                selectionActions
+            } else {
+                normalActions
+            }
+        }
+    }
 
-            recordButton
+    @ViewBuilder
+    private var normalActions: some View {
+        ModelStatusPill()
+
+        recordButton
+
+        selectButton
 
             // The same picker the settings boards draw, in the box this title
             // bar draws it in: a rounder corner and tighter padding, with the
@@ -86,7 +105,78 @@ struct LibraryView: View {
                     }
                 }
             }
+    }
+
+    // MARK: - Picking several at once
+
+    /// Starts selection mode. Beside Record because that is where the other
+    /// thing you do *to* the library lives, rather than with the term, which
+    /// says what you are looking at.
+    private var selectButton: some View {
+        Button {
+            withAnimation(RetainMotion.selection(reduceMotion: reduceMotion)) {
+                model.startSelecting()
+            }
+        } label: {
+            Text(verbatim: LibraryCopy.selectRecordings)
         }
+        .buttonStyle(titleBarButton())
+        .disabled(model.recordings.isEmpty)
+        .fixedSize()
+    }
+
+    /// Merge, Delete, Cancel — in that order, so Cancel is the one at the far
+    /// right, furthest from the pointer on its way in from the table.
+    ///
+    /// Three outlines, three colours: the accent for the one that makes
+    /// something, amber for the one that changes what the user has, red for
+    /// the one that leaves. Against a bar of four-letter words, colour is what
+    /// is read first.
+    @ViewBuilder
+    private var selectionActions: some View {
+        Button {
+            Task { await model.mergeSelection() }
+        } label: {
+            Text(verbatim: LibraryCopy.mergeSelected(model.selection.count))
+        }
+        .buttonStyle(titleBarButton(ink: RetainPalette.accent, border: RetainPalette.accentSwatch))
+        .disabled(!model.canMergeSelection)
+        .fixedSize()
+
+        Button {
+            Task { await model.deleteSelection() }
+        } label: {
+            Text(verbatim: LibraryCopy.deleteSelected(model.selection.count))
+        }
+        .buttonStyle(titleBarButton(ink: RetainPalette.amberInk, border: RetainPalette.amberSwatch))
+        .disabled(!model.canDeleteSelection)
+        .fixedSize()
+
+        Button {
+            withAnimation(RetainMotion.selection(reduceMotion: reduceMotion)) {
+                model.stopSelecting()
+            }
+        } label: {
+            Text(verbatim: LibraryCopy.cancelSelection)
+        }
+        .buttonStyle(titleBarButton(ink: RetainPalette.redInk, border: RetainPalette.redBorderSwatch))
+        .fixedSize()
+    }
+
+    /// The bar's one button shape, so five buttons in one row cannot each be
+    /// drawn slightly differently.
+    private func titleBarButton(
+        ink: Color = RetainPalette.inkBody,
+        border: RetainColor? = nil
+    ) -> RetainSecondaryButtonStyle {
+        RetainSecondaryButtonStyle(
+            textStyle: RetainTypography.titleBarButton,
+            padding: RetainMetrics.titleBarButtonPadding,
+            cornerRadius: RetainMetrics.radiusExportButton,
+            isFilled: true,
+            ink: ink,
+            border: border
+        )
     }
 
     /// Starts a recording for the course in the sidebar, without going back to

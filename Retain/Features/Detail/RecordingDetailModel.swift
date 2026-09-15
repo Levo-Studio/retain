@@ -31,6 +31,11 @@ final class RecordingDetailModel {
     private(set) var course: Course?
     private(set) var term: Term?
 
+    /// Where the parts of a merged recording begin. Empty for a recording made
+    /// in one sitting, which is the ordinary case and is why the transcript
+    /// draws nothing for it.
+    private(set) var parts: [RecordingPart] = []
+
     /// Every course this recording could be moved to: the ones running in the
     /// term it was recorded in.
     ///
@@ -299,6 +304,11 @@ final class RecordingDetailModel {
             // was recorded in, whatever the course has been used for since.
             term = try await library.term(recording.termID)
             coursesInTerm = try await library.courses(in: recording.termID).map(\.course)
+            // Only the seams are of interest: one part is a recording that was
+            // never merged, and a heading over the whole of it would say
+            // nothing.
+            let joined = try await library.parts(of: recordingID)
+            parts = joined.count > 1 ? joined : []
         } catch {
             // A read that failed leaves the window empty rather than wrong.
             // There is no error state drawn for the detail window, and a

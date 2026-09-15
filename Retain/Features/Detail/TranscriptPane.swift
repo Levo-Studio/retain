@@ -27,6 +27,16 @@ struct TranscriptPane: View {
                                 .foregroundStyle(RetainPalette.inkDim)
                         } else {
                             ForEach(Array(model.lines.enumerated()), id: \.element.id) { index, line in
+                                // The seam between two lectures that were
+                                // merged. Above the first line of each part
+                                // rather than at its exact second, because a
+                                // heading belongs to what follows it and the
+                                // second before it is the end of the last
+                                // sentence of the part before.
+                                if let part = part(startingBefore: line, previous: index > 0 ? model.lines[index - 1] : nil) {
+                                    TranscriptPartHeading(part: part, number: number(of: part))
+                                }
+
                                 TranscriptRow(
                                     line: line,
                                     isMarked: isMarked(line),
@@ -78,6 +88,22 @@ struct TranscriptPane: View {
     }
 
     // MARK: - The find bar
+
+    /// The part this line is the first of, if any.
+    ///
+    /// The first part is never returned: a heading over the start of the
+    /// transcript is a heading over the transcript, and the seams are the only
+    /// thing worth marking.
+    private func part(startingBefore line: TranscriptLine, previous: TranscriptLine?) -> RecordingPart? {
+        guard let previous else { return nil }
+        return model.parts.first { part in
+            part.offset > 0 && previous.start < part.offset && line.start >= part.offset
+        }
+    }
+
+    private func number(of part: RecordingPart) -> Int {
+        (model.parts.firstIndex(of: part) ?? 0) + 1
+    }
 
     private var findBar: some View {
         HStack(spacing: RetainMetrics.findBarGap) {
@@ -241,5 +267,38 @@ struct RetainSearchHitText: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Where one recording ended and the next began
+
+/// The seam in a transcript that was merged out of several recordings.
+///
+/// **Not in the export**, which has no merged recording in it. It is the
+/// uppercase label the meta strip and the rail already use, over a rule — the
+/// two shapes Retain already has for "a new thing starts here" — and it carries
+/// the part's own start time, because that is the one fact the merged timeline
+/// cannot show: the lines run continuously, and the afternoon did not.
+struct TranscriptPartHeading: View {
+
+    let part: RecordingPart
+    let number: Int
+
+    var body: some View {
+        HStack(spacing: RetainMetrics.transcriptPartHeadingGap) {
+            Text(verbatim: DetailCopy.transcriptPart(number))
+            Text(verbatim: started)
+                .foregroundStyle(RetainPalette.inkDim)
+            Spacer(minLength: 0)
+        }
+        .retainStyle(RetainTypography.uppercaseLabel)
+        .foregroundStyle(RetainPalette.inkLabel)
+        .padding(.top, RetainMetrics.transcriptPartHeadingRoom)
+        .padding(.bottom, RetainMetrics.transcriptPartHeadingGap)
+        .overlay(alignment: .bottom) { RetainDivider() }
+    }
+
+    private var started: String {
+        part.startedAt.formatted(.dateTime.hour().minute())
     }
 }

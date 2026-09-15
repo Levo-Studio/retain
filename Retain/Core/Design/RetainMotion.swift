@@ -137,6 +137,21 @@ nonisolated enum RetainMotion {
         resolve(.easeInOut(duration: railDuration), reduceMotion: reduceMotion)
     }
 
+    // MARK: - Picking several at once
+
+    /// How long the tick takes to appear in front of a row, and the title to
+    /// move over for it.
+    ///
+    /// **Not a drawn value.** The export has no selection state. It is the
+    /// shortest move that reads as the row making room rather than as the table
+    /// being re-laid out, and it is one value rather than two so the tick and
+    /// the title cannot arrive at different times.
+    static let selectionDuration: Double = 0.18
+
+    static func selection(reduceMotion: Bool) -> Animation? {
+        resolve(.easeOut(duration: selectionDuration), reduceMotion: reduceMotion)
+    }
+
     // MARK: - The gate
 
     /// The one place an animation is allowed to become no animation.
