@@ -22,45 +22,32 @@ nonisolated enum NoteReduction {
 
     // MARK: - Prompts, map step
 
-    /// Written in English and asking for German output.
+    /// **These are meeting notes, not an encyclopedia entry.**
     ///
-    /// The two are not in tension: instruction-tuned models follow English
-    /// instructions more reliably than German ones — that is what the bulk of
-    /// their instruction data is in — while the class, and therefore the notes,
-    /// are German. Mixing the two in one prompt is the arrangement that loses
-    /// the least.
+    /// The prompt used to say "explaining the matter itself the way a textbook
+    /// would" and "never write about the class". Read literally, that is an
+    /// instruction to leave the room: the model was handed three minutes of a
+    /// biology lesson about corals and wrote a tidy paragraph of general
+    /// knowledge about coral symbiosis — accurate, plausible, and not what the
+    /// teacher had said. Which is exactly how it was reported: the model just
+    /// puts something out.
     ///
-    /// Every line below is there to stop something a 3–8B model does otherwise:
+    /// What is wanted is the other thing. Somebody who missed the lesson should
+    /// be able to read the note and know **what was covered and what was said
+    /// about it** — the definition as it was given, the example that was used,
+    /// the number that was named, the question somebody asked. Nothing from
+    /// outside the transcript, however true.
     ///
-    /// - *automatic and German* — without it, the model treats recognition
-    ///   errors as terminology and repeats them into the heading.
-    /// - *`##` and nothing else* — a model handed "write Markdown" opens with
-    ///   an `#` title, because the card looks to it like a document. An H1 in a
-    ///   column drawn for a 22px heading is a card twice the height of the ones
-    ///   around it.
-    /// - *no tables, code, images or links* — all four are drawn nowhere, all
-    ///   four are things a model reaches for unasked, and a link is a promise
-    ///   Retain cannot keep: there is no browser in the notes pane.
-    /// - *noun phrase, no verb, no full stop* — otherwise the heading is
-    ///   "Die Lehrerin erklärt die Seitentabelle", which is about the class
-    ///   rather than the subject and reads wrong at 22px bold.
-    /// - *never write about the class* — a model given a transcript writes a
-    ///   meeting summary: "Zunächst wurde besprochen …". Nobody revises from
-    ///   that.
-    /// - *the list may be left out* — without that half, every card gets
-    ///   exactly three bullets restating the paragraph, because an empty list
-    ///   feels to the model like a failure.
-    /// - *one bold term* — the design highlights exactly one term per card. Two
-    ///   highlights in one paragraph is a paragraph with no emphasis in it.
-    /// - *invent nothing* — the single most expensive failure here. A fluent
-    ///   invented definition in a student's revision notes is worse than a gap,
-    ///   because nothing about it looks wrong.
+    /// The shape is unchanged; only the job is.
     static let blockSystemPrompt = """
-        You write one revision note from one stretch of a recorded class.
+        You take one stretch of a recorded class and write down what was said in it.
 
-        The transcript is German and was produced by automatic speech recognition, \
-        so it contains recognition errors, filler words and false starts. Write your \
-        answer in German.
+        These are notes of the lesson, not an article about the subject. Somebody who \
+        missed this stretch reads them to find out what was covered and what was said \
+        about it. Write your answer in German.
+
+        The transcript is German and comes from automatic speech recognition, so it \
+        contains recognition errors, filler words and false starts. Read through them.
 
         The note is Markdown, in exactly this shape and using nothing else:
 
@@ -69,20 +56,28 @@ nonisolated enum NoteReduction {
         - höchstens drei Stichpunkte
 
         Rules:
-        - The heading is one line starting with "## ". Never "#", never "###". \
-        It is a noun phrase: no verb, no full stop.
-        - One paragraph of two to four sentences, explaining the matter itself the \
-        way a textbook would. Never write about the class, the teacher, the room or \
-        "dieser Abschnitt".
-        - Mark the one technical term the stretch is about with **double asterisks**, \
+        - The heading is one line starting with "## ". Never "#", never "###". It names \
+        what this stretch was about: a noun phrase, no verb, no full stop.
+        - One paragraph of two to four sentences saying what was actually said: the \
+        definition as it was given, the example that was used, the point that was made. \
+        Follow the order it was said in.
+        - **Take nothing from outside the transcript.** If the teacher explained \
+        something incompletely, write it as incompletely as they did. Adding what you \
+        know about the subject is the one mistake that makes these notes worthless, \
+        because the reader cannot tell it from what was said.
+        - Do not narrate the lesson either: no "der Lehrer sagt", no "in diesem \
+        Abschnitt", no "es wurde besprochen". Write the content, in the room's own \
+        terms.
+        - Mark the one technical term the stretch turns on with **double asterisks**, \
         once, inside the paragraph. Never mark a second term.
-        - The list is optional and holds at most three items, each a fact worth \
-        memorising: a number, a definition, a condition, an exception. Leave it out \
-        when the stretch holds nothing of that kind. Never restate the paragraph.
+        - The list is optional and holds at most three items, each something worth \
+        keeping that was actually named: a number, a definition, a condition, an \
+        exception, a question from the room. Leave it out when nothing of that kind was \
+        said. Never restate the paragraph.
         - No tables, no code fences, no images, no links, no horizontal rules.
 
-        Invent nothing. If a word was obviously misrecognised and you can tell what was \
-        meant, correct it; if you cannot, leave it out.
+        If a word was obviously misrecognised and the context makes it clear what was \
+        meant, correct it. If you cannot tell, leave it out rather than guess.
         """
 
     /// The user turn for one block.
@@ -115,12 +110,12 @@ nonisolated enum NoteReduction {
     static let blockSchema = SchemaDescription(
         name: "note_block",
         schema: JSONSchema.object(
-            "One revision note about one stretch of a recording, in German.",
+            "Notes of one stretch of a recorded class, in German: what was covered and what was said about it. Nothing from outside the transcript.",
             [
                 (
                     "markdown",
                     JSONSchema.string(
-                        "The note as Markdown: a '## ' heading, one paragraph with one **bold** term, and an optional list of at most three '- ' items. No other Markdown."
+                        "The note as Markdown: a '## ' heading naming what this stretch was about, one paragraph saying what was said about it with one **bold** term, and an optional list of at most three '- ' items that were actually named. No other Markdown."
                     )
                 )
             ]
@@ -143,16 +138,21 @@ nonisolated enum NoteReduction {
     ///   and enforced afterwards, because a model that is told twice still
     ///   sometimes answers "Zusammenfassung der Vorlesung".
     static let reduceSystemPrompt = """
-        You write the finished notes for one recorded class.
+        You write the finished notes of one recorded class: what was covered, and \
+        what was said about it.
+
+        These are notes of the lesson, not an article about the subject. Somebody who \
+        was not there reads them instead of the recording. Write in German.
 
         You are given the transcript of record and the draft notes that were written \
         while the recording ran. The drafts are drafts: each was written from three \
         minutes in isolation, so they overlap, they repeat themselves, and they cut \
-        topics in half. Write in German.
+        topics in half. **The transcript is what is true.** Where a draft says \
+        something the transcript does not, drop it.
 
-        topic — a German noun phrase naming the subject matter of the whole recording, \
-        at most 60 characters. No verb, no sentence, no full stop. Never a generic label \
-        such as "Zusammenfassung", "Vorlesung" or "Notizen".
+        topic — a German noun phrase naming what the lesson was about, at most 60 \
+        characters. No verb, no sentence, no full stop. Never a generic label such as \
+        "Zusammenfassung", "Vorlesung" or "Notizen".
 
         markdown — the notes, as three to eight sections in the order things were said. \
         Merge consecutive drafts that turned out to be about the same thing; split one \
@@ -163,14 +163,20 @@ nonisolated enum NoteReduction {
         - höchstens drei Stichpunkte
 
         Rules:
-        - Headings start with "## ". Never "#", never "###". Each is a noun phrase: \
-        no verb, no full stop.
+        - Headings start with "## ". Never "#", never "###". Each names what that part \
+        of the lesson was about: a noun phrase, no verb, no full stop.
+        - Each paragraph says what was said: the definition as it was given, the \
+        example that was used, the argument that was made, in the order it came.
+        - **Take nothing from outside the transcript.** If something was explained \
+        incompletely, leave it incomplete. Filling the gap with what you know about \
+        the subject is the one mistake that makes these notes worthless, because the \
+        reader cannot tell it from what was said.
+        - Do not narrate the lesson either: no "der Lehrer sagt", no "in dieser \
+        Stunde", no "es wurde besprochen". Write the content, in the room's own terms.
         - Mark the one technical term of each section with **double asterisks**, once.
-        - The list is optional and holds at most three items.
+        - The list is optional and holds at most three items, each something worth \
+        keeping that was actually named.
         - No tables, no code fences, no images, no links, no horizontal rules.
-        - Write the matter itself, never the class, the teacher or the room.
-
-        Invent nothing that is not in the transcript.
         """
 
     /// - Parameters:
@@ -196,18 +202,18 @@ nonisolated enum NoteReduction {
     static let notesSchema = SchemaDescription(
         name: "recording_notes",
         schema: JSONSchema.object(
-            "The finished notes for one recording, in German.",
+            "The finished notes of one recorded class, in German: what was covered and what was said about it, in the order it was said. Nothing from outside the transcript.",
             [
                 (
                     "topic",
                     JSONSchema.string(
-                        "A German noun phrase naming the subject matter. At most 60 characters, no verb, no full stop."
+                        "A German noun phrase naming what the lesson was about. At most 60 characters, no verb, no full stop."
                     )
                 ),
                 (
                     "markdown",
                     JSONSchema.string(
-                        "The notes as Markdown: three to eight sections, each a '## ' heading, one paragraph with one **bold** term, and an optional list. No other Markdown."
+                        "The notes as Markdown: three to eight sections in the order things were said, each a '## ' heading naming that part of the lesson, one paragraph saying what was said about it with one **bold** term, and an optional list. No other Markdown."
                     )
                 ),
             ]
