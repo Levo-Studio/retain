@@ -89,7 +89,7 @@ final class RecordingDetailModel {
 
     /// Handed in rather than built here: the conversation needs a language
     /// model, and which one that is belongs to settings.
-    private let chat: RecordingChat?
+    private var chat: RecordingChat?
 
     private(set) var turns: [ChatTurn] = []
     private(set) var isAnswering = false
@@ -101,11 +101,18 @@ final class RecordingDetailModel {
 
     private let database: RetainDatabase
 
+    /// - Parameter chat: handed in by a test that wants to answer without a
+    ///   server. `nil` in the app, where `load()` builds one from Settings —
+    ///   see `ChatFactory`, and the reason it has to.
     init(recording: Recording, database: RetainDatabase, chat: RecordingChat? = nil) {
         self.recording = recording
         self.database = database
         self.chat = chat
+        wasChatHandedIn = chat != nil
     }
+
+    /// So `load()` does not replace a chat a test gave it.
+    private let wasChatHandedIn: Bool
 
 
     // MARK: - Writing the notes after the fact
@@ -225,14 +232,21 @@ final class RecordingDetailModel {
 
         find = TranscriptFind(lines: lines, query: findQuery)
 
+        let material = RecordingChat.Material(
+            notes: self.notes,
+            transcript: lines,
+            isRecording: recording.state == .recording
+        )
+
+        // Built here rather than by the caller. It used to be the caller's job
+        // and no caller did it: `RecordingChat(` appeared nowhere in the app, so
+        // every window got `nil` and asking a question did nothing, silently.
+        if !wasChatHandedIn {
+            chat = ChatFactory.make(material: material)
+        }
+
         if let chat {
-            await chat.update(
-                RecordingChat.Material(
-                    notes: self.notes,
-                    transcript: lines,
-                    isRecording: recording.state == .recording
-                )
-            )
+            await chat.update(material)
             turns = await chat.turns
         }
     }
