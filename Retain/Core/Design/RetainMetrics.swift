@@ -145,10 +145,6 @@ nonisolated enum RetainMetrics {
     /// Between the mark and the name beside it.
     static let titleBarMarkGap: CGFloat = 8
 
-    /// Between the window's name at the top of a sidebar and the first row
-    /// under it. Enough that the name reads as the window's and not as a row.
-    static let sidebarTitleGap: CGFloat = 10
-
     /// The `Export` button.
     static let titleBarButtonPadding = edges(5, 10)
     /// The term picker in the library title bar, and the gap inside it.
@@ -265,15 +261,16 @@ nonisolated enum RetainMetrics {
     /// The recording window's name, on the same left edge as its tabs and its
     /// meta strip. It has no sidebar to sit at the top of, so it is its own row
     /// under the title bar instead.
-    /// The name's own row in the detail window: 34 from the left, which is the
-    /// edge the meta strip, the tabs and the notes all start at.
+    /// Room above and below the window's name, in every window.
     ///
-    /// Taller than it was drawn. The name spent a round inside the title bar,
-    /// where the owner asked for it — and the traffic lights push anything in
-    /// that strip 70 points in, so it could not line up with a single thing
-    /// under it. It is back on its own line, and the room asked for that round
-    /// is here instead, above and below it.
-    static let detailWindowTitle = edges(14, 34, 14)
+    /// **One number, deliberately.** Each window used to set its own — the two
+    /// sidebars 8 above and 18 below, the detail window 6 and 10 — and the
+    /// three rows were the same row drawn three slightly different ways, which
+    /// is visible the moment two of them are open side by side. The horizontal
+    /// inset stays each window's own, because that one has a job: the mark has
+    /// to start on the same edge as whatever the window's first column starts
+    /// at, and those genuinely differ.
+    static let windowTitleRoom: CGFloat = 14
     static let tabGap: CGFloat = 22
     static let tabPadding = edges(11, 0)
 

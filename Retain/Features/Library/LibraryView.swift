@@ -177,7 +177,7 @@ struct LibrarySidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: RetainMetrics.sidebarRowGap) {
-            RetainWindowTitle(title: LibraryCopy.windowTitle, inset: RetainMetrics.sidebarRowLibrary)
+            RetainWindowTitle(title: LibraryCopy.windowTitle, leading: RetainMetrics.sidebarRowLibrary.leading)
 
             termHeader
 

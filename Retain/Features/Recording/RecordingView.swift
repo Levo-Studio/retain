@@ -41,6 +41,17 @@ struct RecordingRoot: View {
             } else {
                 VStack(spacing: 0) {
                     RecordingTitleBar(shell: shell)
+
+                    // The same row, on the same edge, with the same room as
+                    // every other window — and as the finished lecture, which
+                    // replaces this whole view the moment the notes exist. Its
+                    // absence was a jump: the bar, the strip and the tabs all
+                    // shifted down a row when a lecture ended.
+                    RetainWindowTitle(
+                        title: lectureName,
+                        leading: RetainMetrics.metaStripCellFirst.leading
+                    )
+
                     RecordingMetaStrip(session: shell.session, courses: shell.courses)
 
                     content
@@ -97,6 +108,16 @@ struct RecordingRoot: View {
     /// opened for, and follows it if the lecture is moved mid-recording.
     private var lectureTitle: String {
         shell.session.course?.name ?? ""
+    }
+
+    /// What the window is called while the lecture runs: the course and when it
+    /// started, which is what the finished lecture's own row says.
+    private var lectureName: String {
+        let started = shell.session.startedAt.formatted(
+            .dateTime.day().month(.wide).year().hour().minute()
+        )
+        guard let course = shell.session.course else { return started }
+        return DetailCopy.joined(course.name, started)
     }
 }
 

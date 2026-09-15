@@ -400,16 +400,16 @@ struct RetainWindowTitle: View {
 
     let title: String
 
-    /// The row inset of the sidebar this is at the top of. The two sidebars do
-    /// not agree — the library's rows are a point tighter than the settings
-    /// ones — and the whole point of this view is that the logo's left edge is
-    /// the same edge as the rows beneath it.
-    var inset: EdgeInsets = RetainMetrics.sidebarRowSettings
-
-    /// Between the name and whatever comes under it. A sidebar wants a gap
-    /// before its first row; the detail window's meta strip draws its own rule
-    /// and wants none.
-    var bottomGap: CGFloat = RetainMetrics.sidebarTitleGap
+    /// The edge the window's first column starts at, which is the edge the mark
+    /// has to start at too. The three windows genuinely differ — the library's
+    /// rows are a point tighter than the settings ones, and the detail window's
+    /// meta strip starts far further in — so this is a parameter.
+    ///
+    /// **Only the leading edge.** The room above and below is
+    /// `RetainMetrics.windowTitleRoom` in every window: it used to be each
+    /// window's own, and three rows that are the same row drawn three slightly
+    /// different ways is visible the moment two of them are open at once.
+    var leading: CGFloat = RetainMetrics.sidebarRowSettings.leading
 
     var body: some View {
         HStack(spacing: RetainMetrics.titleBarMarkGap) {
@@ -421,7 +421,7 @@ struct RetainWindowTitle: View {
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(inset)
-        .padding(.bottom, bottomGap)
+        .padding(.leading, leading)
+        .padding(.vertical, RetainMetrics.windowTitleRoom)
     }
 }

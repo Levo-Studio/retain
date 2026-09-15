@@ -28,8 +28,9 @@ struct RecordingDetailView: View {
             // which is the same conclusion written down the first time.
             RetainWindowTitle(
                 title: DetailCopy.joined(courseName, started),
-                inset: RetainMetrics.detailWindowTitle,
-                bottomGap: 0
+                // The meta strip's own edge, which the tabs and the notes
+                // share. That is the whole point of the row.
+                leading: RetainMetrics.metaStripCellFirst.leading
             )
 
             DetailMetaStrip(model: model)
