@@ -25,6 +25,22 @@ extension Defaults.Keys {
     /// asked what it has.
     static let languageModelName = Key<String>("languageModelName", default: "")
 
+    /// Whether an API key has ever been stored. **Not the key** — see hard rule
+    /// 10, which is about where the secret lives, and it still lives in the
+    /// Keychain and nowhere else.
+    ///
+    /// This exists so that Retain can leave the Keychain alone entirely when
+    /// there is nothing in it. Reading an item macOS does not think this binary
+    /// is entitled to read puts a password sheet on screen, and an ad-hoc
+    /// signed build is a different binary every time — so a user with no key at
+    /// all, which is the ordinary case for LM Studio, was asked for a password
+    /// at launch for a secret that was not there.
+    ///
+    /// `nonisolated` because `LanguageModelKey` is: the backend reads the key
+    /// off the main actor, and the whole point of this flag is to be consulted
+    /// before the Keychain is.
+    nonisolated static let hasLanguageModelKey = Key<Bool>("hasLanguageModelKey", default: false)
+
     /// The microphone, by the UID that survives a reboot. `nil` follows
     /// whatever macOS is using, which is what a user who plugs in a headset
     /// expects.

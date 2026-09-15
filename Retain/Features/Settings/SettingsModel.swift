@@ -269,6 +269,8 @@ final class SettingsModel {
             // costs no access of its own: on a build whose signature the item
             // does not recognise, every access is its own password sheet, and
             // this used to be a second one on top of the backend's.
+            // Through the shared cache where there is one, which leaves the
+            // Keychain alone entirely when nothing was ever stored.
             if let keyCache {
                 apiKeyText = keyCache.value() ?? ""
             } else {

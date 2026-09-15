@@ -1,3 +1,4 @@
+import Defaults
 import Foundation
 
 /// The LM Studio API key, read from the Keychain once per launch.
@@ -36,7 +37,16 @@ nonisolated final class LanguageModelKey: @unchecked Sendable {
     }
 
     /// The key, reading it the first time and remembering the answer.
+    ///
+    /// **The Keychain is not touched at all when nothing was ever stored.** LM
+    /// Studio needs no key, which makes "no key" the ordinary case — and a read
+    /// of an item this binary is not recognised as entitled to read puts a
+    /// password sheet on screen. Asking the user for a password to fetch a
+    /// secret that does not exist is the worst version of that, and it happened
+    /// at every launch.
     func value() -> String? {
+        guard Defaults[.hasLanguageModelKey] else { return nil }
+
         lock.lock()
         defer { lock.unlock() }
 
@@ -71,11 +81,15 @@ nonisolated final class LanguageModelKey: @unchecked Sendable {
     func write(_ key: String) throws {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
+            // Unconditionally, even when the flag says there is nothing: an
+            // item left by an earlier version has to be reachable by the one
+            // action that removes it.
             try item.delete()
             replace(with: nil)
         } else {
             try item.write(trimmed)
             replace(with: trimmed)
         }
+        Defaults[.hasLanguageModelKey] = !trimmed.isEmpty
     }
 }
