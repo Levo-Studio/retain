@@ -21,6 +21,17 @@ struct RecordingDetailView: View {
         VStack(spacing: 0) {
             titleBar
 
+            // Under the bar, not in it. macOS owns the first seventy points of
+            // a title bar and draws close, minimise and zoom in them, so a name
+            // put up there starts to the right of everything below it and
+            // cannot be made flush with any of it. See `RetainWindowTitle`,
+            // which is the same conclusion written down the first time.
+            RetainWindowTitle(
+                title: DetailCopy.joined(courseName, started),
+                inset: RetainMetrics.detailWindowTitle,
+                bottomGap: 0
+            )
+
             DetailMetaStrip(model: model)
             tabBar
 
@@ -66,15 +77,7 @@ struct RecordingDetailView: View {
     // MARK: - Chrome
 
     private var titleBar: some View {
-        // The name sits in the bar rather than on a line of its own under it.
-        // That line was a whole row of window for one sentence, and the bar it
-        // sat under was empty on the left — the owner asked for the two to be
-        // one, with the name where it already was and the controls where they
-        // already were.
-        RetainTitleBar(
-            title: DetailCopy.joined(courseName, started),
-            bottomGap: RetainMetrics.titleBarBottomGap
-        ) {
+        RetainTitleBar {
             // The chat and the notes both live off this model, and this window
             // is where a reader asks it questions. Whether it is going to
             // answer belongs where they are looking.

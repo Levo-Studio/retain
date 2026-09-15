@@ -128,15 +128,6 @@ nonisolated enum RetainMetrics {
     static let dialogWidth: CGFloat = 430
 
     static let titleBarHeight: CGFloat = 38
-
-    /// Extra room under the title bar's contents, where a window asks for it.
-    ///
-    /// **Not drawn.** The export's bar carries controls and nothing else, and
-    /// the detail window's now carries the recording's name as well — which
-    /// used to have a row of its own. At 38 points flat the name sits against
-    /// the rule under it, so that bar is given the gap back and the others are
-    /// left at the height they are drawn at.
-    static let titleBarBottomGap: CGFloat = 14
     static let titleBarPadding = horizontal(14)
     static let titleBarGap: CGFloat = 9
 
@@ -274,7 +265,15 @@ nonisolated enum RetainMetrics {
     /// The recording window's name, on the same left edge as its tabs and its
     /// meta strip. It has no sidebar to sit at the top of, so it is its own row
     /// under the title bar instead.
-    static let detailWindowTitle = edges(6, 34, 10)
+    /// The name's own row in the detail window: 34 from the left, which is the
+    /// edge the meta strip, the tabs and the notes all start at.
+    ///
+    /// Taller than it was drawn. The name spent a round inside the title bar,
+    /// where the owner asked for it — and the traffic lights push anything in
+    /// that strip 70 points in, so it could not line up with a single thing
+    /// under it. It is back on its own line, and the room asked for that round
+    /// is here instead, above and below it.
+    static let detailWindowTitle = edges(14, 34, 14)
     static let tabGap: CGFloat = 22
     static let tabPadding = edges(11, 0)
 
