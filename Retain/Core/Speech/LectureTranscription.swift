@@ -46,14 +46,58 @@ actor LectureTranscription {
         self.models = models
     }
 
+    // MARK: - Which transcriber
+
+    /// Apple's model where the Mac has it, Parakeet everywhere else.
+    ///
+    /// `SpeechAnalyzer` ships in macOS 26 and Retain's deployment target is 15,
+    /// so this is a choice made at run time rather than a dependency swapped
+    /// out. Both produce the same thing — words with times — and everything
+    /// after this point is the same code.
+    ///
+    /// Apple's is preferred where it exists because it had the lowest German
+    /// word error rate of the engines in a 2026 benchmark over 13 000
+    /// recordings. Whether that holds for a classroom rather than read-aloud
+    /// speech is a question the owner's own recordings answer, and Parakeet is
+    /// one line away.
+    ///
+    /// **A failure falls back rather than failing the lecture.** A model asset
+    /// that will not download, a locale the system has dropped — none of that
+    /// is a reason to lose an hour of audio that Parakeet can read.
+    private func transcribe(
+        _ url: URL,
+        onStage: (@Sendable (Stage) -> Void)?
+    ) async throws -> BatchTranscriber.Result {
+        if #available(macOS 26.0, *), await AppleSpeechTranscriber.isUsable() {
+            do {
+                let apple = try await AppleSpeechTranscriber().transcribe(url) { fraction in
+                    onStage?(.transcribing(fraction))
+                }
+                if !apple.words.isEmpty {
+                    return BatchTranscriber.Result(
+                        words: apple.words,
+                        text: apple.text,
+                        realTimeFactor: apple.realTimeFactor
+                    )
+                }
+            } catch {
+                // Fall through to Parakeet. Deliberately silent: the user is
+                // not waiting on a choice between two transcribers, and the one
+                // that works is about to run.
+            }
+        }
+
+        let transcriber = BatchTranscriber(models: models)
+        return try await transcriber.transcribe(url) { fraction in
+            onStage?(.transcribing(fraction))
+        }
+    }
+
     func run(
         _ url: URL,
         onStage: (@Sendable (Stage) -> Void)? = nil
     ) async throws -> Output {
-        let transcriber = BatchTranscriber(models: models)
-        let transcription = try await transcriber.transcribe(url) { fraction in
-            onStage?(.transcribing(fraction))
-        }
+        let transcription = try await transcribe(url, onStage: onStage)
 
         let diarizer = SpeakerDiarizer()
         let segments = await diarizer.segments(for: url) { fraction in

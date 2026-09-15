@@ -40,7 +40,11 @@ final class SpeechModels {
     /// The language the streaming model is asked for. German, per the locked
     /// decision; `languageDirectory(for:)` routes `de-DE` to the Latin-script
     /// vocabulary, which is the smaller and faster of the two ships.
-    static let languageCode = "de-DE"
+    ///
+    /// `nonisolated` because the batch passes are not on the main actor and
+    /// there has to be one answer to what language a lecture is in — Apple's
+    /// transcriber takes its locale from here too.
+    nonisolated static let languageCode = "de-DE"
 
     /// Chunk tier in milliseconds.
     ///
