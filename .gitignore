@@ -20,3 +20,6 @@ Packages/
 
 # Machine-local build settings — the development team lives here, never in the project
 Local.xcconfig
+
+# Worktrees agents run in. Never part of the repository.
+.claude/worktrees/
