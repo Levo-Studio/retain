@@ -88,8 +88,15 @@ struct RecordingRoot: View {
         }
     }
 
+    /// The course the lecture being processed was recorded into.
+    ///
+    /// From the session, not from the course picker. The picker is the window's
+    /// current selection and it moves — open the library, click another course,
+    /// and the screen processing your maths lesson starts claiming it is
+    /// processing biology. The session holds the course the microphone was
+    /// opened for, and follows it if the lecture is moved mid-recording.
     private var lectureTitle: String {
-        shell.courses.selected?.name ?? ""
+        shell.session.course?.name ?? ""
     }
 }
 
