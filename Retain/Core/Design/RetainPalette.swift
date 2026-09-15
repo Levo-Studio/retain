@@ -218,8 +218,19 @@ nonisolated enum RetainPalette {
 
     private static let canvas = RetainColor(hex: 0x08090B)
     private static let window = RetainColor(hex: 0x0E1013)
-    private static let titleBar = RetainColor(hex: 0x16181C)
-    private static let metaStrip = RetainColor(hex: 0x14161A)
+
+    // **The export draws these two a shade lighter than the window and the
+    // owner asked for them to stop.** Four near-identical greys stacked down a
+    // window read as banding rather than as structure: the title strip looked
+    // like a bar bolted on top of the page instead of part of it. The dividers
+    // already say where one band ends and the next begins, and they say it
+    // without changing the colour of the paper.
+    //
+    // This is a deliberate departure from `docs/design/`, made on the owner's
+    // word. The tokens stay — every view still asks for the surface it means,
+    // so putting the shades back is one line each.
+    private static let titleBar = window
+    private static let metaStrip = window
     private static let rail = RetainColor(hex: 0x131519)
     private static let insetControl = RetainColor(hex: 0x171A1E)
     private static let selectedRow = RetainColor(hex: 0x1B1F24)
@@ -330,5 +341,9 @@ nonisolated enum RetainPalette {
     /// The one pair of names in `swatches` the export deliberately paints the
     /// same colour. Everything else being distinct is what the palette test
     /// asserts.
-    static let intentionallyEqualSwatches: Set<Set<String>> = [["surfaceRail", "surfaceHotkeyChip"]]
+    static let intentionallyEqualSwatches: Set<Set<String>> = [
+        ["surfaceRail", "surfaceHotkeyChip"],
+        // The window's own bands. See the colours themselves for why.
+        ["surfaceWindow", "surfaceTitleBar", "surfaceMetaStrip"],
+    ]
 }

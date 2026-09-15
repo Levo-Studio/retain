@@ -77,11 +77,34 @@ struct RetainPaletteTests {
             "searchHitInk": "#ffffff",
         ]
 
-        for (name, hex) in expected {
+        for (name, hex) in expected where !Self.departures.keys.contains(name) {
+            let swatch = RetainPalette.swatches.first { $0.name == name }
+            #expect(swatch?.colour.hexDescription == hex, "\(name)")
+        }
+
+        // The departures are checked too, against what they were changed to.
+        // Listing them is the point: a token that quietly drifts off the design
+        // is a bug, and a token the owner moved on purpose is a decision — and
+        // the difference has to be written down somewhere a reader will find
+        // it.
+        for (name, hex) in Self.departures {
             let swatch = RetainPalette.swatches.first { $0.name == name }
             #expect(swatch?.colour.hexDescription == hex, "\(name)")
         }
     }
+
+    /// Tokens Retain deliberately draws differently from `docs/design/`, and
+    /// what it draws them as.
+    ///
+    /// The export stacks four near-identical greys down a window — `#0e1013`,
+    /// `#16181c`, `#14161a`, `#131519` — and the owner asked for the two bands
+    /// at the top to stop. Read on a real screen they are banding rather than
+    /// structure: the title strip looked like a bar bolted onto the page. The
+    /// dividers already say where one band ends.
+    static let departures: [String: String] = [
+        "surfaceTitleBar": "#0e1013",
+        "surfaceMetaStrip": "#0e1013",
+    ]
 
     /// Two tokens the design draws as different colours must not have become
     /// one value through a mistyped digit — a mistake that is invisible on
