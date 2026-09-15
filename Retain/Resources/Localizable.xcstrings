@@ -1146,6 +1146,10 @@
       "comment": "Progress while the language model works through a finished recording",
       "extractionState": "manual"
     },
+    "Writing the notes …": {
+      "comment": "Recording rail footer while the model rewrites the notes from the final transcript",
+      "extractionState": "manual"
+    },
     "Writing the transcript · %lld %": {
       "comment": "Recording rail footer during the batch transcription pass",
       "extractionState": "manual"

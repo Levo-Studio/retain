@@ -73,7 +73,7 @@ struct TranscriptRail: View {
     @ViewBuilder
     private var footer: some View {
         switch shell.session.phase {
-        case .transcribing, .separatingSpeakers, .preparingModels:
+        case .transcribing, .separatingSpeakers, .preparingModels, .writingNotes:
             working
         case .done, .failed:
             finished
@@ -237,6 +237,9 @@ nonisolated enum RecordingRailCopy {
         case .separatingSpeakers(let fraction):
             String(localized: "Separating the speakers · \(percent(fraction)) %",
                    comment: "Recording rail footer during diarization")
+        case .writingNotes:
+            String(localized: "Writing the notes …",
+                   comment: "Recording rail footer while the model rewrites the notes from the final transcript")
         case .done:
             String(localized: "Finished. The notes are in the library.",
                    comment: "Recording rail footer once everything has run")

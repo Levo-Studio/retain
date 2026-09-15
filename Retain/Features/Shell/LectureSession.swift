@@ -24,6 +24,11 @@ final class LectureSession {
         /// The batch pass over the finished recording.
         case transcribing(Double)
         case separatingSpeakers(Double)
+        /// The reduce step: the notes being written again from the transcript
+        /// of record. It is the last thing that happens to a lecture and it can
+        /// take a large model a minute, so it is a phase of its own rather than
+        /// silence at the end of the other two.
+        case writingNotes
         case done
         case failed(String)
 
@@ -183,7 +188,7 @@ final class LectureSession {
         switch phase {
         case .idle, .done, .failed:
             break
-        case .preparingModels, .recording, .transcribing, .separatingSpeakers:
+        case .preparingModels, .recording, .transcribing, .separatingSpeakers, .writingNotes:
             return
         }
 
@@ -387,6 +392,12 @@ final class LectureSession {
             // cards that no further line will ever nudge.
             await retryDeferredBlocks()
 
+            // And then the notes are written again, from the transcript of
+            // record rather than from the one that was on screen. See
+            // `writeFinalNotes` — this is the step that was missing.
+            phase = .writingNotes
+            await writeFinalNotes(from: lines)
+
             phase = .done
         } catch {
             // The recording itself is not lost because the pass over it failed,
@@ -538,6 +549,72 @@ final class LectureSession {
             // rather than shorter.
             guard let written = try? await summarizer.summarise(block) else { return }
             replaceNote(note.number, with: written)
+        }
+    }
+
+
+    // MARK: - The notes the lecture is left with
+
+    /// Rewrites the notes from the batch transcript, once it exists.
+    ///
+    /// **This is the reduce half of the map/reduce the whole design rests on,
+    /// and nothing called it.** `RecordingSummarizer.reduce` was written,
+    /// tested, and unreachable: the notes a lecture ended with were the cards
+    /// written *during* it — each from three minutes in isolation, off the live
+    /// transcript, which sits around 10 % word error against the batch pass's
+    /// 5.9 %. They overlap, they repeat themselves, they cut topics in half,
+    /// and they are built on the worse of the two transcripts. That is exactly
+    /// what "the live notes are bad and only Re-analyse makes them good"
+    /// describes, and Re-analyse was doing by hand what this does by itself.
+    ///
+    /// Run after the batch pass and the diarization, because it needs the
+    /// transcript of record rather than the one that was on screen.
+    ///
+    /// Hard rule 7 lives in `ModelSizeDecision`: the large model only on mains.
+    /// On battery the reduce runs on the small one rather than not at all — a
+    /// worse set of notes is worth more than none, and the reader can press
+    /// Re-analyse on mains later.
+    ///
+    /// A failure leaves the cards in place. They are poor and they are real;
+    /// throwing them away for an empty column would be the worse trade.
+    private func writeFinalNotes(from lines: [TranscriptLine]) async {
+        guard let summarizer, !notes.isEmpty || !lines.isEmpty else { return }
+
+        let written = try? await summarizer.reduce(
+            notes: notes,
+            transcript: lines,
+            markers: markers,
+            // Hard rule 7 is decided in `ModelSizeDecision`, not here: the
+            // large model on mains, the small one on battery.
+            using: ModelSizeDecision.size(
+                power: PowerMonitor.currentState(),
+                lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
+            )
+        )
+        guard let written else { return }
+
+        topic = written.topic
+        notes = written.blocks
+
+        guard let store, let recordingID else { return }
+
+        // Replaced, not appended: these stand in place of the cards written
+        // during the lecture, and appending would leave the lecture summarised
+        // twice.
+        let stored = written.blocks.enumerated().map { index, block in
+            StoredNoteBlock(
+                recordingID: recordingID,
+                position: index + 1,
+                startTime: block.start,
+                endTime: block.end,
+                markdown: block.markdown
+            )
+        }
+        try? await store.notes.replaceBlocks(stored, for: recordingID)
+
+        if var recording = try? await store.library.recording(recordingID) {
+            recording.topic = written.topic
+            _ = try? await store.library.save(recording)
         }
     }
 

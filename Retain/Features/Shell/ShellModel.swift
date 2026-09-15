@@ -75,7 +75,7 @@ final class ShellModel {
     var canRecord: Bool {
         switch session.phase {
         case .idle, .done, .failed: true
-        case .preparingModels, .recording, .transcribing, .separatingSpeakers: false
+        case .preparingModels, .recording, .transcribing, .separatingSpeakers, .writingNotes: false
         }
     }
 
