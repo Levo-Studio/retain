@@ -1,4 +1,6 @@
 import Foundation
+// For the async iterator on `LibraryChanges.stream`, which is GRDB's own type.
+import GRDB
 import Observation
 
 /// Everything boards 03 and 04 are drawn from, for one recording.
@@ -28,6 +30,14 @@ final class RecordingDetailModel {
     private(set) var recording: Recording
     private(set) var course: Course?
     private(set) var term: Term?
+
+    /// Every course this recording could be moved to: the ones running in the
+    /// term it was recorded in.
+    ///
+    /// Not every course in the library. A recording belongs to one term and
+    /// that does not move — see `startRecording` — so offering courses from
+    /// another half-year would offer a pairing the library has no row for.
+    private(set) var coursesInTerm: [Course] = []
 
     private(set) var blocks: [NoteBlock] = []
     private(set) var lines: [TranscriptLine] = []
@@ -288,6 +298,7 @@ final class RecordingDetailModel {
             // several, and this window is about one lesson — the half-year it
             // was recorded in, whatever the course has been used for since.
             term = try await library.term(recording.termID)
+            coursesInTerm = try await library.courses(in: recording.termID).map(\.course)
         } catch {
             // A read that failed leaves the window empty rather than wrong.
             // There is no error state drawn for the detail window, and a
@@ -421,6 +432,75 @@ final class RecordingDetailModel {
     func reader(reached number: Int?) {
         guard let number, number != currentBlockNumber else { return }
         currentBlockNumber = number
+    }
+
+    // MARK: - Editing the recording itself
+
+    /// Renames the recording, from the meta strip.
+    ///
+    /// An empty name is not a name: it clears the topic instead of storing a
+    /// blank one, and the window and the library then both fall back to when
+    /// the recording happened — which is what `RecordingPresentation.title`
+    /// already does for a lecture the model never got a topic out of.
+    func rename(to name: String) async {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let topic: String? = trimmed.isEmpty ? nil : trimmed
+        guard topic != recording.topic else { return }
+
+        var edited = recording
+        edited.topic = topic
+        guard let saved = try? await LibraryRepository(database).save(edited) else { return }
+        recording = saved
+    }
+
+    /// Moves the recording to another course.
+    ///
+    /// The term does not move with it. A recording belongs to the half-year it
+    /// was recorded in and that is not a thing anybody is correcting here —
+    /// `coursesInTerm` is therefore the only set this can be handed, and a
+    /// course from outside it is refused rather than written.
+    func move(to course: Course) async {
+        guard let id = course.id, id != recording.courseID else { return }
+        guard coursesInTerm.contains(where: { $0.id == id }) else { return }
+
+        var edited = recording
+        edited.courseID = id
+        guard let saved = try? await LibraryRepository(database).save(edited) else { return }
+        recording = saved
+        self.course = course
+    }
+
+    /// Follows the library for as long as the window is open.
+    ///
+    /// A course renamed in the library, a recording moved from another window,
+    /// a term retitled — this window read all three once and kept them, so the
+    /// meta strip could sit there naming a course that had been called
+    /// something else for an hour.
+    ///
+    /// Only the chrome is re-read. The notes and the transcript are not in the
+    /// tables this watches, and re-reading an hour of transcript because
+    /// somebody renamed a course in another window would be a stutter for
+    /// nothing.
+    func follow() async {
+        do {
+            for try await _ in LibraryChanges.stream(in: database) {
+                await refreshChrome()
+            }
+        } catch {
+            await refreshChrome()
+        }
+    }
+
+    private func refreshChrome() async {
+        guard let id = recording.id else { return }
+        let library = LibraryRepository(database)
+
+        // The row first: it is what carries the topic and the course, and a
+        // course read against a stale `courseID` would name the wrong one.
+        if let stored = try? await library.recording(id) { recording = stored }
+        course = try? await library.course(recording.courseID)
+        term = try? await library.term(recording.termID)
+        coursesInTerm = (try? await library.courses(in: recording.termID).map(\.course)) ?? coursesInTerm
     }
 
     // MARK: - Moving around the window

@@ -527,6 +527,15 @@ nonisolated enum RetainMetrics {
     /// Between a meta-strip value and the `▾` that opens its menu.
     static let metaChevronGap: CGFloat = 7
 
+    /// The course picker in the detail meta strip.
+    ///
+    /// **Not drawn.** The export draws the course there as plain text, and the
+    /// owner asked for it to open a list. A field's own padding would push the
+    /// value off the baseline the two cells beside it sit on, so this is the
+    /// chevron gap either side of the text and nothing above or below it — the
+    /// value stays where it was drawn and gains a border when it is pointed at.
+    static let metaPickerPadding = edges(metaChevronGap, 0)
+
     /// "writing …" sits in the heading's own row, at the heading gap.
     static let noteWritingLabelGap: CGFloat = 11
 

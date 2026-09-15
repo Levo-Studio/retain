@@ -30,12 +30,23 @@ private let headlessCard = "Ein Absatz ohne Überschrift."
 @Suite("Recording detail")
 struct RecordingDetailModelTests {
 
+    /// The model, and the store behind it — for the tests that write to the
+    /// store directly, or read it back to check what the model wrote.
     private func loaded(
         state: RecordingState = .done,
         cards: [String] = [firstCard, secondCard],
         annotations: [(TimeInterval, String)] = [(3130, "Übungsblatt 5, Aufgabe 3 rechnet genau diesen Fall durch.")],
         chat: RecordingChat? = nil
     ) async throws -> RecordingDetailModel {
+        try await loadedWithStore(state: state, cards: cards, annotations: annotations, chat: chat).model
+    }
+
+    private func loadedWithStore(
+        state: RecordingState = .done,
+        cards: [String] = [firstCard, secondCard],
+        annotations: [(TimeInterval, String)] = [(3130, "Übungsblatt 5, Aufgabe 3 rechnet genau diesen Fall durch.")],
+        chat: RecordingChat? = nil
+    ) async throws -> (model: RecordingDetailModel, database: RetainDatabase) {
         let database = try StoreFixture.database()
         let library = try await StoreFixture.library(in: database)
         let recordingID = try #require(library.recording.id)
@@ -73,7 +84,7 @@ struct RecordingDetailModelTests {
             chat: chat
         )
         await model.load()
-        return model
+        return (model, database)
     }
 
     // MARK: - The chapter rail
@@ -152,6 +163,70 @@ struct RecordingDetailModelTests {
         #expect(model.noteItems == model.blocks.map(NoteItem.block))
         #expect(model.markerCount == 1)
         #expect(model.markers.contains { $0.time == 3130 })
+    }
+
+    // MARK: - Editing the recording itself
+
+    /// The topic the model guessed is the recording's name in the library, in
+    /// the search and at the top of this window. It used to be unchangeable.
+    @Test("The recording can be renamed, and the new name is what is stored")
+    func renaming() async throws {
+        let (model, database) = try await loadedWithStore()
+        let id = try #require(model.recording.id)
+
+        await model.rename(to: "  Seitenersetzung, zweiter Anlauf  ")
+
+        #expect(model.recording.topic == "Seitenersetzung, zweiter Anlauf")
+        let stored = try await LibraryRepository(database).recording(id)
+        #expect(stored?.topic == "Seitenersetzung, zweiter Anlauf")
+    }
+
+    /// An empty name is not a name. Storing a blank one would put a recording
+    /// with no visible title in the library, where a recording with no topic
+    /// shows when it happened instead.
+    @Test("An empty name clears the topic rather than storing a blank one")
+    func renamingToNothing() async throws {
+        let model = try await loaded()
+
+        await model.rename(to: "   ")
+
+        #expect(model.recording.topic == nil)
+        #expect(RecordingPresentation.title(of: model.recording) != "")
+    }
+
+    @Test("The recording moves to another course in the same term")
+    func moving() async throws {
+        let (model, database) = try await loadedWithStore()
+        let id = try #require(model.recording.id)
+        let term = try #require(model.term)
+        let other = try await StoreFixture.course(in: database, term: term, name: "Biologie")
+
+        await model.load()
+        #expect(model.coursesInTerm.count == 2)
+
+        await model.move(to: other)
+
+        #expect(model.course?.id == other.id)
+        let stored = try await LibraryRepository(database).recording(id)
+        #expect(stored?.courseID == other.id)
+        // The half-year does not move with it.
+        #expect(stored?.termID == term.id)
+    }
+
+    /// A recording belongs to the half-year it was recorded in, and that is not
+    /// something this window corrects. A course from another term would be a
+    /// pairing the library has no row for.
+    @Test("A course from another term is refused")
+    func movingOutsideTheTerm() async throws {
+        let (model, database) = try await loadedWithStore()
+        let before = try #require(model.course?.id)
+        let otherTerm = try await StoreFixture.term(in: database, title: "Third year, summer", isCurrent: false)
+        let elsewhere = try await StoreFixture.course(in: database, term: otherTerm, name: "Chemie")
+
+        await model.load()
+        await model.move(to: elsewhere)
+
+        #expect(model.course?.id == before)
     }
 
     /// The store numbers blocks from zero and everything else — a chapter row,

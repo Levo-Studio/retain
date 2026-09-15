@@ -78,6 +78,16 @@ nonisolated enum DetailCopy {
                      comment: "Button in the tab bar that folds the chapters and chat rail away")
     }
 
+    static var renameRecording: String {
+        String(localized: "Rename recording",
+               comment: "Accessibility label of the editable topic in the detail meta strip")
+    }
+
+    static var changeCourse: String {
+        String(localized: "Change course",
+               comment: "Accessibility label of the course picker in the detail meta strip")
+    }
+
     static var noChapters: String {
         String(localized: "No chapters yet.",
                comment: "Chapters rail with nothing in it, because no note block has been written")

@@ -30,6 +30,14 @@
       "comment": "Model status when the chosen model is not one the server offers",
       "extractionState": "manual"
     },
+    "%@ moves from %@ to %@. It stays in the same term.": {
+      "comment": "Move-recording dialog body: the recording, the course it is in, and the one it is going to",
+      "extractionState": "manual"
+    },
+    "%@ moves to %@. It stays in the same term.": {
+      "comment": "Move-recording dialog body when the recording is not in a course yet",
+      "extractionState": "manual"
+    },
     "%@ of %@": {
       "comment": "Byte counts on the speech model download card",
       "extractionState": "manual"
@@ -378,6 +386,10 @@
       "comment": "Dialog button that closes without saving",
       "extractionState": "manual"
     },
+    "Change course": {
+      "comment": "Accessibility label of the course picker in the detail meta strip",
+      "extractionState": "manual"
+    },
     "Chapters": {
       "comment": "Rail segment showing the chapters — the export's Kapitel",
       "extractionState": "manual"
@@ -604,6 +616,10 @@
     },
     "Model": {
       "comment": "Settings field label for the model picker",
+      "extractionState": "manual"
+    },
+    "Move recording": {
+      "comment": "Move-recording dialog title, and the button that confirms it",
       "extractionState": "manual"
     },
     "Name": {
@@ -844,6 +860,10 @@
     },
     "Rename": {
       "comment": "Button that opens the name-term dialog for the selected term",
+      "extractionState": "manual"
+    },
+    "Rename recording": {
+      "comment": "Accessibility label of the editable topic in the detail meta strip",
       "extractionState": "manual"
     },
     "Resume": {
