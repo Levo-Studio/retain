@@ -10,13 +10,40 @@ struct DetailNotesPane: View {
 
     let model: RecordingDetailModel
 
+    /// The steps, while the model is working — **wherever it is working from**.
+    ///
+    /// It used to live inside the empty state, so it appeared only for a
+    /// recording that had no notes. Pressing Re-analyse on a recording that
+    /// already had some showed nothing at all: the old notes stayed on screen,
+    /// unchanged, for as long as the model took, and then swapped. Working and
+    /// idle looked identical, which is the version of this that gets reported
+    /// as the button doing nothing.
+    ///
+    /// It takes the notes column and not the window, because that is the part
+    /// of the screen that is about to change.
+    @ViewBuilder
+    private var working: some View {
+        VStack(alignment: .leading, spacing: RetainMetrics.detailEmptyNotesGap) {
+            HStack(spacing: RetainMetrics.processingRowGap) {
+                TypingIndicator()
+                    .frame(width: RetainMetrics.processingMarkerColumn, alignment: .leading)
+
+                Text(verbatim: ProcessingCopy.writingNotes)
+                    .retainStyle(RetainTypography.fieldText)
+                    .foregroundStyle(RetainPalette.inkPrimary)
+            }
+
+            Text(verbatim: DetailCopy.readingTranscript(lines: model.lines.count))
+                .retainStyle(RetainTypography.captionSmall)
+                .foregroundStyle(RetainPalette.inkLabel)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     /// What stands in for the notes when there are none.
     ///
     /// The sentence alone was the whole of it, and it left a reader with a full
-    /// transcript, no notes, and nothing to do about either. The notes are made
-    /// during the lecture, and a lecture recorded while LM Studio was
-    /// unreachable ended here for good — nothing ever went back for them,
-    /// whatever the comment beside the code said.
+    /// transcript, no notes, and nothing to do about either.
     @ViewBuilder
     private var empty: some View {
         VStack(alignment: .leading, spacing: RetainMetrics.detailEmptyNotesGap) {
@@ -24,21 +51,7 @@ struct DetailNotesPane: View {
                 .retainStyle(RetainTypography.noteParagraphDetail)
                 .foregroundStyle(RetainPalette.inkDim)
 
-            // The button is drawn in **every** state, disabled while a run is
-            // in flight. It used to be hidden by the running case, so a run
-            // that never came back — a model still being read off disk, a
-            // server that went away mid-answer — left the pane with a line of
-            // progress text and no control at all, which reads as the button
-            // having disappeared.
-            HStack(spacing: RetainMetrics.settingsModelRowGap) {
-                writeButton
-
-                if case .running(let done, let total) = model.noteWriting {
-                    Text(verbatim: DetailCopy.writingNotes(done: done, total: total))
-                        .retainStyle(RetainTypography.captionSmall)
-                        .foregroundStyle(RetainPalette.inkLabel)
-                }
-            }
+            writeButton
 
             if case .failed(let reason) = model.noteWriting {
                 Text(verbatim: reason)
@@ -68,7 +81,9 @@ struct DetailNotesPane: View {
         ScrollViewReader { scroll in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    if model.blocks.isEmpty {
+                    if case .running = model.noteWriting {
+                        working
+                    } else if model.blocks.isEmpty {
                         empty
                     } else {
                         ForEach(Array(model.noteItems.enumerated()), id: \.element.id) { index, item in

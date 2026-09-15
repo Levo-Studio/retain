@@ -103,9 +103,15 @@ nonisolated enum DetailCopy {
                comment: "Button that runs the language model over a finished recording's transcript")
     }
 
-    static func writingNotes(done: Int, total: Int) -> String {
-        String(localized: "Writing notes · \(done) of \(total)",
-               comment: "Progress while the language model works through a finished recording")
+    /// What the model is reading, while it reads it.
+    ///
+    /// There is no percentage: it is one request over the whole lecture and the
+    /// model does not stream progress. The number of lines is the honest thing
+    /// to show — it says how much work this is without pretending to know how
+    /// far along it is.
+    static func readingTranscript(lines: Int) -> String {
+        String(localized: "Reading \(lines) lines of transcript",
+               comment: "Shown while the model writes the notes, saying how much it was given")
     }
 
     /// The sentence above the button.

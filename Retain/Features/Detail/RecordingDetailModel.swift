@@ -120,7 +120,10 @@ final class RecordingDetailModel {
     /// Where a run of the summariser over a finished recording has got to.
     nonisolated enum NoteWriting: Equatable, Sendable {
         case idle
-        case running(done: Int, total: Int)
+        /// **No fraction.** It is one request over the whole lecture, and the
+        /// model does not stream a percentage — a bar that moves on a guess is
+        /// worse than saying plainly that something is running.
+        case running
         /// What went wrong, in the error's own words.
         case failed(String)
     }
@@ -181,20 +184,20 @@ final class RecordingDetailModel {
         await writeNotes()
     }
 
-    /// Runs the summariser over the stored transcript and writes the notes.
+    /// Runs the model over the stored transcript and writes the notes.
     ///
-    /// **This exists because the notes could silently never arrive.** The
-    /// summaries are made during the lecture, one block at a time; a block the
-    /// model could not answer was marked as waiting, and the comment beside it
-    /// said summaries are caught up when the connection is back. Nothing caught
-    /// them up. A lecture recorded while LM Studio was unreachable — or, as it
-    /// happened, while its API key had been deleted — ended with a full
-    /// transcript, no notes, and a window that said only that the notes had not
-    /// been written yet.
+    /// **One call, over the whole lecture** — the same step, the same prompt and
+    /// the same model as the one that runs when a recording stops. It used to
+    /// summarise block by block here, three minutes at a time, which is the
+    /// approach that was removed from the lecture itself for producing notes
+    /// that overlap, repeat themselves and cut topics in half. A button that
+    /// rewrites the notes has to produce what the pipeline produces, or it is a
+    /// second, worse answer to the same question.
     ///
-    /// It stops at the first failure rather than working through the rest. A
-    /// server that refused one block refuses the next, and a queue of identical
-    /// errors is not more informative than one.
+    /// **This exists because the notes could silently never arrive.** A lecture
+    /// recorded while LM Studio was unreachable — or, as it happened, while its
+    /// API key had been deleted — ended with a full transcript, no notes, and a
+    /// window whose only word on the subject was that they had not been written.
     func writeNotes() async {
         guard canWriteNotes, let recordingID = recording.id else { return }
 
@@ -206,34 +209,46 @@ final class RecordingDetailModel {
             return
         }
 
-        // The same boundaries the lecture would have used, with `finished` —
-        // the recording is over, so the trailing block is whole rather than
-        // still filling.
-        let blocksToWrite = BlockBoundaries.blocks(from: lines, markers: markers, finished: true)
-        guard !blocksToWrite.isEmpty else { return }
+        noteWriting = .running
 
-        noteWriting = .running(done: 0, total: blocksToWrite.count)
-        let repository = NoteRepository(database)
-
-        for (index, block) in blocksToWrite.enumerated() {
-            do {
-                let written = try await summarizer.summarise(block)
-                let stored = StoredNoteBlock(
-                    recordingID: recordingID,
-                    position: written.number,
-                    startTime: written.start,
-                    endTime: written.end,
-                    markdown: written.markdown
+        let written: RecordingNotes
+        do {
+            written = try await summarizer.reduce(
+                // No drafts: there is nothing between the transcript and the
+                // notes any more.
+                notes: [],
+                transcript: lines,
+                markers: markers,
+                // Hard rule 7 is decided in `ModelSizeDecision`: the large
+                // model on mains, the small one on battery.
+                using: ModelSizeDecision.size(
+                    power: PowerMonitor.currentState(),
+                    lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
                 )
-                _ = try await repository.append(stored, to: recordingID)
-                blocks.append(written)
-                noteWriting = .running(done: index + 1, total: blocksToWrite.count)
-            } catch {
-                noteWriting = .failed(SettingsModel.message(for: error))
-                return
-            }
+            )
+        } catch {
+            noteWriting = .failed(SettingsModel.message(for: error))
+            return
         }
 
+        let stored = written.blocks.enumerated().map { index, block in
+            StoredNoteBlock(
+                recordingID: recordingID,
+                position: index + 1,
+                startTime: block.start,
+                endTime: block.end,
+                markdown: block.markdown
+            )
+        }
+
+        do {
+            try await NoteRepository(database).replaceBlocks(stored, for: recordingID)
+        } catch {
+            noteWriting = .failed(SettingsModel.message(for: error))
+            return
+        }
+
+        blocks = written.blocks
         noteWriting = .idle
     }
 
