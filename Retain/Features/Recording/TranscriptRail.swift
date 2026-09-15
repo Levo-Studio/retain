@@ -6,20 +6,48 @@ struct TranscriptRail: View {
 
     let shell: ShellModel
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         VStack(spacing: 0) {
             header
 
-            ScrollView {
-                TranscriptRailLines(lines: lines)
+            ScrollViewReader { scroll in
+                ScrollView {
+                    TranscriptRailLines(lines: lines)
+                        // An anchor at the very end rather than the last line's
+                        // own id: the newest line is replaced as it is spoken —
+                        // the partial becomes a line and a new partial takes
+                        // its place — so scrolling to it by id chases a moving
+                        // target.
+                        .overlay(alignment: .bottom) {
+                            Color.clear.frame(height: 1).id(Self.endID)
+                        }
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .onChange(of: lines.count) { follow(scroll) }
+                .onChange(of: shell.session.partial) { follow(scroll) }
+                .task { follow(scroll) }
             }
-            .scrollBounceBehavior(.basedOnSize)
 
             footer
         }
         .frame(maxHeight: .infinity)
         .background(RetainPalette.surfaceRail)
         .overlay(alignment: .leading) { RetainVerticalDivider() }
+    }
+
+    private static let endID = "transcript-end"
+
+    /// Keeps the newest line in view while the lecture runs.
+    ///
+    /// The whole transcript is in the rail now, so without this a lecture
+    /// scrolls its own newest words off the bottom within a minute. Scrolling
+    /// back by hand still works — this only fires when a line arrives.
+    private func follow(_ scroll: ScrollViewProxy) {
+        withAnimation(RetainMotion.reveal(reduceMotion: reduceMotion)) {
+            scroll.scrollTo(Self.endID, anchor: .bottom)
+        }
     }
 
     // MARK: Parts

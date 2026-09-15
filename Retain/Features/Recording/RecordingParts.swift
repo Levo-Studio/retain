@@ -132,17 +132,28 @@ struct TranscriptLineRow: View {
 
 nonisolated enum TranscriptLadder {
 
-    /// The last few lines, with the opacity each is drawn at.
+    /// **Every** line, with the opacity each is drawn at.
     ///
-    /// The ladder is read from the end: the newest line is always full
-    /// strength, and a rail holding fewer lines than the ladder has rungs takes
-    /// the rungs nearest the end rather than starting at the faintest one.
+    /// It used to be `lines.suffix(opacities.count)` — the last five and
+    /// nothing else. The rail scrolled, and scrolling it showed five lines and
+    /// then stopped, because everything older had never been put in it. An hour
+    /// of a lecture existed in the session, in the database and in the
+    /// transcript tab, and could not be read in the window it was being
+    /// recorded in.
+    ///
+    /// The ladder still does what it is for: text arriving at the bottom fades
+    /// up over the last few lines. Everything above them is drawn at full
+    /// strength, because it is history and history has to be readable.
     static func visible(
         _ lines: [TranscriptLine],
         opacities: [Double]
     ) -> [(line: TranscriptLine, opacity: Double)] {
-        let shown = lines.suffix(opacities.count)
-        let rungs = opacities.suffix(shown.count)
-        return Array(zip(shown, rungs)).map { (line: $0.0, opacity: $0.1) }
+        let full = opacities.last ?? 1
+        let fading = lines.suffix(opacities.count)
+        let older = lines.dropLast(fading.count)
+
+        let rungs = opacities.suffix(fading.count)
+        return older.map { (line: $0, opacity: full) }
+            + Array(zip(fading, rungs)).map { (line: $0.0, opacity: $0.1) }
     }
 }

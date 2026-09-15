@@ -76,11 +76,22 @@ struct TranscriptLadderTests {
         #expect(rungs.map(\.opacity) == [0.55, 0.8, 1])
     }
 
-    @Test("Only the last few lines are shown")
-    func ladderTakesTheEnd() {
+    @Test("Every line is shown, and only the newest few are faded")
+    func ladderKeepsEverything() {
         let rungs = TranscriptLadder.visible(lines(20), opacities: RetainMetrics.transcriptRailOpacities)
-        #expect(rungs.count == 5)
-        #expect(rungs.map(\.line.text) == ["line 15", "line 16", "line 17", "line 18", "line 19"])
+
+        // This asserted the opposite and the opposite was the bug: the rail
+        // drew `lines.suffix(5)`, so it scrolled five lines and then stopped.
+        // An hour of a lecture was in the session, in the database and in the
+        // transcript tab, and unreadable in the window it was recorded in.
+        #expect(rungs.count == 20)
+        #expect(rungs.first?.line.text == "line 0")
+        #expect(rungs.last?.line.text == "line 19")
+
+        // History at full strength — it has to be readable — and the ladder
+        // still fading the text arriving at the bottom.
+        #expect(rungs.prefix(15).allSatisfy { $0.opacity == 1 })
+        #expect(rungs.suffix(5).map(\.opacity) == [0.5, 0.75, 1, 1, 1])
     }
 
     @Test("The newest line is always full strength, however few there are")
