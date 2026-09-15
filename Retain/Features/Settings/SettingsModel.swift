@@ -28,6 +28,20 @@ final class SettingsModel {
 
     var address: String {
         didSet {
+            // **Only an address Retain may actually open is stored.** It used
+            // to store whatever was typed, so a half-finished address — or one
+            // pointing somewhere that is not this Mac, which hard rule 9
+            // refuses outright — replaced a working `http://localhost:1234/v1`
+            // in `UserDefaults` and stayed there after the window closed.
+            // Every request then failed at the endpoint before it was even
+            // built, and nothing said why: the field showed the reason while it
+            // was open, and the next launch showed a working-looking app with
+            // no connection.
+            //
+            // The field keeps what was typed — it has to, or it could not be
+            // edited — and the rejection under it says why it is not being
+            // used.
+            guard BaseAddress.isAcceptable(address) else { return }
             Defaults[.languageModelAddress] = address
             // The pill in three windows is showing what the old address said.
             LanguageModelPresence.shared.refresh()
@@ -199,7 +213,17 @@ final class SettingsModel {
     /// Keeps the picker honest: a stored model the server no longer has is not
     /// a selection, and a server with exactly one model needs no decision.
     private func adoptModelIfNeeded() {
+        // **A server that did not answer is not a server with no models.**
+        // This used to clear the chosen model whenever the list came back
+        // empty, which is exactly what an unreachable server, a wrong address
+        // or a missing API key produce. One 401 and a model the user had
+        // chosen weeks ago was gone from `UserDefaults`, the title bar said
+        // "No model", and nothing connected the two.
+        guard !availableModels.isEmpty else { return }
+
         if availableModels.contains(where: { $0.id == selectedModel }) { return }
+        // A server with exactly one model needs no decision; with several, the
+        // old choice is not among them and there is nothing honest to pick.
         selectedModel = availableModels.count == 1 ? (availableModels.first?.id ?? "") : ""
     }
 

@@ -21,6 +21,14 @@ import Foundation
 enum ChatFactory {
 
     static func make(material: RecordingChat.Material) -> RecordingChat? {
+        // **Never under tests.** `RecordingDetailModel.load()` builds its chat
+        // here, and a test that loads a detail window would otherwise open a
+        // real connection to whatever LM Studio the machine happens to be
+        // running — which it did: one test sent a real question to the owner's
+        // own server and waited fourteen seconds for a real answer. A test that
+        // wants a chat hands one in.
+        guard !RetainApp.isTestHost else { return nil }
+
         let model = Defaults[.languageModelName]
         guard !model.isEmpty else { return nil }
 

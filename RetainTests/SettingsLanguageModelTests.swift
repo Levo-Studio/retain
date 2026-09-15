@@ -174,17 +174,20 @@ struct SettingsLanguageModelTests {
         #expect(!ModelPicker.isPlaceholder(selected: "qwen3-14b-instruct", available: models))
     }
 
-    @Test("A test against a server with no models leaves nothing selected")
-    func testingAnEmptyServerClearsTheSelection() async {
+    @Test("A server with no models does not clear the chosen model")
+    func anEmptyListKeepsTheSelection() async {
         let model = SettingsModel(makeBackend: { _ in SettingsStubBackend(models: []) })
-        model.address = BaseAddress.default
         model.selectedModel = "a-model-that-is-gone"
 
         await model.testConnection()
 
+        // This used to assert the opposite, and the opposite was wrong. An
+        // unreachable server, a refused address and a missing API key all
+        // answer with an empty list, and clearing the selection on that
+        // deleted a model the owner had chosen — after one 401, with the title
+        // bar then saying "No model" and nothing connecting the two.
+        #expect(model.selectedModel == "a-model-that-is-gone")
         #expect(model.availableModels.isEmpty)
-        #expect(model.selectedModel.isEmpty)
-        #expect(model.connection.isGood)
     }
 
     @Test("A server with exactly one model needs no decision")

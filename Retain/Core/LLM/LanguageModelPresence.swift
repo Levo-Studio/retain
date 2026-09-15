@@ -58,6 +58,14 @@ final class LanguageModelPresence {
     /// Safe to call as often as anything likes: a run already in flight is
     /// joined rather than duplicated.
     func refresh(loadingIfCold: Bool = true) {
+        // **Never under tests.** Settings calls this whenever the address or
+        // the model changes, and the default backend is the real one — so a
+        // test that sets an address opened a connection to whatever LM Studio
+        // the machine happens to be running, with `load`'s ten-minute timeout
+        // behind it. It hung the whole suite. A test that wants to exercise
+        // this builds its own `LanguageModelPresence` with a stub.
+        guard self !== Self.shared || !RetainApp.isTestHost else { return }
+
         if let work {
             Task { await work.value }
             return
