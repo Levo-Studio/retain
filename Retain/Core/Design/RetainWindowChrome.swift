@@ -139,11 +139,13 @@ private struct WindowButtonExtent: NSViewRepresentable {
 /// whatever the board puts at the trailing end.
 struct RetainTitleBar<Trailing: View>: View {
 
-    let title: String
+    /// Empty in the windows that have a sidebar, which carry their name at the
+    /// top of it instead. See `RetainWindowTitle`.
+    var title: String = ""
 
     @ViewBuilder var trailing: Trailing
 
-    init(title: String, @ViewBuilder trailing: () -> Trailing) {
+    init(title: String = "", @ViewBuilder trailing: () -> Trailing) {
         self.title = title
         self.trailing = trailing()
     }
@@ -152,14 +154,16 @@ struct RetainTitleBar<Trailing: View>: View {
         HStack(spacing: 0) {
             RetainTrafficLightSpace()
 
-            RetainWindowMark()
-                .padding(.leading, RetainMetrics.titleBarMarkGap)
+            if !title.isEmpty {
+                RetainWindowMark()
+                    .padding(.leading, RetainMetrics.titleBarMarkGap)
 
-            Text(verbatim: title)
-                .retainStyle(RetainTypography.titleBarSubtitle)
-                .foregroundStyle(RetainPalette.inkDim)
-                .padding(.leading, RetainMetrics.titleBarMarkGap)
-                .lineLimit(1)
+                Text(verbatim: title)
+                    .retainStyle(RetainTypography.titleBarSubtitle)
+                    .foregroundStyle(RetainPalette.inkDim)
+                    .padding(.leading, RetainMetrics.titleBarMarkGap)
+                    .lineLimit(1)
+            }
 
             Spacer(minLength: RetainMetrics.titleBarTitleGap)
 
@@ -373,4 +377,44 @@ struct RetainWindowMark: View {
     /// Read once. `NSImage(named:)` goes through the asset catalog every call,
     /// and this is drawn in the title bar of every window.
     private static let image: NSImage = NSImage(named: "WindowMark") ?? NSImage()
+}
+
+// MARK: - The mark and the window's name
+
+/// Retain's logo with the window's name beside it.
+///
+/// **Where this sits is the point of it.** It began in the title bar, next to
+/// the traffic lights, which is where the export draws the window's name — and
+/// there it can never be flush with anything, because macOS owns the first
+/// seventy-odd points of that strip and draws close, minimise and zoom in them.
+/// Against a sidebar full of text starting at 22 points, a title starting at 80
+/// reads as adrift, and no amount of shaving the gap fixes it: the buttons are
+/// still there.
+///
+/// So in a window with a sidebar it goes at the top of the sidebar, on the same
+/// left edge as the rows under it. The title bar above keeps the traffic lights
+/// and whatever the window puts on its right, and carries no text.
+struct RetainWindowTitle: View {
+
+    let title: String
+
+    /// The row inset of the sidebar this is at the top of. The two sidebars do
+    /// not agree — the library's rows are a point tighter than the settings
+    /// ones — and the whole point of this view is that the logo's left edge is
+    /// the same edge as the rows beneath it.
+    var inset: EdgeInsets = RetainMetrics.sidebarRowSettings
+
+    var body: some View {
+        HStack(spacing: RetainMetrics.titleBarMarkGap) {
+            RetainWindowMark()
+
+            Text(verbatim: title)
+                .retainStyle(RetainTypography.titleBarSubtitle)
+                .foregroundStyle(RetainPalette.inkDim)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(inset)
+        .padding(.bottom, RetainMetrics.sidebarTitleGap)
+    }
 }

@@ -2,14 +2,15 @@ import SwiftUI
 
 // MARK: - Title bar
 
-/// The 38-point strip with the three lights and the window's name.
+/// The 38-point strip the window's buttons sit in.
 ///
-/// Drawn rather than borrowed from AppKit: the export paints the lights at
-/// `#30353c` — one flat colour, no red/yellow/green — and a real title bar
-/// cannot be made to look like that.
+/// It carries no text. The export draws "Settings" here, beside the lights,
+/// and that is the one place in the window where nothing can be flush with
+/// anything: macOS owns the first seventy-odd points and draws close, minimise
+/// and zoom in them, so a name starting after them sits adrift of a sidebar
+/// whose rows start at 22. The name is at the top of that sidebar instead —
+/// see `RetainWindowTitle`.
 struct SettingsTitleBar: View {
-
-    let title: String
 
     /// The export paints three flat grey circles, which is what macOS draws
     /// for a window that is **not** frontmost. In a real window the system's
@@ -27,14 +28,8 @@ struct SettingsTitleBar: View {
             // board's arithmetic.
             RetainTrafficLightSpace(drawsButtons: drawsTrafficLights)
 
-            RetainWindowMark()
-                .padding(.leading, RetainMetrics.titleBarMarkGap)
-
-            Text(title)
-                .retainStyle(RetainTypography.titleBarSubtitle)
-                .foregroundStyle(RetainPalette.inkDim)
-                .padding(.leading, RetainMetrics.titleBarMarkGap)
-
+            // No title here. It is at the top of the sidebar, where it can line
+            // up with the rows under it — see `RetainWindowTitle`.
             Spacer(minLength: 0)
         }
         .padding(RetainMetrics.titleBarPadding)
@@ -57,6 +52,10 @@ struct SettingsSidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: RetainMetrics.sidebarRowGap) {
+            RetainWindowTitle(
+                title: String(localized: "Settings", comment: "Settings window title, and the button that opens it")
+            )
+
             ForEach(SettingsSection.allCases) { section in
                 row(section)
             }

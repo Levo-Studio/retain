@@ -23,10 +23,7 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SettingsTitleBar(
-                title: String(localized: "Settings", comment: "Settings window title, and the button that opens it"),
-                drawsTrafficLights: drawsTrafficLights
-            )
+            SettingsTitleBar(drawsTrafficLights: drawsTrafficLights)
 
             HStack(spacing: 0) {
                 SettingsSidebar(selection: $model.section)
