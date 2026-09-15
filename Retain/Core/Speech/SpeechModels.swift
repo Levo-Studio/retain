@@ -46,6 +46,25 @@ final class SpeechModels {
     /// transcriber takes its locale from here too.
     nonisolated static let languageCode = "de-DE"
 
+    /// How sure the voice-activity model has to be before a chunk is treated as
+    /// speech, 0…1.
+    ///
+    /// **FluidAudio's own default is 0.85, and that is a bar for a microphone
+    /// at your mouth.** A lecturer across a classroom, a question from the back
+    /// row — none of it clears 85 % confidence on a built-in microphone, so it
+    /// was gated out before the speech model ever saw it. The owner's report
+    /// was that voices from further away simply do not appear.
+    ///
+    /// The cost of lowering it is the other kind of mistake: a cough, a chair,
+    /// a corridor becomes a word. That is the better failure of the two here —
+    /// a stray word in the live transcript is visible and ignorable, a sentence
+    /// that was never shown is neither.
+    ///
+    /// **It gates the live transcript only.** The batch pass reads the whole
+    /// file with no gate at all, so nothing said in the room is lost from the
+    /// transcript of record because of this number.
+    nonisolated static let speechThreshold: Float = 0.5
+
     /// Chunk tier in milliseconds.
     ///
     /// FluidAudio's own note recommends 2240 ms and warns that 560 ms emits
@@ -112,7 +131,7 @@ final class SpeechModels {
             let batch = try await AsrModels.downloadAndLoad(version: .v3)
             self.batch = batch
 
-            let vad = try await VadManager()
+            let vad = try await VadManager(config: VadConfig(defaultThreshold: Self.speechThreshold))
             self.vad = vad
 
             state = .ready
