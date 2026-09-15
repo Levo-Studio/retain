@@ -30,8 +30,8 @@ source.
 
 | | |
 |---|---|
-| **While the lecture runs** | Live transcript, note blocks that close every few minutes, speaker separation between the lecturer and a question from the room, an annotation hotkey, elapsed time |
-| **Afterwards** | The lecture re-transcribed in batch for the authoritative transcript, diarization, the notes written again from it, timestamps, chapters and a chat about the lesson |
+| **While the lecture runs** | The transcript, full width, as it is recognised. An annotation hotkey, the elapsed time, and nothing sent anywhere |
+| **Afterwards** | The lecture re-transcribed in batch for the authoritative transcript, speaker separation, and the notes written from all of it at once — timestamps, chapters and a chat about the lesson |
 | **Library** | Courses and terms, full-text search across a whole term, and a recording started or ended without leaving the window |
 | **Settings** | The LM Studio connection, the speech models, the microphone |
 
@@ -51,6 +51,8 @@ passages you marked.
   applications' audio.
 - No menu bar item. Retain is an ordinary window app: the library is its home
   window, and the global shortcuts work from any app without one.
+- No notes while the lecture runs. The model is asked once, at the end, with
+  the whole transcript in front of it.
 - No archive of recordings. The audio is deleted once it has been transcribed,
   and there is no playback anywhere in the app. What Retain keeps is the
   transcript, the notes and what you marked.
@@ -59,16 +61,22 @@ passages you marked.
 
 While the lecture runs, the microphone feeds 16 kHz mono audio to two places at
 once: straight to disk, and through a voice-activity gate into a streaming
-speech model, which pushes partial lines into the interface. Every few minutes
-of speech a block closes and a small language model summarises that block alone,
-so notes appear during the lecture rather than after it.
+speech model, which pushes partial lines into the interface. That is the whole
+of it. **Nothing is sent to the language model while a lecture is running** —
+the speech models are on the Neural Engine and stay out of the way, and a Mac
+that is recording a lesson should not also be answering requests about it.
 
 When the lecture ends, the raw recording is transcribed again in one batch pass,
 which is roughly twice as accurate as the streaming pass. Then the speakers are
-separated, and then the notes are written again from that transcript — the
-cards from during the lecture are drafts, each written from three minutes in
-isolation, and the finished notes replace them. **The live transcript is
-feedback, not the record, and neither are the live notes.**
+separated. Then the model is given the transcript — the whole lesson, at once,
+for the first and only time — and writes the notes from it. **The live
+transcript is feedback, not the record.**
+
+Retain summarised as it went once: a card every few minutes, each written from
+those minutes in isolation and from the live transcript. The cards overlapped,
+repeated themselves and cut topics in half, because a model reading three
+minutes cannot see where a subject started or where it was dropped. Handing it
+the hour costs one request instead of twenty and produces notes worth keeping.
 
 The batch pass uses Apple's own on-device model where the Mac has it — it ships
 in macOS 26 — and NVIDIA's Parakeet TDT everywhere else. Both are local, both
@@ -149,7 +157,7 @@ Retain/
   Core/Keychain/   the API-key wrapper
   Core/Power/      power source, low-power mode, the model-size decision
   Models/          plain Sendable record types
-  Pipeline/        pure logic: block boundaries, map and reduce, transcript merging
+  Pipeline/        pure logic: block boundaries, the prompts, transcript merging
   Features/        the shell that owns the windows, plus one folder per screen area
   Resources/       fonts, Localizable.xcstrings
 RetainTests/       Swift Testing
@@ -157,9 +165,9 @@ docs/design/       the design export — read-only, never edited to match the co
 ```
 
 **The pipeline knows no database and no view.** `Retain/Pipeline/` works on plain
-`Sendable` values, so block boundaries, the map and reduce over summaries and the
-merge of live and batch transcripts are pure functions whose tests run in
-milliseconds without a database and without audio hardware.
+`Sendable` values, so the block boundaries, the prompts and the merge of live and
+batch transcripts are pure functions whose tests run in milliseconds without a
+database and without audio hardware.
 
 **Colour, size and motion come only from the design layer.** No `.padding(17)`
 and no `Color(hex:)` in a feature file. A missing value goes into
