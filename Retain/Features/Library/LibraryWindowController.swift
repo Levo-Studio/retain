@@ -28,11 +28,23 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
     var startRecording: ((Course, Term) -> Void)?
     var canRecord: () -> Bool = { false }
 
+    /// Ends the lecture that is running.
+    var finishRecording: (() -> Void)?
+
     /// Keyed by recording id, so a second click finds the first window.
     private var detailWindows: [Int64: NSWindow] = [:]
 
     init(database: RetainDatabase) {
         self.database = database
+    }
+
+    /// Told by the shell whenever the lecture starts or stops, so the window's
+    /// button can be Record or Finish without polling anything.
+    private(set) var isLectureRunning = false
+
+    func lectureIsRunning(_ running: Bool) {
+        isLectureRunning = running
+        model?.lectureIsRunning(running)
     }
 
     // MARK: - The library
@@ -51,6 +63,8 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
             self?.startRecording?(course, term)
         }
         model.canRecord = { [weak self] in self?.canRecord() ?? false }
+        model.onFinish = { [weak self] in self?.finishRecording?() }
+        model.lectureIsRunning(isLectureRunning)
         self.model = model
 
         let hosting = NSHostingController(rootView: LibraryView(model: model))

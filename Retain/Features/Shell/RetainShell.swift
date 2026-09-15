@@ -47,6 +47,8 @@ final class RetainShell {
             recordingWindow.show()
         }
         library?.canRecord = { [shell] in shell.canRecord }
+        library?.finishRecording = { [shell] in shell.finish() }
+
 
         // **No item in the menu bar.** Retain wore one from the first commit and
         // the owner asked for it to go: an icon that has to be hunted for in a
@@ -159,5 +161,8 @@ final class RetainShell {
 
     private func applyPhase() {
         shell.followPower()
+        // The library's one button is Record or Finish depending on this, and
+        // the window may well be open while it changes.
+        libraryWindow?.lectureIsRunning(shell.session.phase == .recording)
     }
 }

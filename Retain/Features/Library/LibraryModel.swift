@@ -63,6 +63,31 @@ final class LibraryModel {
     /// closure for the same reason as above.
     var canRecord: () -> Bool = { false }
 
+    /// Ends the lecture that is running. `nil` while there is no shell.
+    ///
+    /// The library is where somebody sits during a lesson — it is the app's
+    /// home window now — and the only way to stop a recording was to find the
+    /// recording window again. One button, two states, in the place the reader
+    /// already is.
+    var onFinish: (() -> Void)?
+
+    /// Whether a lecture is running at all.
+    ///
+    /// **Pushed in by the shell, not read through a closure.** A closure is
+    /// invisible to `@Observable`, so the button would have kept saying Record
+    /// for as long as the window stayed open, however many lectures started and
+    /// stopped behind it.
+    private(set) var isLectureRunning = false
+
+    func lectureIsRunning(_ running: Bool) {
+        guard running != isLectureRunning else { return }
+        isLectureRunning = running
+    }
+
+    func finish() {
+        onFinish?()
+    }
+
     /// True when there is a course to record and nothing in the way.
     var isRecordable: Bool {
         selectedCourse != nil && selectedTerm?.id != nil && onRecord != nil && canRecord()

@@ -6,6 +6,8 @@ struct LibraryView: View {
 
     @Bindable var model: LibraryModel
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         VStack(spacing: 0) {
             titleBar
@@ -98,12 +100,25 @@ struct LibraryView: View {
     /// The red outline is the mark Retain gives a control that starts or ends a
     /// recording — the same one board 02 draws on "Stop" and "Finish".
     private var recordButton: some View {
+        // One button, two states. While a lecture is running it says Finish and
+        // ends it — the library is the app's home window and somebody sitting
+        // in it during a lesson should not have to go and find the recording
+        // window to stop the microphone.
         Button {
-            model.record()
+            if model.isLectureRunning {
+                model.finish()
+            } else {
+                model.record()
+            }
         } label: {
             HStack(spacing: RetainMetrics.titleBarPillGap) {
-                RetainStatusDot(colour: RetainPalette.redRecording, diameter: RetainMetrics.statusDotSmall)
-                Text(verbatim: LibraryCopy.record)
+                RetainStatusDot(
+                    colour: RetainPalette.redRecording,
+                    diameter: RetainMetrics.statusDotSmall,
+                    loop: model.isLectureRunning ? .recordingPulse : nil
+                )
+
+                Text(verbatim: model.isLectureRunning ? LibraryCopy.finish : LibraryCopy.record)
             }
         }
         .buttonStyle(
@@ -116,8 +131,11 @@ struct LibraryView: View {
                 border: RetainPalette.redBorderSwatch
             )
         )
-        .disabled(!model.isRecordable)
+        .disabled(model.isLectureRunning ? false : !model.isRecordable)
         .fixedSize()
+        // The label and the dot change together, so the swap reads as one
+        // control changing its mind rather than two things happening.
+        .animation(RetainMotion.reveal(reduceMotion: reduceMotion), value: model.isLectureRunning)
     }
 
     // MARK: - Search, then either the table or the results
