@@ -10,8 +10,9 @@ import Foundation
 ///   produces the live transcript during the lecture;
 /// - the **batch** model, Parakeet TDT v3, which re-transcribes the recording
 ///   afterwards and is what the notes are built from;
-/// - the **voice-activity** model, which gates the streaming model so it is not
-///   decoding silence for ninety minutes.
+/// - the **voice-activity** model, which says where the live transcript breaks
+///   into lines. It does not gate the streaming model — see `LiveGate` for the
+///   voice across the classroom that is why.
 ///
 /// **Nothing here passes an `MLModelConfiguration`.** Every FluidAudio manager
 /// defaults to `.cpuAndNeuralEngine`, and hard rule 4 exists because handing it
@@ -46,86 +47,84 @@ final class SpeechModels {
     /// transcriber takes its locale from here too.
     nonisolated static let languageCode = "de-DE"
 
-    /// How sure the voice-activity model has to be before a chunk is treated as
+    /// How sure the voice-activity model has to be before it calls a chunk
     /// speech, 0…1.
     ///
-    /// **FluidAudio's own default is 0.85, and that is a bar for a microphone
-    /// at your mouth.** A lecturer across a classroom, a question from the back
-    /// row — none of it clears 85 % confidence on a built-in microphone, so it
-    /// was gated out before the speech model ever saw it. The owner's report
-    /// was that voices from further away simply do not appear.
+    /// **This no longer decides what the speech model hears.** It decided that
+    /// twice, at 0.85 and then at 0.3, and both times a lecturer across a
+    /// classroom — plainly audible on the recording afterwards — never cleared
+    /// the bar and never appeared in the live transcript. A distant voice is
+    /// genuinely a faint signal, so there is no threshold that both admits it
+    /// and still means anything. The gate was taken off the audio path
+    /// instead; see `LiveGate`.
     ///
-    /// The cost of lowering it is the other kind of mistake: a cough, a chair,
-    /// a corridor becomes a word. That is the better failure of the two here —
-    /// a stray word in the live transcript is visible and ignorable, a sentence
-    /// that was never shown is neither.
-    ///
-    /// **It gates the live transcript only.** The batch pass reads the whole
-    /// file with no gate at all, so nothing said in the room is lost from the
-    /// transcript of record because of this number.
-    /// Lowered again, to 0.3, after 0.5 still dropped a voice the microphone
-    /// was plainly picking up. The level meter moved and the words did not
-    /// arrive, which is the clearest evidence there is that the gate and not
-    /// the microphone was the problem.
+    /// What it still does is put the line breaks where the speech stops, which
+    /// is what makes the transcript readable rather than a wall of twenty-
+    /// second blocks. 0.3 is kept because getting that wrong now costs a line
+    /// break in an odd place and nothing else.
     nonisolated static let speechThreshold: Float = 0.3
 
-    /// How the gate decides an utterance is over.
+    /// How the model decides the speech in front of it has stopped.
     ///
     /// Passed explicitly because `processStreamingChunk` otherwise takes
     /// `VadSegmentationConfig.default`, whose 0.75 s of silence and 0.15
-    /// hysteresis close a line on a cough. The report was precise: a short loud
-    /// noise stopped the live transcript, and nothing arrived again until the
-    /// room was clearly quiet and someone spoke clearly — twenty seconds of a
-    /// lecture missing from the screen.
+    /// hysteresis break a line on a cough.
     ///
-    /// Two numbers move, and only two of the nine here do anything at all in
-    /// streaming mode — the streaming state machine reads `minSilenceDuration`,
-    /// `speechPadding` and the negative threshold, and ignores
-    /// `minSpeechDuration`, `maxSpeechDuration` and everything below them.
-    /// Tuning those would be tuning nothing.
+    /// Only two of the nine settings here do anything in streaming mode — the
+    /// streaming state machine reads `minSilenceDuration`, `speechPadding` and
+    /// the negative threshold, and ignores `minSpeechDuration`,
+    /// `maxSpeechDuration` and everything below them. Tuning those would be
+    /// tuning nothing.
     ///
     /// - `negativeThresholdOffset` 0.2 puts the closing bar at 0.1 against an
-    ///   opening bar of 0.3. Hysteresis: it takes far less confidence to keep a
-    ///   line open than to open one, so a breath or a chair does not close it.
+    ///   opening bar of 0.3. Hysteresis: far less confidence is needed to keep
+    ///   a line running than to start one.
     /// - `minSilenceDuration` 1.2 s is how long it has to stay under that bar.
     ///   A cough is a tenth of a second and a pause between sentences is under
-    ///   a second; both now pass through the middle of a line rather than
-    ///   ending it.
-    ///
-    /// The upper bound on a line is `longestUtterance`, in `LiveTranscriber` —
-    /// `maxSpeechDuration` here is one of the settings the streaming path never
-    /// reads.
+    ///   a second; neither is a line break.
     nonisolated static let segmentation = VadSegmentationConfig(
         minSilenceDuration: 1.2,
         negativeThresholdOffset: 0.2
     )
 
-    /// How long audio keeps reaching the speech model after the gate says the
-    /// speech has stopped.
+    /// How long a line stays open after the model says the speech stopped.
     ///
-    /// The gate being wrong is not a rare event, and it is wrong in a
-    /// particular way: a loud transient makes the microphone's automatic gain
-    /// duck, and the speech that follows is quiet enough to sit under any
-    /// threshold for several seconds until the gain comes back. No value of
-    /// `speechThreshold` fixes that, because for those seconds the signal
-    /// really is faint.
-    ///
-    /// So the gate no longer decides whether the model hears the lecture. It
-    /// decides where a line ends, and the model keeps listening for three
-    /// seconds past that point. If the voice comes back inside them — because
-    /// it never actually left — the line simply continues and nothing is lost.
-    /// The cost is three seconds of decoded silence per closed line, which on
-    /// the Neural Engine is a fraction of a second of work.
+    /// A loud transient makes the microphone's automatic gain duck, and the
+    /// speech after it sits under any threshold for seconds until the gain
+    /// comes back. Three seconds of doubt means a voice that returns inside
+    /// them continues the same line rather than starting a new one.
     nonisolated static let speechHangover: TimeInterval = 3.0
 
-    /// How much audio from before the gate opened is fed in with the first
-    /// chunk of a line.
+    /// The longest anything runs before the line is closed and the decoder
+    /// reset, whether the model ever called it speech or not.
     ///
-    /// Speech is recognised from having happened: the chunk that crosses the
-    /// threshold is the one holding the first syllable, and the syllable before
-    /// it is in the chunk already gone. Half a second of it is kept while the
-    /// gate is shut so a line does not start mid-word.
-    nonisolated static let speechPreRoll: TimeInterval = 0.5
+    /// It is the upper bound on two different things. A line that never closes
+    /// is a decoder that never resets, and a streaming RNN-T that has not been
+    /// reset in ten minutes transcribes its own history rather than the room.
+    /// And it is what puts a voice the model never flagged into the transcript
+    /// at all: the audio was decoded either way, and this is when what came out
+    /// is read off and shown. Anything that decoded to nothing is dropped, so
+    /// during real silence the timer costs nothing.
+    ///
+    /// Twenty seconds is the ceiling on how late a line settles, not on how
+    /// late the words appear — the partial callback puts those on the screen as
+    /// they decode, whatever the gate thinks.
+    ///
+    /// **`maxSpeechDuration` in `segmentation` is not this.** FluidAudio reads
+    /// that one in the batch segmenter only; nothing enforces a maximum while
+    /// streaming, which is why this exists.
+    nonisolated static let longestLine: TimeInterval = 20
+
+    /// How far behind the present a line's start may sit while nothing has
+    /// begun.
+    ///
+    /// Without it, a line after a long quiet stretch would be dated from the
+    /// start of the quiet. With it, a line dated early and a line dated late
+    /// because the speech in it was never flagged both stay inside three
+    /// seconds. Live timestamps are provisional and the batch pass replaces
+    /// them; this is about the transcript not reading as though the lecturer
+    /// spoke half a minute before they did.
+    nonisolated static let idleLineLag: TimeInterval = 3.0
 
     /// Chunk tier in milliseconds.
     ///

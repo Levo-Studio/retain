@@ -3,11 +3,12 @@ import Foundation
 
 /// The transcript that runs along beside the lecture.
 ///
-/// Audio arrives in blocks of 16 kHz mono float from the recording writer. Each
-/// block goes through voice activity detection first, and only speech reaches
-/// the streaming model — which is the difference between decoding ninety
-/// minutes and decoding the sixty a lecturer actually talks for, on a battery
-/// that has to last the day.
+/// Audio arrives in blocks of 16 kHz mono float from the recording writer. All
+/// of it reaches the streaming model. Voice activity detection runs beside it
+/// and decides where the lines break — it does not decide what is heard. See
+/// `LiveGate`: it used to decide both, and a voice from across the room never
+/// cleared its bar, so speech that is plainly audible on the recording never
+/// appeared on the screen.
 ///
 /// **What comes out of here is feedback, not the record.** The streaming model
 /// sits around 10 % word error on German against the batch model's 5.9 %, so
@@ -30,13 +31,8 @@ actor LiveTranscriber {
 
     /// The durations in `SpeechModels`, in samples, at the capture rate.
     private static let hangoverSamples = Int(SpeechModels.speechHangover * CaptureFormat.sampleRate)
-    private static let preRollSamples = Int(SpeechModels.speechPreRoll * CaptureFormat.sampleRate)
-
-    /// The longest a single line may run before it is cut and the decoder is
-    /// reset. Nothing in FluidAudio enforces this while streaming — its
-    /// `maxSpeechDuration` is read by the batch segmenter only — so the gate
-    /// enforces it.
-    private static let longestLineSamples = Int(20 * CaptureFormat.sampleRate)
+    private static let longestLineSamples = Int(SpeechModels.longestLine * CaptureFormat.sampleRate)
+    private static let idleLagSamples = Int(SpeechModels.idleLineLag * CaptureFormat.sampleRate)
 
     private let streaming: StreamingNemotronMultilingualAsrManager
     private let vad: VadManager
@@ -52,13 +48,9 @@ actor LiveTranscriber {
     /// not the same question as what the voice-activity model thinks.
     private var gate = LiveGate(
         hangoverSamples: LiveTranscriber.hangoverSamples,
-        preRollSamples: LiveTranscriber.preRollSamples,
-        longestLineSamples: LiveTranscriber.longestLineSamples
+        longestLineSamples: LiveTranscriber.longestLineSamples,
+        idleLagSamples: LiveTranscriber.idleLagSamples
     )
-
-    /// The tail of the silence, bounded by `preRollSamples`, kept so a line
-    /// does not begin mid-word.
-    private var preRoll: [Float] = []
 
     /// Where the current line began, in samples from the start of the
     /// recording. Times come from the sample count rather than from a clock:
@@ -126,29 +118,18 @@ actor LiveTranscriber {
         await perform(gate.advance(signal, chunk: chunk.count), on: chunk)
     }
 
-    /// Does what the gate decided.
+    /// Does what the gate decided. Every case feeds the chunk; they differ in
+    /// what happens to the line around it.
     private func perform(_ step: LiveGate.Step, on chunk: [Float]) async {
         switch step {
-        case .keep:
-            preRoll.append(contentsOf: chunk)
-            let excess = preRoll.count - Self.preRollSamples
-            if excess > 0 { preRoll.removeFirst(excess) }
-
-        case .open(let lineStart):
+        case .idle(let lineStart), .open(let lineStart):
             lineStartSample = lineStart
-            let roll = preRoll
-            preRoll = []
-            if !roll.isEmpty { _ = try? await streaming.process(samples: roll) }
             _ = try? await streaming.process(samples: chunk)
 
         case .feed:
             _ = try? await streaming.process(samples: chunk)
 
         case .close(let endSample):
-            _ = try? await streaming.process(samples: chunk)
-            await endLine(at: endSample)
-
-        case .cut(let endSample):
             _ = try? await streaming.process(samples: chunk)
             await endLine(at: endSample)
             lineStartSample = endSample
@@ -189,16 +170,16 @@ actor LiveTranscriber {
     /// the last sentence of the lecture is not the one that goes missing.
     func finish() async {
         // What is in hand never filled a VAD chunk, so it was never classified.
-        // It goes to the model if a line is open — the last sentence of a
-        // lecture is the one worth not losing — and is dropped if one is not,
-        // because then it is the silence after the lecture.
+        // It goes to the model anyway: the last sentence of a lecture is the
+        // one worth not losing.
         let remainder = pending
         pending = []
+        if !remainder.isEmpty { _ = try? await streaming.process(samples: remainder) }
 
-        if gate.isOpen {
-            if !remainder.isEmpty { _ = try? await streaming.process(samples: remainder) }
-            await endLine(at: gate.processed + remainder.count)
-        }
+        // Unconditionally, whether the gate ever called it a line or not. What
+        // decoded to nothing is dropped inside `endLine`; what decoded to the
+        // last sentence of the lecture is the reason this is here.
+        await endLine(at: gate.processed + remainder.count)
         await streaming.cleanup()
     }
 }

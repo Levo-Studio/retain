@@ -90,7 +90,7 @@ change it on your own.
 | Audio | `AVAudioEngine` `inputNode.installTap`, 16 kHz mono Int16 → CAF. **No Core Audio process taps** — Retain records the microphone and nothing else. |
 | Live speech-to-text | FluidAudio, `StreamingNemotronMultilingualAsrManager`, `languageCode "de-DE"`, `chunkMs 1120` |
 | Final speech-to-text | FluidAudio, Parakeet TDT v3, batch, after the lesson |
-| Voice activity | FluidAudio `VadManager`, gating the ASR |
+| Voice activity | FluidAudio `VadManager`, **segmenting** the live transcript, not gating it. It gated the ASR until a lecturer across a classroom — audible on the recording — never cleared the bar at any threshold and never reached the screen. Every chunk now goes to the streaming model; the VAD only says where the lines break. See `LiveGate`. |
 | Diarization | FluidAudio, offline, after the lesson |
 | Language model | LM Studio over **`/api/v0/chat/completions`**, not `/v1/` — `/api/v0/` returns `stop_reason` and `loaded_context_length`, which are needed |
 | Persistence | **GRDB.swift with FTS5.** Not SwiftData — it has no full-text search. The database is a plain SQLite file at `~/Library/Application Support/Retain/Retain.sqlite`. |
@@ -116,8 +116,11 @@ always returns `""` — partial results arrive through `setPartialCallback`.
 ## The architecture in one paragraph
 
 While the lesson runs: microphone → 16 kHz mono → in parallel raw to disk **and**
-through the VAD → on speech through the streaming model → partial into the UI,
-and on `speechEnd` finalise the line and reset the model. Every ~3 minutes of
+through the streaming model → partial into the UI. The VAD runs alongside and
+says where the lines break: a line closes three seconds after it reports the
+speech stopped, or after twenty seconds regardless, and the model is reset
+there. Nothing is dropped on the way to the model — a line the VAD never opened
+is read off on the same timer, and what decoded to nothing is discarded. Every ~3 minutes of
 speech, or on the annotation hotkey, a block closes: a small model (3–8B)
 summarises **only that block**, and the card appears in the UI. After the
 lesson: batch re-transcription of the raw file with Parakeet for the
