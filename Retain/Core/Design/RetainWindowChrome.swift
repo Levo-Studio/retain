@@ -135,28 +135,45 @@ private struct WindowButtonExtent: NSViewRepresentable {
 
 // MARK: - The bar
 
-/// `.tb` — 38 points tall, the window's own title in the middle of it, and
-/// whatever the board puts at the trailing end.
+/// `.tb` — the window's name on the left, whatever the board puts on the right,
+/// and the buttons macOS draws above both.
+///
+/// **One row, under the traffic lights rather than beside them.** The system
+/// paints close, minimise and zoom over the top-left of the content view, so a
+/// name on the same line as them starts seventy points in — to the right of
+/// every column beneath it, and impossible to line up with any of them. The bar
+/// keeps `titleBarTopRoom` clear above its contents instead: the buttons sit in
+/// that, and the row under them begins wherever the window's first column
+/// begins.
 struct RetainTitleBar<Trailing: View>: View {
 
-    /// Empty in the windows that have a sidebar, which carry their name at the
-    /// top of it instead. See `RetainWindowTitle`.
+    /// The window's name. Empty draws the mark and the name not at all.
     var title: String = ""
+
+    /// The edge the window's first column starts at, which is the edge the
+    /// name starts at too. The windows genuinely differ — a library sidebar, a
+    /// settings sidebar and a meta strip all begin somewhere else — so it is
+    /// taken rather than assumed.
+    var titleLeading: CGFloat = RetainMetrics.sidebarRowSettings.leading
 
     @ViewBuilder var trailing: Trailing
 
-    init(title: String = "", @ViewBuilder trailing: () -> Trailing) {
+    init(
+        title: String = "",
+        titleLeading: CGFloat = RetainMetrics.sidebarRowSettings.leading,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
         self.title = title
+        self.titleLeading = titleLeading
         self.trailing = trailing()
     }
 
     var body: some View {
         HStack(spacing: 0) {
-            RetainTrafficLightSpace()
-
-            if !title.isEmpty {
+            if title.isEmpty {
+                RetainTrafficLightSpace()
+            } else {
                 RetainWindowMark()
-                    .padding(.leading, RetainMetrics.titleBarMarkGap)
 
                 Text(verbatim: title)
                     .retainStyle(RetainTypography.titleBarSubtitle)
@@ -169,8 +186,10 @@ struct RetainTitleBar<Trailing: View>: View {
 
             HStack(spacing: RetainMetrics.titleBarTrailingGap) { trailing }
         }
-        .padding(RetainMetrics.titleBarPadding)
+        .padding(.leading, title.isEmpty ? RetainMetrics.titleBarPadding.leading : titleLeading)
+        .padding(.trailing, RetainMetrics.titleBarPadding.trailing)
         .frame(height: RetainMetrics.titleBarHeight)
+        .padding(.top, RetainMetrics.titleBarTopRoom)
         .padding(.bottom, RetainMetrics.titleBarBottomRoom)
         .background(RetainPalette.surfaceTitleBar)
         .overlay(alignment: .bottom) { RetainDivider() }
@@ -378,51 +397,4 @@ struct RetainWindowMark: View {
     /// Read once. `NSImage(named:)` goes through the asset catalog every call,
     /// and this is drawn in the title bar of every window.
     private static let image: NSImage = NSImage(named: "WindowMark") ?? NSImage()
-}
-
-// MARK: - The mark and the window's name
-
-/// Retain's logo with the window's name beside it.
-///
-/// **Where this sits is the point of it.** It began in the title bar, next to
-/// the traffic lights, which is where the export draws the window's name — and
-/// there it can never be flush with anything, because macOS owns the first
-/// seventy-odd points of that strip and draws close, minimise and zoom in them.
-/// Against a sidebar full of text starting at 22 points, a title starting at 80
-/// reads as adrift, and no amount of shaving the gap fixes it: the buttons are
-/// still there.
-///
-/// So it goes on its own line under the bar, on the same left edge as whatever
-/// the window's first column starts with: the rows of a sidebar in Settings and
-/// the library, the meta strip and the tabs in a recording. The title bar above
-/// keeps the traffic lights and whatever the window puts on its right, and
-/// carries no text.
-struct RetainWindowTitle: View {
-
-    let title: String
-
-    /// The edge the window's first column starts at, which is the edge the mark
-    /// has to start at too. The three windows genuinely differ — the library's
-    /// rows are a point tighter than the settings ones, and the detail window's
-    /// meta strip starts far further in — so this is a parameter.
-    ///
-    /// **Only the leading edge.** The room above and below is
-    /// `RetainMetrics.windowTitleRoom` in every window: it used to be each
-    /// window's own, and three rows that are the same row drawn three slightly
-    /// different ways is visible the moment two of them are open at once.
-    var leading: CGFloat = RetainMetrics.sidebarRowSettings.leading
-
-    var body: some View {
-        HStack(spacing: RetainMetrics.titleBarMarkGap) {
-            RetainWindowMark()
-
-            Text(verbatim: title)
-                .retainStyle(RetainTypography.titleBarSubtitle)
-                .foregroundStyle(RetainPalette.inkDim)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, leading)
-        .padding(.vertical, RetainMetrics.windowTitleRoom)
-    }
 }

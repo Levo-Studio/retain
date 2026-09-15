@@ -40,18 +40,7 @@ struct RecordingRoot: View {
                 RecordingDetailView(model: finished)
             } else {
                 VStack(spacing: 0) {
-                    RecordingTitleBar(shell: shell)
-
-                    // The same row, on the same edge, with the same room as
-                    // every other window — and as the finished lecture, which
-                    // replaces this whole view the moment the notes exist. Its
-                    // absence was a jump: the bar, the strip and the tabs all
-                    // shifted down a row when a lecture ended.
-                    RetainWindowTitle(
-                        title: lectureName,
-                        leading: RetainMetrics.metaStripCellFirst.leading
-                    )
-
+                    RecordingTitleBar(shell: shell, name: lectureName)
                     RecordingMetaStrip(session: shell.session, courses: shell.courses)
 
                     content
@@ -129,6 +118,11 @@ struct RecordingTitleBar: View {
 
     let shell: ShellModel
 
+    /// The lecture's name, on the left of the bar, where every other window
+    /// puts the window's. Its absence was a jump: the bar, the strip and the
+    /// tabs all shifted when a lecture ended and the finished view took over.
+    var name: String = ""
+
     private var session: LectureSession { shell.session }
     private var power: PowerDrawMonitor { shell.power }
 
@@ -177,9 +171,16 @@ struct RecordingTitleBar: View {
 
     var body: some View {
         HStack(spacing: RetainMetrics.titleBarGroupGap) {
-            // The traffic lights are the system's and are drawn over this, so
-            // the strip reserves their width rather than drawing into it.
-            RetainTrafficLightSpace()
+            // The traffic lights are the system's and are drawn above this row
+            // rather than beside it — see `RetainTitleBar` and
+            // `titleBarTopRoom` — so the name can start on the meta strip's own
+            // edge instead of seventy points in.
+            RetainWindowMark()
+
+            Text(verbatim: name)
+                .retainStyle(RetainTypography.titleBarSubtitle)
+                .foregroundStyle(RetainPalette.inkDim)
+                .lineLimit(1)
 
             Spacer(minLength: 0)
 
@@ -215,11 +216,14 @@ struct RecordingTitleBar: View {
 
             timerPill
         }
-        .padding(RetainMetrics.titleBarPadding)
+        .padding(.leading, RetainMetrics.metaStripCellFirst.leading)
+        .padding(.trailing, RetainMetrics.titleBarPadding.trailing)
         .frame(height: RetainMetrics.titleBarHeight)
-        // The same room under it as every other window's bar. This one is its
-        // own view rather than a `RetainTitleBar` — it carries a level meter, a
-        // clock and two controls — so the value is taken rather than inherited.
+        // The same room above and below as every other window's bar. This one
+        // is its own view rather than a `RetainTitleBar` — it carries a level
+        // meter, a clock and two controls — so the values are taken rather
+        // than inherited.
+        .padding(.top, RetainMetrics.titleBarTopRoom)
         .padding(.bottom, RetainMetrics.titleBarBottomRoom)
         .background(RetainPalette.surfaceTitleBar)
         .overlay(alignment: .bottom) { RetainDivider() }

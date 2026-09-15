@@ -2,14 +2,14 @@ import SwiftUI
 
 // MARK: - Title bar
 
-/// The 38-point strip the window's buttons sit in.
+/// The strip the window's buttons sit in, with "Settings" under them.
 ///
-/// It carries no text. The export draws "Settings" here, beside the lights,
-/// and that is the one place in the window where nothing can be flush with
-/// anything: macOS owns the first seventy-odd points and draws close, minimise
-/// and zoom in them, so a name starting after them sits adrift of a sidebar
-/// whose rows start at 22. The name is at the top of that sidebar instead —
-/// see `RetainWindowTitle`.
+/// The export draws the name here beside the lights, and beside them nothing
+/// can be flush with anything: macOS owns the first seventy-odd points, so a
+/// name starting after them sits adrift of a sidebar whose rows start at 22.
+/// The bar keeps `titleBarTopRoom` clear above its row instead — the buttons
+/// sit in that, and the name begins on the sidebar's own edge underneath
+/// them. See `RetainTitleBar`, which is the same bar for the other windows.
 struct SettingsTitleBar: View {
 
     /// The export paints three flat grey circles, which is what macOS draws
@@ -22,21 +22,31 @@ struct SettingsTitleBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // The same strip the other windows use, so all three agree on where
-            // a title bar's content begins — and so the width comes from the
-            // window's own buttons rather than from a second copy of the
-            // board's arithmetic.
-            RetainTrafficLightSpace(drawsButtons: drawsTrafficLights)
+            // Drawn only where there are no real buttons to draw over: a
+            // preview, or the snapshot checked against the board.
+            if drawsTrafficLights {
+                RetainTrafficLightSpace(drawsButtons: true)
+                    .padding(.trailing, RetainMetrics.titleBarGap)
+            }
 
-            // No title here. It is at the top of the sidebar, where it can line
-            // up with the rows under it — see `RetainWindowTitle`.
+            RetainWindowMark()
+
+            Text(verbatim: String(localized: "Settings", comment: "Settings window title, and the button that opens it"))
+                .retainStyle(RetainTypography.titleBarSubtitle)
+                .foregroundStyle(RetainPalette.inkDim)
+                .padding(.leading, RetainMetrics.titleBarMarkGap)
+                .lineLimit(1)
+
             Spacer(minLength: 0)
         }
-        .padding(RetainMetrics.titleBarPadding)
+        .padding(.leading, RetainMetrics.sidebarPadding.leading + RetainMetrics.sidebarRowSettings.leading)
+        .padding(.trailing, RetainMetrics.titleBarPadding.trailing)
         .frame(height: RetainMetrics.titleBarHeight)
-        // The same room under it as every other window's bar. This one is its
-        // own view because Settings draws the traffic lights itself when it is
-        // hosted without them, so the value is taken rather than inherited.
+        // The same room above and below as every other window's bar. This one
+        // is its own view because Settings draws the traffic lights itself when
+        // it is hosted without them, so the values are taken rather than
+        // inherited.
+        .padding(.top, RetainMetrics.titleBarTopRoom)
         .padding(.bottom, RetainMetrics.titleBarBottomRoom)
         .background(RetainPalette.surfaceTitleBar)
         .overlay(alignment: .bottom) {
@@ -56,10 +66,6 @@ struct SettingsSidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: RetainMetrics.sidebarRowGap) {
-            RetainWindowTitle(
-                title: String(localized: "Settings", comment: "Settings window title, and the button that opens it")
-            )
-
             ForEach(SettingsSection.allCases) { section in
                 row(section)
             }

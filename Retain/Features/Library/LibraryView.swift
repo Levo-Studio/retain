@@ -43,9 +43,12 @@ struct LibraryView: View {
     }
 
     private var titleBar: some View {
-        // No title in the bar. It is at the top of the sidebar, on the same
-        // left edge as the course rows — see `RetainWindowTitle`.
-        RetainTitleBar {
+        RetainTitleBar(
+            title: LibraryCopy.windowTitle,
+            // The sidebar's own edge: its padding plus a row's. That is where
+            // the term, the courses and "New course" all begin.
+            titleLeading: RetainMetrics.sidebarPadding.leading + RetainMetrics.sidebarRowLibrary.leading
+        ) {
             ModelStatusPill()
 
             recordButton
@@ -177,8 +180,6 @@ struct LibrarySidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: RetainMetrics.sidebarRowGap) {
-            RetainWindowTitle(title: LibraryCopy.windowTitle, leading: RetainMetrics.sidebarRowLibrary.leading)
-
             termHeader
 
             if model.courses.isEmpty {

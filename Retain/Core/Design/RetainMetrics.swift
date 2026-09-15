@@ -129,6 +129,18 @@ nonisolated enum RetainMetrics {
 
     static let titleBarHeight: CGFloat = 38
 
+    /// Room above the title bar's contents, for the buttons macOS draws.
+    ///
+    /// **This is what lets the bar hold the window's name on the left.** The
+    /// system paints close, minimise and zoom over the top-left of the content
+    /// view, centred about fourteen points down, and anything on the same line
+    /// as them has to start to their right — which is why the name spent two
+    /// rounds either indented past every column below it or on a row of its
+    /// own. Given this much room above, the bar's one row sits underneath the
+    /// buttons instead of beside them, and the name can begin on the same edge
+    /// as the sidebar or the meta strip under it.
+    static let titleBarTopRoom: CGFloat = 24
+
     /// Room under the title bar's contents, in **every** window.
     ///
     /// **Not drawn.** The export draws the bar 38 points flat, and at that
@@ -274,16 +286,6 @@ nonisolated enum RetainMetrics {
     /// The recording window's name, on the same left edge as its tabs and its
     /// meta strip. It has no sidebar to sit at the top of, so it is its own row
     /// under the title bar instead.
-    /// Room above and below the window's name, in every window.
-    ///
-    /// **One number, deliberately.** Each window used to set its own — the two
-    /// sidebars 8 above and 18 below, the detail window 6 and 10 — and the
-    /// three rows were the same row drawn three slightly different ways, which
-    /// is visible the moment two of them are open side by side. The horizontal
-    /// inset stays each window's own, because that one has a job: the mark has
-    /// to start on the same edge as whatever the window's first column starts
-    /// at, and those genuinely differ.
-    static let windowTitleRoom: CGFloat = 14
     static let tabGap: CGFloat = 22
     static let tabPadding = edges(11, 0)
 
