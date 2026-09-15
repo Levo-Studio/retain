@@ -118,6 +118,10 @@ struct RecordingTitleBar: View {
 
     let shell: ShellModel
 
+    /// The finish confirmation. Held here rather than on the session: it is
+    /// about this window being open, not about the lecture.
+    @State private var isConfirmingFinish = false
+
     /// The lecture's name, on the left of the bar, where every other window
     /// puts the window's. Its absence was a jump: the bar, the strip and the
     /// tabs all shifted when a lecture ended and the finished view took over.
@@ -153,7 +157,7 @@ struct RecordingTitleBar: View {
         )
         .fixedSize()
 
-        Button(action: shell.finish) {
+        Button { isConfirmingFinish = true } label: {
             Text(verbatim: RecordingControlCopy.finish)
         }
         .buttonStyle(
@@ -215,6 +219,16 @@ struct RecordingTitleBar: View {
             }
 
             timerPill
+        }
+        .sheet(isPresented: $isConfirmingFinish) {
+            FinishRecordingDialog(
+                elapsed: session.recorder.duration,
+                finish: {
+                    isConfirmingFinish = false
+                    shell.finish()
+                },
+                cancel: { isConfirmingFinish = false }
+            )
         }
         .padding(.leading, RetainMetrics.metaStripCellFirst.leading)
         .padding(.trailing, RetainMetrics.titleBarPadding.trailing)

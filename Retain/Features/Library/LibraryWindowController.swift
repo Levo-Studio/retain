@@ -28,6 +28,10 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
     var startRecording: ((Course, Term) -> Void)?
     var canRecord: () -> Bool = { false }
 
+    /// How long the running lecture has been going. See
+    /// `LibraryModel.lectureDuration`.
+    var recordingDuration: () -> TimeInterval = { 0 }
+
     /// Ends the lecture that is running.
     var finishRecording: (() -> Void)?
 
@@ -67,6 +71,7 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
         }
         model.canRecord = { [weak self] in self?.canRecord() ?? false }
         model.onFinish = { [weak self] in self?.finishRecording?() }
+        model.lectureDuration = { [weak self] in self?.recordingDuration() ?? 0 }
         model.lectureIsRunning(isLectureRunning)
         self.model = model
 

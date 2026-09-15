@@ -510,6 +510,10 @@
       "comment": "Button that ends a recording and starts the summary",
       "extractionState": "manual"
     },
+    "Finish recording": {
+      "comment": "Finish-recording dialog title, and the button that confirms it",
+      "extractionState": "manual"
+    },
     "Finished": {
       "comment": "Recording window once every pass has run",
       "extractionState": "manual"
@@ -540,6 +544,10 @@
     },
     "Input": {
       "comment": "Settings field label for the microphone picker",
+      "extractionState": "manual"
+    },
+    "Keep recording": {
+      "comment": "Finish-recording dialog button that closes it and leaves the microphone open",
       "extractionState": "manual"
     },
     "Kind": {
@@ -1116,6 +1124,14 @@
     },
     "The lecture is open in its own window, and in the library.": {
       "comment": "Recording window saying where the finished lecture is",
+      "extractionState": "manual"
+    },
+    "The microphone closes after %@. The transcript is kept, and the model reads it afterwards.": {
+      "comment": "Finish-recording dialog body; the placeholder is how long the recording has run",
+      "extractionState": "manual"
+    },
+    "The microphone closes. The transcript is kept, and the model reads it afterwards.": {
+      "comment": "Finish-recording dialog body where the length of the recording is not known",
       "extractionState": "manual"
     },
     "The microphone reported a format Retain cannot read.": {

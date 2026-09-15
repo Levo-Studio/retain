@@ -47,6 +47,7 @@ final class RetainShell {
             recordingWindow.show()
         }
         library?.canRecord = { [shell] in shell.canRecord }
+        library?.recordingDuration = { [shell] in shell.session.recorder.duration }
         library?.finishRecording = { [shell] in shell.finish() }
 
         // The recording window shows the finished lecture itself, so it needs

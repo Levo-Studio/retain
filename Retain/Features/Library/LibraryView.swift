@@ -6,6 +6,9 @@ struct LibraryView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// The finish confirmation, for the Record button while a lecture runs.
+    @State private var isConfirmingFinish = false
+
     @Bindable var model: LibraryModel
 
     var body: some View {
@@ -25,6 +28,16 @@ struct LibraryView: View {
         }
         .background(RetainPalette.surfaceWindow)
         .task { await model.follow() }
+        .sheet(isPresented: $isConfirmingFinish) {
+            FinishRecordingDialog(
+                elapsed: model.runningLectureDuration,
+                finish: {
+                    isConfirmingFinish = false
+                    model.finish()
+                },
+                cancel: { isConfirmingFinish = false }
+            )
+        }
         .libraryEditingSheet(
             $model.sheet,
             terms: model.terms,
@@ -197,7 +210,11 @@ struct LibraryView: View {
         // window to stop the microphone.
         Button {
             if model.isLectureRunning {
-                model.finish()
+                // Asked here too, and by the same dialog. The library is a
+                // window somebody sits in during a lesson, so this button is
+                // exactly as easy to hit by accident as the one in the
+                // recording window.
+                isConfirmingFinish = true
             } else {
                 model.record()
             }

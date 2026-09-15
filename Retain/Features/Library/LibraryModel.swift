@@ -143,6 +143,15 @@ final class LibraryModel {
         isLectureRunning = running
     }
 
+    /// How long the running lecture has been going, for the confirmation in
+    /// front of Finish. Filled in by the window controller, which is the only
+    /// object that can see the shell; zero where there is no shell, and the
+    /// dialog then leaves the length out of its sentence rather than claiming
+    /// the lecture has just started.
+    var lectureDuration: (() -> TimeInterval)?
+
+    var runningLectureDuration: TimeInterval { lectureDuration?() ?? 0 }
+
     func finish() {
         onFinish?()
     }
