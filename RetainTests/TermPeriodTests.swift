@@ -107,7 +107,7 @@ struct TermPeriodTests {
         try await StoreFixture.course(in: database, term: term, name: "Informatik")
 
         let model = LibraryModel(database: database)
-        await model.load()
+        await model.refresh()
 
         #expect(model.termSubtitle == LibraryCopy.courses(1))
     }
@@ -120,7 +120,7 @@ struct TermPeriodTests {
         try await StoreFixture.course(in: database, term: term, name: "Informatik")
 
         let model = LibraryModel(database: database)
-        await model.load()
+        await model.refresh()
 
         #expect(model.termSubtitle.contains(TermMonth.label(start)))
         #expect(model.termSubtitle.contains(TermMonth.label(end)))

@@ -22,7 +22,6 @@ final class LibraryModel {
     private(set) var selectedTerm: Term?
     private(set) var selectedCourse: CourseListing?
 
-    private(set) var isLoading = false
 
     // MARK: - Searching
 
@@ -163,31 +162,6 @@ final class LibraryModel {
 
 
     // MARK: - Loading
-
-    func load() async {
-        isLoading = true
-        defer { isLoading = false }
-
-        let library = LibraryRepository(database)
-        do {
-            terms = try await library.terms()
-            // The picker opens on the term that was marked current, and on the
-            // newest one before anything has been marked.
-            let opening = try await library.currentTerm() ?? terms.first
-            if let opening {
-                await select(term: opening)
-            } else {
-                // No terms left — which only happens after the last one is
-                // deleted. Without this the window kept the deleted term in
-                // the picker and its courses in the sidebar, and clicking one
-                // asked the database for recordings in a term that is gone.
-                clearSelection()
-            }
-        } catch {
-            terms = []
-            clearSelection()
-        }
-    }
 
     private func clearSelection() {
         selectedTerm = nil

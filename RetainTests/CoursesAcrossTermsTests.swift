@@ -266,7 +266,7 @@ struct CoursesAcrossTermsTests {
         let year = try await year(in: database)
 
         let model = LibraryModel(database: database)
-        await model.load()
+        await model.refresh()
 
         #expect(model.selectedTerm?.id == year.winter.id)
         #expect(model.courses.map(\.course.name) == ["Informatik"])
