@@ -212,6 +212,33 @@ nonisolated enum RetainMetrics {
 
     static let tabBarPadding = horizontal(34)
 
+    // The live transcript, now that it has the window to itself rather than a
+    // 330-point rail. The export has no board for it — it draws the rail — so
+    // these are the detail window's own reading measures, which is where the
+    // transcript is read at length everywhere else in the app.
+
+    /// How wide a line of transcript is allowed to get. A window on a 27-inch
+    /// screen would otherwise run a sentence the whole way across, and a line
+    /// that long is one the eye loses its place in.
+    static let transcriptFullColumn: CGFloat = 720
+
+    static let transcriptFullPadding = edges(28, 34, 28)
+
+    /// Between two lines of the live transcript.
+    static let transcriptFullLineGap: CGFloat = 14
+
+    // The screen between a lecture ending and its notes existing. Not drawn on
+    // any board — the export has no state for it, because in the export the
+    // notes are already there.
+
+    static let processingColumn: CGFloat = 420
+    static let processingGap: CGFloat = 10
+    static let processingStepGap: CGFloat = 14
+    static let processingRowGap: CGFloat = 12
+    /// Wide enough for the moving dots, so the three rows do not shift
+    /// sideways as each step starts and finishes.
+    static let processingMarkerColumn: CGFloat = 26
+
     /// Between the "no notes yet" sentence and what can be done about it.
     static let detailEmptyNotesGap: CGFloat = 14
 
@@ -430,12 +457,6 @@ nonisolated enum RetainMetrics {
     static let settingsDescriptionWidth: CGFloat = 70
 
     // MARK: - Opacity ladder
-
-    /// The live transcript fades older lines. This is opacity on the whole
-    /// line, not a colour change — the newest line also gets brighter ink,
-    /// which is a palette matter and not this.
-    static let transcriptRailOpacities: [Double] = [0.5, 0.75, 1, 1, 1]
-    static let transcriptPopoverOpacities: [Double] = [0.55, 0.8, 1]
 
     // MARK: - Board 01, the recording window
 

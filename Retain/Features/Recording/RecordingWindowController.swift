@@ -22,6 +22,15 @@ final class RecordingWindowController: NSObject, NSWindowDelegate {
 
     // MARK: - Showing it
 
+    /// Opens the lecture that has just finished, in its own window.
+    ///
+    /// Filled in by the shell, which is the only object that can see both this
+    /// window and the library's. The recording window says it is finished and
+    /// the detail window comes up over it, which is the hand-over the owner
+    /// asked for: the transcript while it runs, then what was done to it, then
+    /// the notes, the chapters and the tabs.
+    var onFinished: ((Int64) -> Void)?
+
     func show() {
         let window = window ?? makeWindow()
         self.window = window
@@ -54,7 +63,9 @@ final class RecordingWindowController: NSObject, NSWindowDelegate {
         window.backgroundColor = NSColor(RetainPalette.surfaceWindow)
         window.isReleasedWhenClosed = false
         window.delegate = self
-        window.contentView = NSHostingView(rootView: RecordingRoot(shell: shell))
+        var root = RecordingRoot(shell: shell)
+        root.openFinished = { [weak self] id in self?.onFinished?(id) }
+        window.contentView = NSHostingView(rootView: root)
         window.setContentSize(size)
 
         return window

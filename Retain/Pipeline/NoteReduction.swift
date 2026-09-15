@@ -152,11 +152,10 @@ nonisolated enum NoteReduction {
         retelling of it. Somebody who was not there reads them instead of the \
         recording. Write in German.
 
-        You are given the transcript of record and the draft notes that were written \
-        while the recording ran. The drafts are drafts: each was written from three \
-        minutes in isolation, so they overlap, they repeat themselves, and they cut \
-        topics in half. **The transcript is what is true.** Where a draft says \
-        something the transcript does not, drop it.
+        You are given the transcript of record: the whole lesson, from the first \
+        word to the last. Read all of it before you write anything — the point of \
+        being given it whole is that you can see where a subject started and where it \
+        was dropped, which is not visible three minutes at a time.
 
         topic — a German noun phrase naming what the lesson was about, at most 60 \
         characters. No verb, no sentence, no full stop. Never a generic label such as \
@@ -201,8 +200,14 @@ nonisolated enum NoteReduction {
     static func reducePrompt(notes: [NoteBlock], transcript: [TranscriptLine]) -> ChatConversation {
         var parts: [String] = []
 
-        parts.append("Draft notes, one per block:")
-        parts.append(notes.map(draft(of:)).joined(separator: "\n\n"))
+        // Only when there are any. Nothing is summarised while a lecture runs
+        // any more — the model is handed the whole transcript once, at the end
+        // — and a heading saying "Draft notes:" with nothing under it is a
+        // prompt telling the model something it then has to ignore.
+        if !notes.isEmpty {
+            parts.append("Draft notes, one per block:")
+            parts.append(notes.map(draft(of:)).joined(separator: "\n\n"))
+        }
 
         parts.append("Transcript of record:")
         parts.append(self.transcript(of: transcript))

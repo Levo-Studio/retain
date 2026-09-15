@@ -9,22 +9,71 @@ struct RecordingRoot: View {
 
     let shell: ShellModel
 
+    /// Opens the finished lecture in its own window once everything has run.
+    /// Filled in by the window controller, which is the only object that can
+    /// see both this window and the library's.
+    var openFinished: ((Int64) -> Void)?
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// **One window, three states, in the order a lecture goes through them.**
+    ///
+    /// While it runs there is the transcript and nothing else — no notes
+    /// column, and nothing sent to the model. When it stops, the same window
+    /// shows what is being done to the recording. When that is over it says so
+    /// and hands the lecture to its own window, where the notes, the chapters
+    /// and the transcript tab live.
+    ///
+    /// The three cross-fade rather than cut, because they are one thing
+    /// changing rather than three screens.
     var body: some View {
         VStack(spacing: 0) {
-            RecordingTitleBar(session: shell.session, power: shell.power)
+            RecordingTitleBar(shell: shell)
             RecordingMetaStrip(session: shell.session, courses: shell.courses)
 
-            HStack(spacing: 0) {
-                RecordingNotesPane(shell: shell)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                TranscriptRail(shell: shell)
-                    .frame(width: RetainMetrics.transcriptRailWidth)
-            }
-            .frame(maxHeight: .infinity)
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .animation(RetainMotion.reveal(reduceMotion: reduceMotion), value: stage)
         }
         .background(RetainPalette.surfaceWindow)
         .task { await shell.courses.follow() }
+        .onChange(of: shell.session.phase) { _, phase in
+            guard case .done = phase, let id = shell.session.recordingID else { return }
+            openFinished?(id)
+        }
+    }
+
+    // MARK: -
+
+    private enum Stage: Hashable { case recording, processing, finished }
+
+    private var stage: Stage {
+        switch shell.session.phase {
+        case .idle, .recording, .preparingModels: .recording
+        case .transcribing, .separatingSpeakers, .writingNotes: .processing
+        case .done, .failed: .finished
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch stage {
+        case .recording:
+            LiveTranscriptPane(shell: shell)
+                .transition(.opacity)
+
+        case .processing:
+            ProcessingPane(phase: shell.session.phase, title: lectureTitle)
+                .transition(.opacity)
+
+        case .finished:
+            FinishedPane(phase: shell.session.phase)
+                .transition(.opacity)
+        }
+    }
+
+    private var lectureTitle: String {
+        shell.courses.selected?.name ?? ""
     }
 }
 
@@ -34,8 +83,53 @@ struct RecordingRoot: View {
 /// microphone on the right.
 struct RecordingTitleBar: View {
 
-    let session: LectureSession
-    let power: PowerDrawMonitor
+    let shell: ShellModel
+
+    private var session: LectureSession { shell.session }
+    private var power: PowerDrawMonitor { shell.power }
+
+    /// Broken out of `body`: the bar has enough in it that the type checker
+    /// gives up on the whole thing as one expression.
+    @ViewBuilder
+    private var controls: some View {
+        // A closure rather than a ternary over two method references: the
+        // compiler fails to type-check the latter, and reports it as a bug in
+        // itself rather than as a message anybody can act on.
+        Button {
+            if session.isPaused {
+                shell.resume()
+            } else {
+                shell.pause()
+            }
+        } label: {
+            Text(verbatim: session.isPaused ? RecordingControlCopy.resume : RecordingControlCopy.pause)
+        }
+        .buttonStyle(
+            RetainSecondaryButtonStyle(
+                textStyle: RetainTypography.titleBarButton,
+                padding: RetainMetrics.titleBarButtonPadding,
+                cornerRadius: RetainMetrics.radiusExportButton,
+                isFilled: true,
+                border: RetainPalette.controlBorderEmphasisedSwatch
+            )
+        )
+        .fixedSize()
+
+        Button(action: shell.finish) {
+            Text(verbatim: RecordingControlCopy.finish)
+        }
+        .buttonStyle(
+            RetainSecondaryButtonStyle(
+                textStyle: RetainTypography.titleBarButton,
+                padding: RetainMetrics.titleBarButtonPadding,
+                cornerRadius: RetainMetrics.radiusExportButton,
+                isFilled: true,
+                ink: RetainPalette.redInk,
+                border: RetainPalette.redBorderSwatch
+            )
+        )
+        .fixedSize()
+    }
 
     var body: some View {
         HStack(spacing: RetainMetrics.titleBarGroupGap) {
@@ -62,12 +156,13 @@ struct RecordingTitleBar: View {
                 .retainStyle(RetainTypography.titleBarStatus)
                 .foregroundStyle(RetainPalette.inkLabel)
 
-            // Beside the microphone's state, because they are the same
-            // question about the other half of the pipeline: the notes are
-            // being written by a model, and whether that model is there is
-            // something the lecturer wants to know at the start of the lesson
-            // rather than at the end of it.
-            ModelStatusPill()
+            // Pause and Finish were in the transcript rail's footer, and the
+            // rail is gone — the transcript has the window. They belong with
+            // the clock, which is the other thing in this bar that is about the
+            // lecture rather than about the machine.
+            if session.phase == .recording {
+                controls
+            }
 
             timerPill
         }
@@ -268,5 +363,28 @@ struct RetainVerticalDivider: View {
         Rectangle()
             .fill(colour)
             .frame(width: RetainMetrics.borderWidth)
+    }
+}
+
+
+// MARK: -
+
+/// The two controls that end or hold a lecture.
+///
+/// They were in the transcript rail's footer, which the live screen no longer
+/// has: the transcript takes the window and the rail is gone. The wording is
+/// the rail's, unchanged.
+nonisolated enum RecordingControlCopy {
+
+    static var pause: String {
+        String(localized: "Pause", comment: "Button that holds a running recording")
+    }
+
+    static var resume: String {
+        String(localized: "Continue", comment: "Button that resumes a paused recording")
+    }
+
+    static var finish: String {
+        String(localized: "Finish", comment: "Button that ends a recording and starts the summary")
     }
 }

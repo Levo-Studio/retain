@@ -333,7 +333,6 @@ final class LectureSession {
             }
         }
 
-        closeBlocks()
     }
 
     /// Stops the recording and runs the pass that produces the transcript of
@@ -387,14 +386,9 @@ final class LectureSession {
                 await TransientAudio(store.database).discardAudio(of: recordingID, passFinished: true)
             }
 
-            // One last attempt for the blocks nothing came after. A lecture
-            // whose last minutes were recorded with the model unreachable has
-            // cards that no further line will ever nudge.
-            await retryDeferredBlocks()
-
-            // And then the notes are written again, from the transcript of
-            // record rather than from the one that was on screen. See
-            // `writeFinalNotes` — this is the step that was missing.
+            // And now the model sees the lecture, for the first and only
+            // time: the whole transcript of record, at once. Nothing was sent
+            // while it was running — see `writeFinalNotes`.
             phase = .writingNotes
             await writeFinalNotes(from: lines)
 
@@ -444,114 +438,10 @@ final class LectureSession {
                 // survive a crash in the middle of a lecture.
                 Task { _ = try? await store.transcript.append(line, to: recordingID) }
             }
-
-            closeBlocks()
-
-            // Every finished line is also a chance to catch up on a block the
-            // model could not be reached for. It costs nothing when none is
-            // waiting, and it means a lecture that started before LM Studio was
-            // running fills itself in rather than staying half empty.
-            Task { [weak self] in await self?.retryDeferredBlocks() }
         }
     }
 
     // MARK: - Note blocks
-
-    /// Cuts the transcript so far into blocks and summarises any that have just
-    /// closed.
-    ///
-    /// `finished: false`, always: the trailing block is still filling, and
-    /// closing it would send half a topic to the model and put a card in the
-    /// notes that the next card then repeats.
-    private func closeBlocks() {
-        guard let summarizer else { return }
-
-        let blocks = BlockBoundaries.blocks(from: lines, markers: markers, finished: false)
-
-        for block in blocks where !notes.contains(where: { $0.number == block.number }) {
-            notes.append(
-                NoteBlock(
-                    number: block.number,
-                    markdown: "",
-                    start: block.start,
-                    end: block.end,
-                    state: .summarising
-                )
-            )
-
-            Task { [weak self] in
-                let written = try? await summarizer.summarise(block)
-                await MainActor.run { self?.replaceNote(block.number, with: written) }
-            }
-        }
-    }
-
-    /// Puts the model's card in place of the placeholder, or marks the block as
-    /// waiting if the model could not be reached.
-    ///
-    /// `deferred` rather than dropping the card: board 07's "No connection"
-    /// dialog says summaries are caught up once the connection is back, and a
-    /// block that silently vanished could not be.
-    private func replaceNote(_ number: Int, with written: NoteBlock?) {
-        guard let index = notes.firstIndex(where: { $0.number == number }) else { return }
-
-        if let written {
-            notes[index] = written
-            if let store, let recordingID {
-                let block = StoredNoteBlock(
-                    recordingID: recordingID,
-                    position: written.number,
-                    startTime: written.start,
-                    endTime: written.end,
-                    markdown: written.markdown
-                )
-                Task { _ = try? await store.notes.append(block, to: recordingID) }
-            }
-        } else {
-            notes[index].state = .deferred
-        }
-    }
-
-
-    // MARK: - Catching up
-
-    /// Sends the blocks the model could not be reached for, again.
-    ///
-    /// **This is the promise the code had been making and not keeping.** The
-    /// comment beside `replaceNote` says a deferred block is kept rather than
-    /// dropped because board 07's dialog tells the user that "summaries are
-    /// caught up once the connection is back" — and nothing ever caught them
-    /// up. A lecture recorded while LM Studio was unreachable ended with every
-    /// card still saying it was being written, for the rest of the hour and
-    /// then for ever.
-    ///
-    /// Called on a timer while the lecture runs, and once more when it stops.
-    /// It costs one request per outstanding block and only when there are any,
-    /// so a lecture with a working model never sends a second request for
-    /// anything.
-    func retryDeferredBlocks() async {
-        guard let summarizer else { return }
-
-        let waiting = notes.filter { $0.state == .deferred }
-        guard !waiting.isEmpty else { return }
-
-        // Rebuilt rather than kept from the first attempt: the transcript has
-        // grown since, and the batch pass may have replaced the live lines that
-        // the first attempt was made from.
-        let blocks = BlockBoundaries.blocks(from: lines, markers: markers, finished: phase != .recording)
-
-        for note in waiting {
-            guard let block = blocks.first(where: { $0.number == note.number }) else { continue }
-
-            // One at a time, and stopping at the first failure. A server that
-            // refused one block refuses the next, and a burst of requests at a
-            // model that is still being read off disk makes the wait longer
-            // rather than shorter.
-            guard let written = try? await summarizer.summarise(block) else { return }
-            replaceNote(note.number, with: written)
-        }
-    }
-
 
     // MARK: - The notes the lecture is left with
 
@@ -578,10 +468,14 @@ final class LectureSession {
     /// A failure leaves the cards in place. They are poor and they are real;
     /// throwing them away for an empty column would be the worse trade.
     private func writeFinalNotes(from lines: [TranscriptLine]) async {
-        guard let summarizer, !notes.isEmpty || !lines.isEmpty else { return }
+        guard let summarizer, !lines.isEmpty else { return }
 
         let written = try? await summarizer.reduce(
-            notes: notes,
+            // No drafts. Nothing was summarised while the lecture ran, which is
+            // the point: the model is handed the whole hour at once instead of
+            // three minutes at a time off a transcript that was still being
+            // corrected.
+            notes: [],
             transcript: lines,
             markers: markers,
             // Hard rule 7 is decided in `ModelSizeDecision`, not here: the
@@ -598,8 +492,9 @@ final class LectureSession {
 
         guard let store, let recordingID else { return }
 
-        // Replaced, not appended: these stand in place of the cards written
-        // during the lecture, and appending would leave the lecture summarised
+        // Replaced rather than appended. Nothing should be there — no cards are
+        // written during a lecture any more — but a re-run has to land on a
+        // recording that already has notes, and appending would summarise it
         // twice.
         let stored = written.blocks.enumerated().map { index, block in
             StoredNoteBlock(

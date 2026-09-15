@@ -70,6 +70,7 @@ struct DetailNotesPane: View {
                 VStack(alignment: .leading, spacing: 0) {
                     if model.blocks.isEmpty {
                         empty
+                            .transition(.opacity)
                     } else {
                         ForEach(Array(model.noteItems.enumerated()), id: \.element.id) { index, item in
                             view(for: item)
@@ -79,6 +80,10 @@ struct DetailNotesPane: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(RetainMetrics.notesPaneDetail)
+                // Notes arrive all at once when a run finishes, and an empty
+                // column becoming a full one in a single frame reads as a
+                // glitch rather than as work completing.
+                .animation(RetainMotion.reveal(reduceMotion: reduceMotion), value: model.blocks.count)
             }
             .scrollContentBackground(.hidden)
             // `task(id:)` and not `onChange`: a chat citation clicked on the

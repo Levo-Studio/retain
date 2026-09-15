@@ -82,6 +82,16 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
 
     // MARK: - A recording
 
+    /// Opens a recording by id, reading the row first.
+    ///
+    /// For the hand-over at the end of a lecture: the recording window knows
+    /// the id and nothing else, and a window controller is the right place to
+    /// turn one into a row.
+    func openRecording(_ id: Int64) async {
+        guard let recording = try? await LibraryRepository(database).recording(id) else { return }
+        openDetail(for: recording)
+    }
+
     func openDetail(for recording: Recording, at time: TimeInterval? = nil) {
         guard let id = recording.id else { return }
 

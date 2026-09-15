@@ -62,6 +62,10 @@
       "comment": "A term's period, with both endpoints — the export's Okt 2025 – März 2026",
       "extractionState": "manual"
     },
+    "%lld %": {
+      "comment": "A percentage on the processing screen",
+      "extractionState": "manual"
+    },
     "%lld courses": {
       "comment": "How many courses are in a term",
       "extractionState": "manual",
@@ -402,6 +406,10 @@
       "comment": "Status line after a successful connection test",
       "extractionState": "manual"
     },
+    "Continue": {
+      "comment": "Button that resumes a paused recording",
+      "extractionState": "manual"
+    },
     "Copy": {
       "comment": "Edit menu item",
       "extractionState": "manual"
@@ -482,8 +490,8 @@
       "comment": "Button that ends a recording and starts the summary",
       "extractionState": "manual"
     },
-    "Finished. The notes are in the library.": {
-      "comment": "Recording rail footer once everything has run",
+    "Finished": {
+      "comment": "Recording window once every pass has run",
       "extractionState": "manual"
     },
     "General": {
@@ -568,10 +576,6 @@
     },
     "Loading %@ …": {
       "comment": "Model status while the server reads the model into memory",
-      "extractionState": "manual"
-    },
-    "Loading the speech models …": {
-      "comment": "Recording rail footer while the speech models are being fetched",
       "extractionState": "manual"
     },
     "Local language model": {
@@ -946,8 +950,8 @@
       "comment": "Status bar menu header during diarization",
       "extractionState": "manual"
     },
-    "Separating the speakers · %lld %": {
-      "comment": "Recording rail footer during diarization",
+    "Separating the speakers": {
+      "comment": "Processing step: diarization",
       "extractionState": "manual"
     },
     "Settings": {
@@ -968,6 +972,10 @@
     },
     "Silence · %@": {
       "comment": "The level line in the popover's ready state, with the microphone's name",
+      "extractionState": "manual"
+    },
+    "Something did not run": {
+      "comment": "Recording window when a pass failed",
       "extractionState": "manual"
     },
     "Speaker": {
@@ -1054,6 +1062,10 @@
       "comment": "Keychain item exists but is not text",
       "extractionState": "manual"
     },
+    "The lecture is open in its own window, and in the library.": {
+      "comment": "Recording window saying where the finished lecture is",
+      "extractionState": "manual"
+    },
     "The microphone reported a format Retain cannot read.": {
       "comment": "Recording failed because the input format was unusable",
       "extractionState": "manual"
@@ -1134,6 +1146,10 @@
       "comment": "Window menu title",
       "extractionState": "manual"
     },
+    "Working through the recording": {
+      "comment": "Heading of the screen shown between a lecture ending and its notes existing",
+      "extractionState": "manual"
+    },
     "Write the notes again": {
       "comment": "Re-analysis dialog title, and the button that confirms it",
       "extractionState": "manual"
@@ -1146,12 +1162,12 @@
       "comment": "Progress while the language model works through a finished recording",
       "extractionState": "manual"
     },
-    "Writing the notes …": {
-      "comment": "Recording rail footer while the model rewrites the notes from the final transcript",
+    "Writing the notes": {
+      "comment": "Processing step: the model reading the whole transcript",
       "extractionState": "manual"
     },
-    "Writing the transcript · %lld %": {
-      "comment": "Recording rail footer during the batch transcription pass",
+    "Writing the transcript": {
+      "comment": "Processing step: the batch transcription pass",
       "extractionState": "manual"
     },
     "You · %@": {
@@ -1252,14 +1268,6 @@
     },
     "until %@": {
       "comment": "A term's period whose start was left empty",
-      "extractionState": "manual"
-    },
-    "waiting for the model": {
-      "comment": "Shown beside a note block whose summary could not be fetched and is queued",
-      "extractionState": "manual"
-    },
-    "writing …": {
-      "comment": "Shown beside the heading of a note block the model has not finished",
       "extractionState": "manual"
     },
     "⌘⇧M · %lld markers": {

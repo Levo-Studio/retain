@@ -53,64 +53,6 @@ struct ElapsedTimeTests {
     }
 }
 
-// MARK: - The opacity ladder
-
-@Suite("Transcript ladder")
-struct TranscriptLadderTests {
-
-    private func lines(_ count: Int) -> [TranscriptLine] {
-        (0..<count).map {
-            TranscriptLine(start: Double($0), end: Double($0) + 1, text: "line \($0)")
-        }
-    }
-
-    @Test("The recording rail fades five lines the way the README lists them")
-    func railLadder() {
-        let rungs = TranscriptLadder.visible(lines(5), opacities: RetainMetrics.transcriptRailOpacities)
-        #expect(rungs.map(\.opacity) == [0.5, 0.75, 1, 1, 1])
-    }
-
-    @Test("The popover fades three")
-    func popoverLadder() {
-        let rungs = TranscriptLadder.visible(lines(3), opacities: RetainMetrics.transcriptPopoverOpacities)
-        #expect(rungs.map(\.opacity) == [0.55, 0.8, 1])
-    }
-
-    @Test("Every line is shown, and only the newest few are faded")
-    func ladderKeepsEverything() {
-        let rungs = TranscriptLadder.visible(lines(20), opacities: RetainMetrics.transcriptRailOpacities)
-
-        // This asserted the opposite and the opposite was the bug: the rail
-        // drew `lines.suffix(5)`, so it scrolled five lines and then stopped.
-        // An hour of a lecture was in the session, in the database and in the
-        // transcript tab, and unreadable in the window it was recorded in.
-        #expect(rungs.count == 20)
-        #expect(rungs.first?.line.text == "line 0")
-        #expect(rungs.last?.line.text == "line 19")
-
-        // History at full strength — it has to be readable — and the ladder
-        // still fading the text arriving at the bottom.
-        #expect(rungs.prefix(15).allSatisfy { $0.opacity == 1 })
-        #expect(rungs.suffix(5).map(\.opacity) == [0.5, 0.75, 1, 1, 1])
-    }
-
-    @Test("The newest line is always full strength, however few there are")
-    func ladderReadsFromTheEnd() {
-        // Two lines take the last two rungs, not the first two: the ladder is
-        // about how old a line is, and the newest one is never faded.
-        let rungs = TranscriptLadder.visible(lines(2), opacities: RetainMetrics.transcriptRailOpacities)
-        #expect(rungs.map(\.opacity) == [1, 1])
-
-        let one = TranscriptLadder.visible(lines(1), opacities: RetainMetrics.transcriptPopoverOpacities)
-        #expect(one.map(\.opacity) == [1])
-    }
-
-    @Test("An empty transcript draws nothing")
-    func ladderOfNothing() {
-        #expect(TranscriptLadder.visible([], opacities: RetainMetrics.transcriptRailOpacities).isEmpty)
-    }
-}
-
 // MARK: - The level meter
 
 @Suite("Level meter")

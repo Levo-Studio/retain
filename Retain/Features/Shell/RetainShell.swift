@@ -49,6 +49,12 @@ final class RetainShell {
         library?.canRecord = { [shell] in shell.canRecord }
         library?.finishRecording = { [shell] in shell.finish() }
 
+        // When everything has run, the lecture opens where it is read: the
+        // detail window, with the notes, the chapters and the transcript tab.
+        recordingWindow.onFinished = { [weak library] id in
+            Task { @MainActor in await library?.openRecording(id) }
+        }
+
 
         // **No item in the menu bar.** Retain wore one from the first commit and
         // the owner asked for it to go: an icon that has to be hunted for in a

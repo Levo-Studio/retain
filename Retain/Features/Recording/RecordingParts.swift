@@ -127,33 +127,3 @@ struct TranscriptLineRow: View {
         return isNewest ? RetainPalette.inkPrimary : RetainPalette.inkBody
     }
 }
-
-// MARK: - The opacity ladder
-
-nonisolated enum TranscriptLadder {
-
-    /// **Every** line, with the opacity each is drawn at.
-    ///
-    /// It used to be `lines.suffix(opacities.count)` — the last five and
-    /// nothing else. The rail scrolled, and scrolling it showed five lines and
-    /// then stopped, because everything older had never been put in it. An hour
-    /// of a lecture existed in the session, in the database and in the
-    /// transcript tab, and could not be read in the window it was being
-    /// recorded in.
-    ///
-    /// The ladder still does what it is for: text arriving at the bottom fades
-    /// up over the last few lines. Everything above them is drawn at full
-    /// strength, because it is history and history has to be readable.
-    static func visible(
-        _ lines: [TranscriptLine],
-        opacities: [Double]
-    ) -> [(line: TranscriptLine, opacity: Double)] {
-        let full = opacities.last ?? 1
-        let fading = lines.suffix(opacities.count)
-        let older = lines.dropLast(fading.count)
-
-        let rungs = opacities.suffix(fading.count)
-        return older.map { (line: $0, opacity: full) }
-            + Array(zip(fading, rungs)).map { (line: $0.0, opacity: $0.1) }
-    }
-}

@@ -14,6 +14,8 @@ struct RecordingDetailView: View {
     /// about this window being open, not about the recording.
     @State private var isConfirmingReanalysis = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         VStack(spacing: 0) {
             titleBar
@@ -135,10 +137,17 @@ struct RecordingDetailView: View {
 
     @ViewBuilder
     private var pane: some View {
-        switch model.tab {
-        case .notes: DetailNotesPane(model: model)
-        case .transcript: TranscriptPane(model: model)
+        // The two tabs cross-fade rather than cut. They are two readings of one
+        // lecture, and a cut reads as two screens; a following citation lands
+        // on the transcript tab and the fade is what makes that a movement
+        // rather than a jump.
+        Group {
+            switch model.tab {
+            case .notes: DetailNotesPane(model: model).transition(.opacity)
+            case .transcript: TranscriptPane(model: model).transition(.opacity)
+            }
         }
+        .animation(RetainMotion.reveal(reduceMotion: reduceMotion), value: model.tab)
     }
 
     // MARK: - Labels
