@@ -84,6 +84,11 @@ nonisolated enum DetailCopy {
                comment: "Label above a note the user typed during the recording, with the second they typed it at")
     }
 
+    /// The title bar's button, beside Export.
+    static var reanalyse: String {
+        String(localized: "Re-analyse", comment: "Title bar button that has the model write the notes again")
+    }
+
     /// The button under that sentence.
     ///
     /// It said "Write notes", and the owner looked straight at it and asked

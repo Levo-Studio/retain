@@ -10,6 +10,10 @@ struct RecordingDetailView: View {
 
     @Bindable var model: RecordingDetailModel
 
+    /// The re-analysis confirmation. Held here rather than on the model: it is
+    /// about this window being open, not about the recording.
+    @State private var isConfirmingReanalysis = false
+
     var body: some View {
         VStack(spacing: 0) {
             titleBar
@@ -38,6 +42,16 @@ struct RecordingDetailView: View {
         }
         .background(RetainPalette.surfaceWindow)
         .task { await model.load() }
+        .sheet(isPresented: $isConfirmingReanalysis) {
+            ReanalyseDialog(
+                impact: model.reanalysisImpact,
+                confirm: {
+                    isConfirmingReanalysis = false
+                    Task { await model.reanalyse() }
+                },
+                cancel: { isConfirmingReanalysis = false }
+            )
+        }
     }
 
     // MARK: - Chrome
@@ -48,6 +62,25 @@ struct RecordingDetailView: View {
             // is where a reader asks it questions. Whether it is going to
             // answer belongs where they are looking.
             ModelStatusPill()
+
+            // Always here, beside Export. It used to exist only in the empty
+            // notes column, which meant it vanished the moment it had worked
+            // once — and a recording whose notes are wrong is exactly the one
+            // somebody wants to run again.
+            Button {
+                isConfirmingReanalysis = true
+            } label: {
+                Text(verbatim: DetailCopy.reanalyse)
+            }
+            .buttonStyle(
+                RetainSecondaryButtonStyle(
+                    textStyle: RetainTypography.titleBarButton,
+                    padding: RetainMetrics.titleBarButtonPadding,
+                    cornerRadius: RetainMetrics.radiusExportButton,
+                    isFilled: true
+                )
+            )
+            .disabled(!model.canReanalyse)
 
             Button {
                 NotesExport.run(markdown: model.notes.markdown, recording: model.recording, course: courseName)

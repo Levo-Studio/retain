@@ -703,7 +703,7 @@
       "extractionState": "manual"
     },
     "Notes": {
-      "comment": "Tab showing the written-out notes — the export's Notizen",
+      "comment": "Uppercase label above the re-analysis dialog title",
       "extractionState": "manual"
     },
     "Nothing in this term matches.": {
@@ -772,6 +772,10 @@
     },
     "Quit Retain": {
       "comment": "Status bar menu item quitting the app",
+      "extractionState": "manual"
+    },
+    "Re-analyse": {
+      "comment": "Title bar button that has the model write the notes again",
       "extractionState": "manual"
     },
     "Ready": {
@@ -1018,6 +1022,14 @@
       "comment": "Status line while the connection test is running",
       "extractionState": "manual"
     },
+    "The %lld note blocks it wrote before are replaced.": {
+      "comment": "Re-analysis dialog sentence naming the note blocks that will be replaced",
+      "extractionState": "manual"
+    },
+    "The %lld passages you marked go with them, and cannot be marked again.": {
+      "comment": "Re-analysis dialog sentence naming the highlights that will be lost",
+      "extractionState": "manual"
+    },
     "The audio has not been transcribed yet and goes with it.": {
       "comment": "Delete-recording dialog sentence for a recording whose audio is still on disk",
       "extractionState": "manual"
@@ -1046,12 +1058,20 @@
       "comment": "The prompt plus the answer exceeded the loaded context length",
       "extractionState": "manual"
     },
+    "The model reads the %lld lines of transcript again and writes new notes.": {
+      "comment": "Re-analysis dialog body naming how much transcript the model will read",
+      "extractionState": "manual"
+    },
     "The model stopped before it finished the notes.": {
       "comment": "The model stopped for a reason other than finishing",
       "extractionState": "manual"
     },
     "The recording is processed only on this Mac. Nothing is uploaded, and only what you keep is stored.": {
       "comment": "Microphone permission dialog body",
+      "extractionState": "manual"
+    },
+    "The transcript itself is not touched.": {
+      "comment": "Re-analysis dialog closing sentence, saying what is safe",
       "extractionState": "manual"
     },
     "This cannot be undone.": {
@@ -1100,6 +1120,10 @@
     },
     "Window": {
       "comment": "Window menu title",
+      "extractionState": "manual"
+    },
+    "Write the notes again": {
+      "comment": "Re-analysis dialog title, and the button that confirms it",
       "extractionState": "manual"
     },
     "Writing an answer": {

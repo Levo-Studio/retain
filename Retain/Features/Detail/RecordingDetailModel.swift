@@ -140,6 +140,47 @@ final class RecordingDetailModel {
         return true
     }
 
+
+    /// What writing the notes again would cost. See `ReanalysisImpact`.
+    var reanalysisImpact: ReanalysisImpact {
+        ReanalysisImpact(
+            noteBlocks: blocks.count,
+            highlights: highlightRanges.values.reduce(0) { $0 + $1.count },
+            transcriptLines: lines.count
+        )
+    }
+
+    /// Whether the title bar's button can be pressed at all.
+    ///
+    /// Drawn always — it sits beside Export and a control that comes and goes
+    /// from a title bar is a control nobody can find twice — and unavailable
+    /// while a run is in flight or there is no transcript to read.
+    var canReanalyse: Bool {
+        guard reanalysisImpact.canRun else { return false }
+        if case .running = noteWriting { return false }
+        return true
+    }
+
+    /// Throws the notes away and writes them again from the transcript.
+    ///
+    /// The blocks go first, in one write, which takes the highlights with them
+    /// — that is what the confirmation is for. Then the same run as
+    /// `writeNotes`, which is why that is where the work lives.
+    func reanalyse() async {
+        guard canReanalyse, let recordingID = recording.id else { return }
+
+        do {
+            try await NoteRepository(database).replaceBlocks([], for: recordingID)
+        } catch {
+            noteWriting = .failed(SettingsModel.message(for: error))
+            return
+        }
+
+        blocks = []
+        highlightRanges = [:]
+        await writeNotes()
+    }
+
     /// Runs the summariser over the stored transcript and writes the notes.
     ///
     /// **This exists because the notes could silently never arrive.** The
