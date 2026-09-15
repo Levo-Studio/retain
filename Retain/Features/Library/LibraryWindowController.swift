@@ -19,6 +19,15 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private var model: LibraryModel?
 
+    /// What the library's Record button does, and whether it can be pressed.
+    ///
+    /// Handed in rather than reached for: the library knows about a database
+    /// and nothing else, and a window that could start a recording by talking
+    /// to the shell directly would be a second place that decides when
+    /// recording is allowed.
+    var startRecording: ((Course, Term) -> Void)?
+    var canRecord: () -> Bool = { false }
+
     /// Keyed by recording id, so a second click finds the first window.
     private var detailWindows: [Int64: NSWindow] = [:]
 
@@ -38,10 +47,10 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
         model.onOpenRecording = { [weak self] recording, time in
             self?.openDetail(for: recording, at: time)
         }
-        // The dialogs belong to Settings, which owns board 07. Until the
-        // library carries its own presentation, these stay unset rather than
-        // pretending: an unset closure draws the control unavailable, which is
-        // honest, where a closure that did nothing would look broken.
+        model.onRecord = { [weak self] course, term in
+            self?.startRecording?(course, term)
+        }
+        model.canRecord = { [weak self] in self?.canRecord() ?? false }
         self.model = model
 
         let hosting = NSHostingController(rootView: LibraryView(model: model))
@@ -52,8 +61,9 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
         )
         self.window = window
         bringForward(window)
-
-        Task { await model.load() }
+        // No load here: `LibraryView` starts `follow()`, whose first element
+        // arrives immediately. Loading as well would read the library twice
+        // every time the window opens.
     }
 
     // MARK: - A recording

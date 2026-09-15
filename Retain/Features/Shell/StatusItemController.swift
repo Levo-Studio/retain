@@ -28,7 +28,8 @@ final class StatusItemController {
     init(store: LectureStore?) {
         shell = ShellModel(store: store)
         recordingWindow = RecordingWindowController(shell: shell)
-        libraryWindow = store.map { LibraryWindowController(database: $0.database) }
+        let library = store.map { LibraryWindowController(database: $0.database) }
+        libraryWindow = library
         settingsWindow = SettingsWindowController(
             model: SettingsModel(
                 speechModels: shell.session.models,
@@ -36,6 +37,15 @@ final class StatusItemController {
                 library: store?.library
             )
         )
+        // The library's Record button goes through the same shell as the
+        // popover's, so there is one answer to "is Retain busy" and one place a
+        // recording starts.
+        library?.startRecording = { [shell, recordingWindow] course, term in
+            shell.record(course, during: term)
+            recordingWindow.show()
+        }
+        library?.canRecord = { [shell] in shell.canRecord }
+
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         // The mark from the repository, not an SF Symbol: the owner settled

@@ -18,6 +18,11 @@ nonisolated enum LibraryCopy {
 
     /// The term picker's context menu. Written with the ellipsis every macOS
     /// menu item takes when it opens a dialog rather than acting at once.
+    /// The library's own Record button, for the course in the sidebar.
+    static var record: String {
+        String(localized: "Record", comment: "Button that starts a recording")
+    }
+
     static var deleteTerm: String {
         String(localized: "Delete term…", comment: "Context menu item on the term picker that opens the delete-term confirmation")
     }

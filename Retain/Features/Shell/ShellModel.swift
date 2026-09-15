@@ -47,7 +47,36 @@ final class ShellModel {
     /// it is asked for both here.
     func record() {
         guard let course = courses.selected, let term = courses.term else { return }
+        record(course, during: term)
+    }
+
+    /// Starts a recording for a course the caller names.
+    ///
+    /// The library window needs this: it is a list of courses, and the one the
+    /// reader is looking at is the one they want to record — going back to the
+    /// menu bar to pick the same course again in a second picker is a step that
+    /// only exists because the two surfaces did not talk.
+    ///
+    /// The picker is moved onto that course as well, so the popover and the
+    /// recording window agree with the library about what is being recorded.
+    func record(_ course: Course, during term: Term) {
+        // Nothing is started on top of a lecture that is still running or
+        // still being transcribed. `start` would refuse it anyway; refusing it
+        // here is what lets the button be drawn unavailable instead.
+        guard canRecord else { return }
+        courses.select(course)
         Task { await session.start(in: course, during: term) }
+    }
+
+    /// Whether a new recording can begin at all.
+    ///
+    /// Read by the library's Record button as well as the popover's, so the two
+    /// cannot disagree about whether Retain is busy.
+    var canRecord: Bool {
+        switch session.phase {
+        case .idle, .done, .failed: true
+        case .preparingModels, .recording, .transcribing, .separatingSpeakers: false
+        }
     }
 
     func pause() {
