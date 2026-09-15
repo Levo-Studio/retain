@@ -146,9 +146,16 @@ nonisolated enum DetailCopy {
     /// It said only that the notes had not been written, which left a reader
     /// with a full transcript and no idea that anything could be done about
     /// it. It now says what the button under it is for.
+    /// What a lecture looks like when the model was not reachable when it
+    /// ended.
+    ///
+    /// It says the transcript is safe first, because that is the question. A
+    /// lecture whose notes could not be written has lost nothing — the whole
+    /// recording is transcribed and stored before the model is asked anything —
+    /// and the reader is one button away from the notes, once LM Studio is up.
     static var emptyNotes: String {
-        String(localized: "No notes yet. The transcript is here — the model has not read it.",
-               comment: "Notes tab of a recording the model has not summarised")
+        String(localized: "No notes yet. The transcript is saved. Check that LM Studio is running, then analyse it.",
+               comment: "Notes tab of a recording the model has not summarised, and how to get the notes")
     }
 
     // MARK: - The transcript
