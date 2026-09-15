@@ -211,6 +211,37 @@ struct RecordingDetailModelTests {
         #expect(stored?.topic == before)
     }
 
+    /// The reduce returns a topic and nothing stored it, so a lecture named by
+    /// the model still showed the day it happened in the library, in the search
+    /// and at the top of its own window.
+    @Test("The model's topic is stored when the recording has no name")
+    func theModelNamesAnUnnamedRecording() async throws {
+        let (model, database) = try await loadedWithStore()
+        let id = try #require(model.recording.id)
+
+        await model.rename(to: "")
+        #expect(model.recording.topic == nil)
+
+        await model.store(topic: "Symbiose am Beispiel von Korallenriffen")
+
+        #expect(model.recording.topic == "Symbiose am Beispiel von Korallenriffen")
+        let stored = try await LibraryRepository(database).recording(id)
+        #expect(stored?.topic == "Symbiose am Beispiel von Korallenriffen")
+    }
+
+    /// A button that says it rewrites the notes does not get to throw away a
+    /// name somebody typed. Retain cannot tell a typed name from a written one,
+    /// so it never replaces one that is already there.
+    @Test("A name that is already there is not replaced")
+    func anExistingNameSurvives() async throws {
+        let (model, _) = try await loadedWithStore()
+        let before = try #require(model.recording.topic)
+
+        await model.store(topic: "Etwas ganz anderes")
+
+        #expect(model.recording.topic == before)
+    }
+
     @Test("The recording moves to another course in the same term")
     func moving() async throws {
         let (model, database) = try await loadedWithStore()

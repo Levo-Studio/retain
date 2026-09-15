@@ -275,7 +275,35 @@ final class RecordingDetailModel {
         }
 
         blocks = written.blocks
+        await store(topic: written.topic)
         noteWriting = .idle
+    }
+
+    /// Writes the topic the model read out of the transcript.
+    ///
+    /// **It was never stored at all.** The reduce returns a topic, the notes
+    /// carried it as far as this method, and this method dropped it — so a
+    /// lecture whose notes were written here kept showing the day it happened
+    /// as its name, in the library, in the search and at the top of its own
+    /// window.
+    ///
+    /// **Only when the recording has no name.** A merge clears the topic, so
+    /// what comes out of one is named by the model, which is the point. A name
+    /// somebody typed themselves is not something a button labelled "write the
+    /// notes again" gets to overwrite — and Retain cannot tell a typed name
+    /// from a written one, so the rule is "never replace a name that is
+    /// already there" rather than a guess about where it came from.
+    ///
+    /// Not private only so the rule above can be tested without a language
+    /// model on the other end of it.
+    func store(topic: String?) async {
+        guard let topic, !topic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard recording.topic?.isEmpty ?? true else { return }
+
+        var named = recording
+        named.topic = topic
+        guard let saved = try? await LibraryRepository(database).save(named) else { return }
+        recording = saved
     }
 
     // MARK: - Loading

@@ -59,6 +59,9 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
         model.onOpenRecording = { [weak self] recording, time in
             self?.openDetail(for: recording, at: time)
         }
+        model.onOpenMerged = { [weak self] recording in
+            self?.openDetail(for: recording, analysing: true)
+        }
         model.onRecord = { [weak self] course, term in
             self?.startRecording?(course, term)
         }
@@ -92,7 +95,16 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
         openDetail(for: recording)
     }
 
-    func openDetail(for recording: Recording, at time: TimeInterval? = nil) {
+    /// - Parameter analysing: start writing the notes as soon as the window has
+    ///   read the recording. Used after a merge, where the lecture that comes
+    ///   out has a whole transcript and no notes at all — leaving the reader to
+    ///   find the button would be leaving them in front of an empty page whose
+    ///   one available action they have to guess at.
+    func openDetail(
+        for recording: Recording,
+        at time: TimeInterval? = nil,
+        analysing: Bool = false
+    ) {
         guard let id = recording.id else { return }
 
         if let existing = detailWindows[id] {
@@ -113,6 +125,10 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
         Task {
             await model.load()
             if let time { model.seek(to: time) }
+            // After the load, so the model is running over the transcript the
+            // window has actually read. The notes column shows the steps for
+            // it, the same way it does for Re-analyse.
+            if analysing { await model.writeNotes() }
         }
     }
 

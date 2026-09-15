@@ -162,6 +162,13 @@ final class LibraryModel {
     /// is: a recording and a place in it.
     var onOpenRecording: ((Recording, TimeInterval?) -> Void)?
 
+    /// Opens what came out of a merge, with the model already working on it.
+    ///
+    /// A separate seam from `onOpenRecording` rather than a flag on it: every
+    /// other way into a recording opens something finished, and this one opens
+    /// a lecture that exists but has not been read yet.
+    var onOpenMerged: ((Recording) -> Void)?
+
     // MARK: -
 
     private let database: RetainDatabase
@@ -423,6 +430,12 @@ final class LibraryModel {
 
         stopSelecting()
         await refresh()
+
+        // Straight into the window, with the model already reading it. What
+        // comes out of a merge is a whole lecture with no notes and no topic,
+        // and the one thing to do with it is the thing that was just made
+        // possible — so it is done rather than offered.
+        onOpenMerged?(merged.recording)
     }
 
     func edit(_ course: Course) async {
