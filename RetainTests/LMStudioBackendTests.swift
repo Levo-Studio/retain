@@ -696,4 +696,58 @@ struct LMStudioAuthenticationTests {
             try await backend.availableModels()
         }
     }
+    // MARK: - Descending past an answer that is not one
+
+    /// The fix end to end: a first rung that answers with an empty shape, a
+    /// second the server refuses, and a third that answers properly — with a
+    /// backend that now gets as far as the third.
+    @Test("An empty shape sends the ladder down to the rung that works")
+    func theLadderDescendsPastAnEmptyShape() async throws {
+        let transport = RecordedTransport([
+            .init(200, try Self.noteCompletion(markdown: "## ...")),
+            .init(400, #"{"error": "json_object unsupported"}"#),
+            .init(200, try Self.noteCompletion(
+                markdown: "## Korallen\n\nAlgen leben in **Korallen** und liefern Zucker."
+            )),
+        ])
+
+        let backend = LMStudioBackend(
+            endpoint: try LMStudioEndpoint(address: "http://localhost:1234/v1"),
+            transport: transport,
+            apiKey: { nil }
+        )
+
+        let reply = try await backend.structuredReply(
+            to: ChatConversation([.user("Transkript")]),
+            model: "small",
+            schema: NoteReduction.blockSchema,
+            as: NoteReduction.BlockAnswer.self
+        )
+
+        // All three rungs were walked, and the answer is the real one. Before
+        // this the first rung counted as a success and the card read `## ...`.
+        #expect(transport.requests.count == 3)
+        #expect(reply.answer.markdown.contains("Korallen"))
+        #expect(reply.answer.isUsable)
+        #expect(reply.mode == .freeText)
+    }
+
+    /// An LM Studio completion envelope around one note.
+    ///
+    /// Built with `JSONSerialization` rather than written out, because the
+    /// content is itself JSON inside a JSON string and hand-escaping two levels
+    /// is how a test ends up asserting against its own typo.
+    private static func noteCompletion(markdown: String) throws -> String {
+        let content = try String(
+            decoding: JSONSerialization.data(withJSONObject: ["markdown": markdown]),
+            as: UTF8.self
+        )
+        let envelope: [String: Any] = [
+            "choices": [["message": ["role": "assistant", "content": content], "finish_reason": "stop"]]
+        ]
+        return try String(
+            decoding: JSONSerialization.data(withJSONObject: envelope),
+            as: UTF8.self
+        )
+    }
 }

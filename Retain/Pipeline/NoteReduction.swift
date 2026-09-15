@@ -428,3 +428,43 @@ nonisolated enum NoteReduction {
         """
     }
 }
+
+// MARK: - When a note is a note
+
+nonisolated extension NoteReduction.BlockAnswer: UsableAnswer {
+
+    /// A heading with nothing under it is not a note.
+    ///
+    /// This is what `gpt-oss-20b` returns when it is asked for one under a
+    /// strict `json_schema`: `## Lern…`, valid JSON, right field, stop reason
+    /// saying it finished. The card was stored and drawn as three dots, and the
+    /// ladder never descended to the rung where the same model on the same
+    /// transcript writes a full note.
+    ///
+    /// The bar is deliberately low. A three-minute block honestly summarised in
+    /// one short sentence is a real note and must pass; what must not pass is a
+    /// heading alone, or a body of a handful of characters.
+    var isUsable: Bool { NoteReduction.isUsableNote(markdown) }
+}
+
+nonisolated extension NoteReduction {
+
+    /// The shortest body that can still be a note, in characters.
+    ///
+    /// Twenty is about four German words. Anything under it is the model
+    /// clearing its throat.
+    static let shortestUsableNote = 20
+
+    static func isUsableNote(_ markdown: String) -> Bool {
+        let trimmed = markdown.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+
+        let body = trimmed
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("#") }
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return body.count >= shortestUsableNote
+    }
+}

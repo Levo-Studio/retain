@@ -177,6 +177,15 @@ nonisolated final class LMStudioBackend: SummarizationBackend {
             throw SummarizationError.unreadableAnswer
         }
 
+        // A shape filled in without an answer in it is a rung failure, and the
+        // ladder has to be told so — `Codable` cannot see the difference
+        // between a note and a heading with nothing under it. See
+        // `UsableAnswer`; the cast is dynamic so that an answer type which has
+        // nothing to say about itself needs no conformance and no change.
+        if let checkable = decoded as? any UsableAnswer, !checkable.isUsable {
+            throw SummarizationError.unreadableAnswer
+        }
+
         return StructuredReply(
             answer: decoded,
             mode: mode,

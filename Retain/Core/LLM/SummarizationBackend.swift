@@ -184,6 +184,29 @@ nonisolated struct ConnectionReport: Hashable, Sendable {
     let latency: TimeInterval
 }
 
+// MARK: - An answer that is an answer
+
+/// An answer type that can tell whether what came back is worth anything.
+///
+/// **The ladder in `LMStudioBackend` descends when a rung fails, and a rung
+/// that returns rubbish does not fail.** Asked for a note under a strict
+/// `json_schema`, `gpt-oss-20b` answers `{"markdown": "## Lern…"}` — valid
+/// JSON, the right field, a heading with no note under it, and a stop reason
+/// saying it finished. The ladder therefore never reached the rung that works:
+/// asked as free text, the same model on the same transcript writes a complete
+/// German note.
+///
+/// Hard rule 12 exists because "a 3–8B model does not hold a schema contract
+/// reliably". This is what holding it syntactically and breaking it
+/// semantically looks like, and `Codable` cannot see the difference.
+///
+/// Conformance is optional: a type that says nothing is taken at its word.
+nonisolated protocol UsableAnswer {
+
+    /// `false` when the model filled the shape in without answering.
+    var isUsable: Bool { get }
+}
+
 // MARK: - Errors
 
 nonisolated enum SummarizationError: Error, Equatable, LocalizedError {
