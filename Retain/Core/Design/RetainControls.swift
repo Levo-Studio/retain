@@ -182,6 +182,14 @@ struct RetainPickerField<Value: Hashable, Label: View>: View {
     var cornerRadius: CGFloat = RetainMetrics.radiusTextField
     var padding: EdgeInsets = RetainMetrics.fieldPadding
 
+    /// Whether the value is drawn in a box.
+    ///
+    /// The meta strip's course is the exception: it is a fact about the
+    /// recording, drawn as plain text beside two other facts, and boxing it
+    /// made the row read as a form. It keeps the chevron — which is the part
+    /// that says there is a list behind it — and loses the fill and the border.
+    var showsChrome = true
+
     @ViewBuilder let label: () -> Label
 
     /// Whether the list is down. The dropdown shuts itself on Escape, on a
@@ -193,9 +201,13 @@ struct RetainPickerField<Value: Hashable, Label: View>: View {
         Button {
             isOpen.toggle()
         } label: {
-            HStack(spacing: 0) {
+            // A boxed field fills its column and puts the chevron at the far
+            // edge, because that is where the box ends. Without the box there
+            // is no edge for it to sit at — it hugs the value instead, one gap
+            // away, the way the export draws the `▾` beside a meta value.
+            HStack(spacing: showsChrome ? 0 : RetainMetrics.metaChevronGap) {
                 label()
-                Spacer(minLength: 0)
+                if showsChrome { Spacer(minLength: 0) }
                 if showsDisclosure {
                     Text(verbatim: RetainGlyph.disclosure)
                         .retainStyle(RetainTypography.chevron)
@@ -203,10 +215,17 @@ struct RetainPickerField<Value: Hashable, Label: View>: View {
                         .accessibilityHidden(true)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: showsChrome ? .infinity : nil, alignment: .leading)
             // A field with its list open is the field being worked in, which is
             // the state the emphasised border already means.
-            .retainFieldChrome(isFocused: isOpen, cornerRadius: cornerRadius, padding: padding)
+            .modifier(
+                RetainOptionalFieldChrome(
+                    isDrawn: showsChrome,
+                    isFocused: isOpen,
+                    cornerRadius: cornerRadius,
+                    padding: padding
+                )
+            )
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -226,6 +245,33 @@ struct RetainPickerField<Value: Hashable, Label: View>: View {
                 close: { isOpen = false }
             )
         )
+    }
+}
+
+/// The field box, where the field has one.
+///
+/// A modifier rather than an `if` around the whole field: the two branches
+/// would be two view identities, and swapping between them throws away the open
+/// dropdown's anchor mid-click. It delegates to `RetainFieldChrome` rather than
+/// drawing a second box of its own, so a boxed picker and a boxed text field
+/// cannot drift apart.
+private struct RetainOptionalFieldChrome: ViewModifier {
+
+    let isDrawn: Bool
+    let isFocused: Bool
+    let cornerRadius: CGFloat
+    let padding: EdgeInsets
+
+    func body(content: Content) -> some View {
+        if isDrawn {
+            content.retainFieldChrome(
+                isFocused: isFocused,
+                cornerRadius: cornerRadius,
+                padding: padding
+            )
+        } else {
+            content.padding(padding)
+        }
     }
 }
 

@@ -123,6 +123,7 @@ struct RecordingDetailView: View {
             tab(.notes, title: DetailCopy.notesTab)
             tab(.transcript, title: DetailCopy.transcriptTab)
             Spacer(minLength: 0)
+
             // Out past the tab bar's own inset, so it lines up with the Export
             // button in the bar above rather than sitting short of it. The
             // tabs keep the 34 the export draws them at; the padding is put on
@@ -226,12 +227,22 @@ struct DetailMetaStrip: View {
     /// recording on purpose: a keystroke is not a save, and abandoning an edit
     /// has to leave the stored name alone.
     @State private var draftTopic = ""
-    @FocusState private var isEditingTopic: Bool
+
+    /// Whether the field exists at all.
+    ///
+    /// Not the same as whether it has focus, and that is the point. A text
+    /// field that is always there is the window's first responder the moment
+    /// the window opens, so the recording's name sat behind a blinking caret
+    /// nobody had clicked in. Until it is clicked there is no field — there is
+    /// the name, as text.
+    @State private var isEditingTopic = false
+
+    @FocusState private var isTopicFocused: Bool
 
     var body: some View {
         RetainWeightedColumns(weights: RetainMetrics.metaStripColumnWeights) {
             cell(DetailCopy.topicLabel, padding: RetainMetrics.metaStripCellFirst, rule: true) {
-                topicField
+                topic
             }
             cell(DetailCopy.courseLabel, padding: RetainMetrics.metaStripCellOther, rule: true) {
                 coursePicker
@@ -261,52 +272,57 @@ struct DetailMetaStrip: View {
 
     // MARK: - The topic
 
-    /// Click it and type. There is no edit button and no pencil: the value is
-    /// the field, drawn as the plain text it already was until the keyboard is
-    /// in it.
+    /// The recording's name until it is clicked, and the field afterwards.
     ///
     /// It saves on Return and on losing focus, because both are somebody
     /// finishing. Escape puts the stored name back — the draft is thrown away
     /// and never written, which is what makes clicking into it by accident
     /// harmless.
-    private var topicField: some View {
-        TextField(
-            "",
-            text: $draftTopic,
-            prompt: Text(verbatim: RecordingPresentation.title(of: model.recording))
-        )
-        .textFieldStyle(.plain)
-        .retainStyle(RetainTypography.metaValue)
-        .foregroundStyle(RetainPalette.inkPrimary)
-        .lineLimit(1)
-        .focused($isEditingTopic)
-        .accessibilityLabel(DetailCopy.renameRecording)
-        .onSubmit { commitTopic() }
-        .onExitCommand { cancelTopicEdit() }
-        .onChange(of: isEditingTopic) { wasEditing, isEditing in
-            if isEditing {
-                draftTopic = model.recording.topic ?? ""
-            } else if wasEditing {
-                commitTopic()
-            }
+    @ViewBuilder
+    private var topic: some View {
+        if isEditingTopic {
+            TextField("", text: $draftTopic)
+                .textFieldStyle(.plain)
+                .retainStyle(RetainTypography.metaValue)
+                .foregroundStyle(RetainPalette.inkPrimary)
+                .lineLimit(1)
+                .focused($isTopicFocused)
+                .accessibilityLabel(DetailCopy.renameRecording)
+                .onSubmit { commitTopic() }
+                .onExitCommand { cancelTopicEdit() }
+                .onChange(of: isTopicFocused) { wasFocused, isFocused in
+                    if wasFocused && !isFocused { commitTopic() }
+                }
+                // After the field exists, not while it is being made: setting
+                // focus in the same pass that creates it is a focus on a view
+                // AppKit has not been told about yet, and it does not take.
+                .task { isTopicFocused = true }
+        } else {
+            Text(verbatim: RecordingPresentation.title(of: model.recording))
+                .retainStyle(RetainTypography.metaValue)
+                .foregroundStyle(RetainPalette.inkPrimary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(.rect)
+                .onTapGesture {
+                    draftTopic = model.recording.topic ?? ""
+                    isEditingTopic = true
+                }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(DetailCopy.renameRecording)
         }
-        // The stored name wins whenever it changes underneath — a re-analysis
-        // writes a new topic, and so does another window.
-        .onChange(of: model.recording.topic) { _, stored in
-            if !isEditingTopic { draftTopic = stored ?? "" }
-        }
-        .task { draftTopic = model.recording.topic ?? "" }
     }
 
     private func commitTopic() {
         let typed = draftTopic
         isEditingTopic = false
+        isTopicFocused = false
         Task { await model.rename(to: typed) }
     }
 
     private func cancelTopicEdit() {
-        draftTopic = model.recording.topic ?? ""
         isEditingTopic = false
+        isTopicFocused = false
     }
 
     // MARK: - The course
@@ -327,7 +343,8 @@ struct DetailMetaStrip: View {
             options: model.coursesInTerm.map(Optional.some),
             title: { $0?.name ?? "" },
             cornerRadius: RetainMetrics.radiusButton,
-            padding: RetainMetrics.metaPickerPadding
+            padding: RetainMetrics.metaPickerPadding,
+            showsChrome: false
         ) {
             Text(verbatim: course)
                 .retainStyle(RetainTypography.metaValue)
