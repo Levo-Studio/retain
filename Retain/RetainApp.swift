@@ -43,7 +43,7 @@ enum RetainMain {
 /// What Retain does when it starts, and the policy it runs under.
 final class RetainApp: NSObject, NSApplicationDelegate {
 
-    private var statusItem: StatusItemController?
+    private var shell: RetainShell?
 
     /// Whether this process is a test host rather than Retain.
     ///
@@ -95,7 +95,13 @@ final class RetainApp: NSObject, NSApplicationDelegate {
         // one, and what is lost is that the lecture is written down. The shell
         // carries `nil` in that case rather than refusing to launch.
         let database = try? RetainDatabase.openOnDisk()
-        statusItem = StatusItemController(store: database.map(LectureStore.init))
+        let shell = RetainShell(store: database.map(LectureStore.init))
+        self.shell = shell
+
+        // The library opens at launch. With the menu bar item gone there is
+        // nothing else to look at: an app that starts with a Dock tile and no
+        // window is an app that has not started as far as anybody can tell.
+        shell.showLibraryWindow()
 
         // A quit or a crash between writing a transcript and deleting the audio
         // it was made from leaves a file that nothing will ever read again.
@@ -137,7 +143,7 @@ final class RetainApp: NSObject, NSApplicationDelegate {
     /// the status item is for.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         guard !hasVisibleWindows else { return true }
-        statusItem?.showLibraryWindow()
+        shell?.showLibraryWindow()
         return true
     }
 
@@ -147,11 +153,11 @@ final class RetainApp: NSObject, NSApplicationDelegate {
     // menu does not have to know where the status item lives.
 
     @objc func openSettings(_ sender: Any?) {
-        statusItem?.showSettingsWindow()
+        shell?.showSettingsWindow()
     }
 
     @objc func openLibrary(_ sender: Any?) {
-        statusItem?.showLibraryWindow()
+        shell?.showLibraryWindow()
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {

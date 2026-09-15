@@ -278,3 +278,20 @@ nonisolated enum RecordingNotesCopy {
                comment: "Shown beside a note block whose summary could not be fetched and is queued")
     }
 }
+
+// MARK: -
+
+/// The annotation composer's placeholder.
+///
+/// It lived with the popover's cards, which is where the composer first
+/// appeared. The popover is gone with the menu bar item; the recording window's
+/// own composer is the only one left, so the wording moved to where it is used.
+nonisolated enum RetainAnnotationCopy {
+
+    static var placeholder: String {
+        String(
+            localized: "Note — goes to the model",
+            comment: "Placeholder of the annotation composer, which sends what is typed to the language model"
+        )
+    }
+}
