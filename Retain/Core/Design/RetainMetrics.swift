@@ -269,6 +269,14 @@ nonisolated enum RetainMetrics {
     static let tabGap: CGFloat = 22
     static let tabPadding = edges(11, 0)
 
+    /// The button at the trailing end of the tab bar that folds the rail away.
+    ///
+    /// **Not drawn in the export.** Sized to sit on the tabs' own baseline
+    /// without making the bar taller: the tab padding's height, and enough
+    /// width either side of a single glyph to be a target rather than a
+    /// character somebody has to aim at.
+    static let railTogglePadding = edges(11, 9)
+
     static let sidebarRowLibrary = edges(8, 9)
     static let sidebarRowSettings = edges(8, 10)
     static let sidebarRowGap: CGFloat = 3

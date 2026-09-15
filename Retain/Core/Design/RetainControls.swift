@@ -28,6 +28,14 @@ nonisolated enum RetainGlyph {
     /// button's text, one space in front of the label.
     static let add = "+"
 
+    /// The button that folds the rail away, and the one that brings it back.
+    ///
+    /// **Not in the export**, which has no state without the rail. Characters
+    /// rather than a symbol for the same reason as the chevron above: they sit
+    /// on the text baseline of the bar they are in, at the optical weight of
+    /// everything beside them, which `sidebar.right` does not.
+    static let foldRail = "⇥"
+    static let unfoldRail = "⇤"
 }
 
 // MARK: - Field chrome

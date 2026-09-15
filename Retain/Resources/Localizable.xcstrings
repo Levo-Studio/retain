@@ -514,6 +514,10 @@
       "comment": "Application menu item hiding the app",
       "extractionState": "manual"
     },
+    "Hide the sidebar": {
+      "comment": "Button in the tab bar that folds the chapters and chat rail away",
+      "extractionState": "manual"
+    },
     "Input": {
       "comment": "Settings field label for the microphone picker",
       "extractionState": "manual"
@@ -968,6 +972,10 @@
     },
     "Shortcuts": {
       "comment": "Settings section heading\nSettings sidebar row",
+      "extractionState": "manual"
+    },
+    "Show the sidebar": {
+      "comment": "Button in the tab bar that brings the chapters and chat rail back",
       "extractionState": "manual"
     },
     "Silence": {

@@ -67,6 +67,17 @@ nonisolated enum DetailCopy {
         String(localized: "Chat", comment: "Rail segment showing the conversation about this recording")
     }
 
+    /// The accessibility label of the button that folds the rail away. The
+    /// button itself is a glyph — see `RetainGlyph.foldRail` — so this is the
+    /// only place it says what it does.
+    static func railToggle(isHidden: Bool) -> String {
+        isHidden
+            ? String(localized: "Show the sidebar",
+                     comment: "Button in the tab bar that brings the chapters and chat rail back")
+            : String(localized: "Hide the sidebar",
+                     comment: "Button in the tab bar that folds the chapters and chat rail away")
+    }
+
     static var noChapters: String {
         String(localized: "No chapters yet.",
                comment: "Chapters rail with nothing in it, because no note block has been written")

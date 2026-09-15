@@ -56,6 +56,17 @@ final class RecordingDetailModel {
 
     private var hasChosenRail = false
 
+    /// Whether the rail is folded away.
+    ///
+    /// One flag for both tabs on purpose. The rail is the same column on the
+    /// notes and on the transcript, and somebody who folded it away to read
+    /// wants it folded away on the other tab too — a fold that undid itself on
+    /// every tab click would be a control the reader has to keep pressing.
+    ///
+    /// It belongs to the window and not to the recording: it is how this window
+    /// is being looked at, not a fact about the lecture, so it is not stored.
+    var isRailHidden = false
+
     /// Board 03's field above the segment: "Search notes and transcript …".
     var railQuery = ""
 

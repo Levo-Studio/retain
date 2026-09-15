@@ -14,6 +14,8 @@ struct RecordingDetailView: View {
     /// about this window being open, not about the recording.
     @State private var isConfirmingReanalysis = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,10 +36,20 @@ struct RecordingDetailView: View {
                 pane
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
-                RetainDivider(axis: .vertical)
+                // Folded by width rather than by removal. Taking the rail out
+                // of the hierarchy would throw away its scroll position, its
+                // search field and any answer in the chat, and bring them back
+                // reset — and it would jump rather than move, because there is
+                // nothing left to animate.
+                if !model.isRailHidden {
+                    RetainDivider(axis: .vertical)
+                }
 
                 RecordingRail(model: model)
-                    .frame(width: RetainMetrics.chaptersRailWidth)
+                    .frame(width: model.isRailHidden ? 0 : RetainMetrics.chaptersRailWidth)
+                    .opacity(model.isRailHidden ? 0 : 1)
+                    .clipped()
+                    .allowsHitTesting(!model.isRailHidden)
             }
             .frame(maxHeight: .infinity)
         }
@@ -107,10 +119,33 @@ struct RecordingDetailView: View {
             tab(.notes, title: DetailCopy.notesTab)
             tab(.transcript, title: DetailCopy.transcriptTab)
             Spacer(minLength: 0)
+            railToggle
         }
         .padding(RetainMetrics.tabBarPadding)
         .background(RetainPalette.surfaceWindow)
         .overlay(alignment: .bottom) { RetainDivider() }
+    }
+
+    /// Folds the rail away, and brings it back.
+    ///
+    /// In the tab bar and not in the title bar because it belongs to the two
+    /// tabs under it: the rail is beside both of them, and this is the one
+    /// control that is about how they are laid out rather than about the
+    /// recording.
+    private var railToggle: some View {
+        Button {
+            withAnimation(RetainMotion.rail(reduceMotion: reduceMotion)) {
+                model.isRailHidden.toggle()
+            }
+        } label: {
+            Text(verbatim: model.isRailHidden ? RetainGlyph.unfoldRail : RetainGlyph.foldRail)
+                .retainStyle(RetainTypography.tab)
+                .foregroundStyle(RetainPalette.inkLabel)
+                .padding(RetainMetrics.railTogglePadding)
+                .accessibilityHidden(true)
+        }
+        .buttonStyle(RetainSurfaceButtonStyle(cornerRadius: RetainMetrics.radiusButton))
+        .accessibilityLabel(DetailCopy.railToggle(isHidden: model.isRailHidden))
     }
 
     private func tab(_ which: RecordingDetailModel.Tab, title: String) -> some View {

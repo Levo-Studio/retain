@@ -120,6 +120,23 @@ nonisolated enum RetainMotion {
         resolve(.easeInOut(duration: revealDuration), reduceMotion: reduceMotion)
     }
 
+    // MARK: - The rail sliding out of the way
+
+    /// How long the rail takes to fold away and come back.
+    ///
+    /// **Not a drawn value.** The export draws the rail and has no state
+    /// without it. This is real work being shown — a column the width of the
+    /// window is changing — so unlike a content swap it earns motion: fast
+    /// enough not to be waited for, slow enough that the text reflowing reads
+    /// as the rail moving rather than as the page being rebuilt.
+    static let railDuration: Double = 0.24
+
+    /// The animation the rail folds with, or `nil` under Reduce Motion, where
+    /// it is simply gone.
+    static func rail(reduceMotion: Bool) -> Animation? {
+        resolve(.easeInOut(duration: railDuration), reduceMotion: reduceMotion)
+    }
+
     // MARK: - The gate
 
     /// The one place an animation is allowed to become no animation.
