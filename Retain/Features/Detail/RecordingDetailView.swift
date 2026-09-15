@@ -13,6 +13,15 @@ struct RecordingDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             titleBar
+
+            // Under the bar rather than in it, so the name lines up with the
+            // meta strip and the tabs below it. See `RetainWindowTitle`.
+            RetainWindowTitle(
+                title: DetailCopy.joined(courseName, started),
+                inset: RetainMetrics.detailWindowTitle,
+                bottomGap: 0
+            )
+
             DetailMetaStrip(model: model)
             tabBar
 
@@ -34,7 +43,7 @@ struct RecordingDetailView: View {
     // MARK: - Chrome
 
     private var titleBar: some View {
-        RetainTitleBar(title: DetailCopy.joined(courseName, started)) {
+        RetainTitleBar {
             Button {
                 NotesExport.run(markdown: model.notes.markdown, recording: model.recording, course: courseName)
             } label: {

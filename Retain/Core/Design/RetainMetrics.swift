@@ -202,6 +202,11 @@ nonisolated enum RetainMetrics {
     static let dialogFooterGap: CGFloat = 10
 
     static let tabBarPadding = horizontal(34)
+
+    /// The recording window's name, on the same left edge as its tabs and its
+    /// meta strip. It has no sidebar to sit at the top of, so it is its own row
+    /// under the title bar instead.
+    static let detailWindowTitle = edges(6, 34, 10)
     static let tabGap: CGFloat = 22
     static let tabPadding = edges(11, 0)
 

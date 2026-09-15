@@ -391,9 +391,11 @@ struct RetainWindowMark: View {
 /// reads as adrift, and no amount of shaving the gap fixes it: the buttons are
 /// still there.
 ///
-/// So in a window with a sidebar it goes at the top of the sidebar, on the same
-/// left edge as the rows under it. The title bar above keeps the traffic lights
-/// and whatever the window puts on its right, and carries no text.
+/// So it goes on its own line under the bar, on the same left edge as whatever
+/// the window's first column starts with: the rows of a sidebar in Settings and
+/// the library, the meta strip and the tabs in a recording. The title bar above
+/// keeps the traffic lights and whatever the window puts on its right, and
+/// carries no text.
 struct RetainWindowTitle: View {
 
     let title: String
@@ -403,6 +405,11 @@ struct RetainWindowTitle: View {
     /// ones — and the whole point of this view is that the logo's left edge is
     /// the same edge as the rows beneath it.
     var inset: EdgeInsets = RetainMetrics.sidebarRowSettings
+
+    /// Between the name and whatever comes under it. A sidebar wants a gap
+    /// before its first row; the detail window's meta strip draws its own rule
+    /// and wants none.
+    var bottomGap: CGFloat = RetainMetrics.sidebarTitleGap
 
     var body: some View {
         HStack(spacing: RetainMetrics.titleBarMarkGap) {
@@ -415,6 +422,6 @@ struct RetainWindowTitle: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(inset)
-        .padding(.bottom, RetainMetrics.sidebarTitleGap)
+        .padding(.bottom, bottomGap)
     }
 }
