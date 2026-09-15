@@ -81,14 +81,34 @@ struct LaunchTests {
         #expect(quit.keyEquivalent == "q")
     }
 
+    /// It was `.accessory` until the owner pointed out that an app you cannot
+    /// ⌘-Tab to is an app you lose behind a browser.
+    ///
+    /// The assertion is on the decision rather than on `NSApp`, because this
+    /// process is a test host and a test host deliberately asks for something
+    /// else — see the next test.
     @Test("Retain is an ordinary app, with a Dock tile")
     func runsAsARegularApp() {
-        // Set in applicationDidFinishLaunching, so this is also a second
-        // witness that the delegate actually ran.
-        //
-        // It was `.accessory` until the owner pointed out that an app you
-        // cannot ⌘-Tab to is an app you lose behind a browser.
-        #expect(NSApp.activationPolicy() == .regular)
+        #expect(RetainApp.isTestHost, "this suite runs in the host application")
+        #expect(RetainApp.activationPolicy == .accessory)
+    }
+
+    /// Reported three times as "the app is there twice", and gone every time
+    /// before it could be looked at — because a test run lasts half a minute.
+    ///
+    /// The tests run inside the real application, which is what makes them
+    /// worth having. The cost was a second Retain in the Dock and a second
+    /// status item beside the user's, every run. Worse, the host opened the
+    /// user's own database and swept their audio, because that is what
+    /// launching does.
+    @Test("A test host stays out of the Dock and off the user's data")
+    func theTestHostIsInvisible() {
+        #expect(NSApp.activationPolicy() == .accessory, "the host claimed a Dock tile")
+
+        // Nothing in the user's Library was opened: the delegate stops before
+        // the database, the status item and the audio sweep.
+        #expect(NSStatusBar.system.statusItem(withLength: 0).button != nil,
+                "the status bar itself still works, which is what the app needs at a real launch")
     }
 }
 

@@ -45,6 +45,32 @@ final class RetainApp: NSObject, NSApplicationDelegate {
 
     private var statusItem: StatusItemController?
 
+    /// Whether this process is a test host rather than Retain.
+    ///
+    /// **The tests run inside the real application**, which is what makes them
+    /// worth having — they assert the actual launch rather than a
+    /// reconstruction of it. The cost is that every test run started a second
+    /// Retain: a Dock tile, a status item beside the real one, and an app the
+    /// user could not tell from theirs. It was reported three times as "the app
+    /// is there twice", and each time it was gone before I looked, because a
+    /// test run lasts half a minute.
+    ///
+    /// Worse than the icons: the host opened the **user's own database** and
+    /// swept their audio, because that is what launching does.
+    ///
+    /// XCTest sets this variable in the environment of the host it launches.
+    /// Swift Testing runs inside that host, so it is set for these tests too.
+    nonisolated static var isTestHost: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
+    /// What Retain asks to be. `.regular` for a real launch — an app you cannot
+    /// ⌘-Tab to is an app you lose behind a browser — and `.accessory` for a
+    /// test host, which has no business in anybody's Dock.
+    nonisolated static var activationPolicy: NSApplication.ActivationPolicy {
+        isTestHost ? .accessory : .regular
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // An ordinary app with a Dock tile, not an accessory.
         //
@@ -57,7 +83,12 @@ final class RetainApp: NSObject, NSApplicationDelegate {
         // way back except through the status item. Raising the policy only
         // while a window happened to be open made all of that conditional on
         // state the user cannot see, which is worse than either answer alone.
-        NSApp.setActivationPolicy(.regular)
+        NSApp.setActivationPolicy(Self.activationPolicy)
+
+        // A test host stops here. Everything below opens the user's real
+        // database, puts an item in their menu bar and deletes audio off their
+        // disk, none of which a test run has any business doing.
+        guard !Self.isTestHost else { return }
 
         // A database that will not open is not a reason to have no status item:
         // the microphone, the live transcript and the window all work without
