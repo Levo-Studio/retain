@@ -143,7 +143,7 @@ final class RecordingEngine {
         duration = 0
         overruns = 0
 
-        installTap(on: input, hardwareFormat: hardware, into: ring)
+        AudioTap.install(on: input, format: hardware, filling: ring)
 
         do {
             engine.prepare()
@@ -184,7 +184,7 @@ final class RecordingEngine {
     func finish() async {
         guard state == .recording || state == .paused else { return }
 
-        engine.inputNode.removeTap(onBus: 0)
+        AudioTap.remove(from: engine.inputNode)
         engine.stop()
         stopDraining()
         watcher?.follow(nil)
@@ -203,30 +203,6 @@ final class RecordingEngine {
 
     // MARK: - The tap
 
-    private func installTap(on input: AVAudioInputNode, hardwareFormat: AVAudioFormat, into ring: AudioRingBuffer) {
-        // Buffer size 0 lets the hardware decide, which is what makes the
-        // AudioHardwarePowerHint in Info.plist effective: Core Audio hands us
-        // 4096-frame buffers instead of 512, eight times fewer wakeups for the
-        // same audio. Asking for a size here would override that and undo the
-        // single largest power saving Retain has.
-        input.installTap(onBus: 0, bufferSize: 0, format: hardwareFormat) { buffer, _ in
-            // ---- audio thread. Hard rule 5 applies to every line below. ----
-            //
-            // One memcpy, through the ring buffer's C implementation. No
-            // allocation, no lock, no logging, no conversion, no Swift runtime
-            // call that could do any of those.
-            //
-            // Only channel 0 is taken. Downmixing several channels is
-            // arithmetic over every sample, which belongs on the writer queue
-            // and not here — and for speech from a microphone, one channel is
-            // what the models want anyway. A device whose useful signal is not
-            // on channel 0 would need the copy widened to all channels and the
-            // downmix done in RecordingWriter, never here.
-            guard let channel = buffer.floatChannelData?[0] else { return }
-            ring.write(channel, count: Int(buffer.frameLength))
-            // ---- end audio thread ----
-        }
-    }
 
     private func setInputDevice(_ id: AudioObjectID, on input: AVAudioInputNode) throws {
         // No force-unwrap: an input node without an audio unit is not a state
@@ -325,7 +301,7 @@ final class RecordingEngine {
 
         writer.restart(sourceFormat: tapped)
         tappedFormat = tapped
-        installTap(on: input, hardwareFormat: hardware, into: ring)
+        AudioTap.install(on: input, format: hardware, filling: ring)
 
         do {
             engine.prepare()
