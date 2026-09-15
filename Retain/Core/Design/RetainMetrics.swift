@@ -158,8 +158,17 @@ nonisolated enum RetainMetrics {
     static let metaStripCellFirst = edges(13, 34)
     static let metaStripCellOther = edges(13, 20)
 
-    static let notesPaneRecording = edges(22, 34, 0)
-    static let notesPaneDetail = edges(24, 34, 0)
+    // The bottom is **not** zero, whatever the board shows. The export draws a
+    // column that happens to end above the window's edge; a real recording
+    // scrolls, and with no bottom inset the last bullet of the last section sat
+    // flush against the frame with its descenders touching it.
+    static let notesPaneRecording = edges(22, 34, notesPaneBottom)
+    static let notesPaneDetail = edges(24, 34, notesPaneBottom)
+
+    /// Room under the last line of the notes. The section gap, so the end of
+    /// the column is spaced like the space between two sections rather than
+    /// looking cut off.
+    static let notesPaneBottom: CGFloat = 32
     static let transcriptPaneDetail = edges(18, 34, 0)
 
     static let libraryHeader = edges(18, 30, 14)
