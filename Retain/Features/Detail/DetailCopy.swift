@@ -84,6 +84,18 @@ nonisolated enum DetailCopy {
                comment: "Label above a note the user typed during the recording, with the second they typed it at")
     }
 
+    /// The button under that sentence. "Write" rather than "Retry": for most
+    /// readers the notes were never attempted, because the model was not
+    /// reachable when the lecture ran.
+    static var writeNotes: String {
+        String(localized: "Write notes", comment: "Button that runs the language model over a finished recording's transcript")
+    }
+
+    static func writingNotes(done: Int, total: Int) -> String {
+        String(localized: "Writing notes · \(done) of \(total)",
+               comment: "Progress while the language model works through a finished recording")
+    }
+
     static var emptyNotes: String {
         String(localized: "The notes for this recording have not been written yet.",
                comment: "Notes tab of a recording the model has not summarised")

@@ -10,14 +10,63 @@ struct DetailNotesPane: View {
 
     let model: RecordingDetailModel
 
+    /// What stands in for the notes when there are none.
+    ///
+    /// The sentence alone was the whole of it, and it left a reader with a full
+    /// transcript, no notes, and nothing to do about either. The notes are made
+    /// during the lecture, and a lecture recorded while LM Studio was
+    /// unreachable ended here for good — nothing ever went back for them,
+    /// whatever the comment beside the code said.
+    @ViewBuilder
+    private var empty: some View {
+        VStack(alignment: .leading, spacing: RetainMetrics.detailEmptyNotesGap) {
+            Text(verbatim: DetailCopy.emptyNotes)
+                .retainStyle(RetainTypography.noteParagraphDetail)
+                .foregroundStyle(RetainPalette.inkDim)
+
+            switch model.noteWriting {
+            case .running(let done, let total):
+                Text(verbatim: DetailCopy.writingNotes(done: done, total: total))
+                    .retainStyle(RetainTypography.captionSmall)
+                    .foregroundStyle(RetainPalette.inkLabel)
+
+            case .failed(let reason):
+                Text(verbatim: reason)
+                    .retainStyle(RetainTypography.captionSmall)
+                    .foregroundStyle(RetainPalette.redInk)
+                    .fixedSize(horizontal: false, vertical: true)
+                writeButton
+
+            case .idle:
+                writeButton
+            }
+        }
+    }
+
+    private var writeButton: some View {
+        Button {
+            Task { await model.writeNotes() }
+        } label: {
+            Text(verbatim: DetailCopy.writeNotes)
+        }
+        .buttonStyle(
+            RetainSecondaryButtonStyle(
+                textStyle: RetainTypography.titleBarButton,
+                padding: RetainMetrics.titleBarButtonPadding,
+                cornerRadius: RetainMetrics.radiusExportButton,
+                isFilled: true
+            )
+        )
+        .disabled(!model.canWriteNotes)
+        .fixedSize()
+    }
+
     var body: some View {
         ScrollViewReader { scroll in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     if model.blocks.isEmpty {
-                        Text(verbatim: DetailCopy.emptyNotes)
-                            .retainStyle(RetainTypography.noteParagraphDetail)
-                            .foregroundStyle(RetainPalette.inkDim)
+                        empty
                     } else {
                         ForEach(Array(model.noteItems.enumerated()), id: \.element.id) { index, item in
                             view(for: item)

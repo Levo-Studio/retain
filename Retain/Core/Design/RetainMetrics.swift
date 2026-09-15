@@ -203,6 +203,9 @@ nonisolated enum RetainMetrics {
 
     static let tabBarPadding = horizontal(34)
 
+    /// Between the "no notes yet" sentence and what can be done about it.
+    static let detailEmptyNotesGap: CGFloat = 14
+
     /// The recording window's name, on the same left edge as its tabs and its
     /// meta strip. It has no sidebar to sit at the top of, so it is its own row
     /// under the title bar instead.

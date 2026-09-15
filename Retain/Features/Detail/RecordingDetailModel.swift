@@ -107,6 +107,88 @@ final class RecordingDetailModel {
         self.chat = chat
     }
 
+
+    // MARK: - Writing the notes after the fact
+
+    /// Where a run of the summariser over a finished recording has got to.
+    nonisolated enum NoteWriting: Equatable, Sendable {
+        case idle
+        case running(done: Int, total: Int)
+        /// What went wrong, in the error's own words.
+        case failed(String)
+    }
+
+    private(set) var noteWriting: NoteWriting = .idle
+
+    /// Whether the button that writes them is offered at all.
+    ///
+    /// Only for a recording that has a transcript and **no notes**. Rewriting
+    /// notes that already exist is a different action with a different cost:
+    /// the highlights a reader marked hang off the blocks, and replacing the
+    /// blocks would take the highlights with them. That needs its own
+    /// confirmation, and it is not this.
+    var canWriteNotes: Bool {
+        guard blocks.isEmpty, !lines.isEmpty else { return false }
+        if case .running = noteWriting { return false }
+        return true
+    }
+
+    /// Runs the summariser over the stored transcript and writes the notes.
+    ///
+    /// **This exists because the notes could silently never arrive.** The
+    /// summaries are made during the lecture, one block at a time; a block the
+    /// model could not answer was marked as waiting, and the comment beside it
+    /// said summaries are caught up when the connection is back. Nothing caught
+    /// them up. A lecture recorded while LM Studio was unreachable — or, as it
+    /// happened, while its API key had been deleted — ended with a full
+    /// transcript, no notes, and a window that said only that the notes had not
+    /// been written yet.
+    ///
+    /// It stops at the first failure rather than working through the rest. A
+    /// server that refused one block refuses the next, and a queue of identical
+    /// errors is not more informative than one.
+    func writeNotes() async {
+        guard canWriteNotes, let recordingID = recording.id else { return }
+
+        guard let summarizer = SummarizerFactory.make() else {
+            noteWriting = .failed(
+                String(localized: "No model is chosen. Pick one in Settings under Local language model.",
+                       comment: "Why the notes cannot be written: no model has been chosen in settings")
+            )
+            return
+        }
+
+        // The same boundaries the lecture would have used, with `finished` —
+        // the recording is over, so the trailing block is whole rather than
+        // still filling.
+        let blocksToWrite = BlockBoundaries.blocks(from: lines, markers: markers, finished: true)
+        guard !blocksToWrite.isEmpty else { return }
+
+        noteWriting = .running(done: 0, total: blocksToWrite.count)
+        let repository = NoteRepository(database)
+
+        for (index, block) in blocksToWrite.enumerated() {
+            do {
+                let written = try await summarizer.summarise(block)
+                let stored = StoredNoteBlock(
+                    recordingID: recordingID,
+                    position: written.number,
+                    startTime: written.start,
+                    endTime: written.end,
+                    markdown: written.markdown
+                )
+                _ = try await repository.append(stored, to: recordingID)
+                blocks.append(written)
+                noteWriting = .running(done: index + 1, total: blocksToWrite.count)
+            } catch {
+                noteWriting = .failed(SettingsModel.message(for: error))
+                return
+            }
+        }
+
+        noteWriting = .idle
+    }
+
     // MARK: - Loading
 
     func load() async {

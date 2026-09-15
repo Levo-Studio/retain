@@ -626,6 +626,10 @@
       "comment": "Input picker label when the Mac has no audio input at all",
       "extractionState": "manual"
     },
+    "No model is chosen. Pick one in Settings under Local language model.": {
+      "comment": "Why the notes cannot be written: no model has been chosen in settings",
+      "extractionState": "manual"
+    },
     "No models on the server": {
       "comment": "Model picker label when the server listed nothing",
       "extractionState": "manual"
@@ -1070,8 +1074,16 @@
       "comment": "Window menu title",
       "extractionState": "manual"
     },
+    "Write notes": {
+      "comment": "Button that runs the language model over a finished recording's transcript",
+      "extractionState": "manual"
+    },
     "Writing an answer": {
       "comment": "Accessibility label of the three-dot typing indicator",
+      "extractionState": "manual"
+    },
+    "Writing notes · %1$lld of %2$lld": {
+      "comment": "Progress while the language model works through a finished recording",
       "extractionState": "manual"
     },
     "You · %@": {
