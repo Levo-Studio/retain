@@ -35,7 +35,59 @@ struct TranscriptRail: View {
         .padding(RetainMetrics.railHeaderRecording)
     }
 
+    /// The rail's footer, which is **not** two buttons once the lecture has
+    /// stopped.
+    ///
+    /// It was two buttons regardless of what the session was doing, so pressing
+    /// Finish changed nothing on screen: the same Pause and Finish, the same
+    /// running clock above them, while the writer closed and the batch pass ran
+    /// for minutes. Reported, correctly, as the Finish button not working.
+    @ViewBuilder
     private var footer: some View {
+        switch shell.session.phase {
+        case .transcribing, .separatingSpeakers, .preparingModels:
+            working
+        case .done, .failed:
+            finished
+        case .idle, .recording:
+            running
+        }
+    }
+
+    /// What the footer says while the passes over the finished recording run.
+    private var working: some View {
+        HStack(spacing: RetainMetrics.panelFooterButtonGap) {
+            TypingIndicator()
+
+            Text(verbatim: RecordingRailCopy.line(for: shell.session.phase))
+                .retainStyle(RetainTypography.buttonPanelFooter)
+                .foregroundStyle(RetainPalette.inkLabel)
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+        }
+        .padding(RetainMetrics.railFooterPadding)
+        .overlay(alignment: .top) { RetainDivider(colour: RetainPalette.lineControlBorder) }
+    }
+
+    /// And afterwards. The window stays open — the transcript is worth reading
+    /// — but there is nothing left to stop.
+    private var finished: some View {
+        HStack(spacing: RetainMetrics.panelFooterButtonGap) {
+            Text(verbatim: RecordingRailCopy.line(for: shell.session.phase))
+                .retainStyle(RetainTypography.buttonPanelFooter)
+                .foregroundStyle(
+                    shell.session.phase.isFailure ? RetainPalette.redInk : RetainPalette.inkLabel
+                )
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(RetainMetrics.railFooterPadding)
+        .overlay(alignment: .top) { RetainDivider(colour: RetainPalette.lineControlBorder) }
+    }
+
+    private var running: some View {
         HStack(spacing: RetainMetrics.panelFooterButtonGap) {
             Button(action: holdOrContinue) {
                 Text(verbatim: holdOrContinueLabel)
@@ -136,5 +188,38 @@ struct TranscriptRailLines: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(RetainMetrics.railBodyRecording)
+    }
+}
+
+
+// MARK: -
+
+nonisolated enum RecordingRailCopy {
+
+    /// One line saying what is happening to the recording now that it has
+    /// stopped. The percentages come from the passes themselves.
+    static func line(for phase: LectureSession.Phase) -> String {
+        switch phase {
+        case .preparingModels:
+            String(localized: "Loading the speech models …",
+                   comment: "Recording rail footer while the speech models are being fetched")
+        case .transcribing(let fraction):
+            String(localized: "Writing the transcript · \(percent(fraction)) %",
+                   comment: "Recording rail footer during the batch transcription pass")
+        case .separatingSpeakers(let fraction):
+            String(localized: "Separating the speakers · \(percent(fraction)) %",
+                   comment: "Recording rail footer during diarization")
+        case .done:
+            String(localized: "Finished. The notes are in the library.",
+                   comment: "Recording rail footer once everything has run")
+        case .failed(let reason):
+            reason
+        case .idle, .recording:
+            ""
+        }
+    }
+
+    private static func percent(_ fraction: Double) -> Int {
+        Int((max(0, min(1, fraction)) * 100).rounded())
     }
 }

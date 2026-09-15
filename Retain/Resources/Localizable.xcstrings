@@ -482,6 +482,10 @@
       "comment": "Button that ends a recording and starts the summary",
       "extractionState": "manual"
     },
+    "Finished. The notes are in the library.": {
+      "comment": "Recording rail footer once everything has run",
+      "extractionState": "manual"
+    },
     "General": {
       "comment": "Settings section heading\nSettings sidebar row",
       "extractionState": "manual"
@@ -564,6 +568,10 @@
     },
     "Loading %@ …": {
       "comment": "Model status while the server reads the model into memory",
+      "extractionState": "manual"
+    },
+    "Loading the speech models …": {
+      "comment": "Recording rail footer while the speech models are being fetched",
       "extractionState": "manual"
     },
     "Local language model": {
@@ -938,6 +946,10 @@
       "comment": "Status bar menu header during diarization",
       "extractionState": "manual"
     },
+    "Separating the speakers · %lld %": {
+      "comment": "Recording rail footer during diarization",
+      "extractionState": "manual"
+    },
     "Settings": {
       "comment": "Button that opens the settings window\nSettings window title",
       "extractionState": "manual"
@@ -1132,6 +1144,10 @@
     },
     "Writing notes · %1$lld of %2$lld": {
       "comment": "Progress while the language model works through a finished recording",
+      "extractionState": "manual"
+    },
+    "Writing the transcript · %lld %": {
+      "comment": "Recording rail footer during the batch transcription pass",
       "extractionState": "manual"
     },
     "You · %@": {

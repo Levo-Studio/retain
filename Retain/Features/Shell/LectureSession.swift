@@ -26,6 +26,13 @@ final class LectureSession {
         case separatingSpeakers(Double)
         case done
         case failed(String)
+
+        /// Whether this is a state a reader has to act on. Asked by the
+        /// recording rail, which paints its footer line red for one.
+        var isFailure: Bool {
+            if case .failed = self { return true }
+            return false
+        }
     }
 
     private(set) var phase: Phase = .idle
@@ -329,6 +336,15 @@ final class LectureSession {
     func stop() async {
         guard phase == .recording else { return }
 
+        // **The phase moves before anything is awaited**, and that is the whole
+        // of the Finish button appearing to do nothing. Closing the writer and
+        // letting the streaming model finish its last utterance take seconds,
+        // and all of it used to happen while `phase` still said `.recording` —
+        // so the window went on drawing a running lecture with a running clock,
+        // and the button could be pressed again and start a second stop on top
+        // of the first, because this guard still passed.
+        phase = .transcribing(0)
+
         // `finish` drains the writer one last time, so the blocks that close
         // the lecture are already in the stream by the time it returns and
         // `releaseLive` can wait for them.
@@ -341,8 +357,6 @@ final class LectureSession {
             phase = .done
             return
         }
-
-        phase = .transcribing(0)
 
         let pass = LectureTranscription(models: prepared.batch)
         do {
