@@ -194,6 +194,23 @@ struct RecordingDetailModelTests {
         #expect(RecordingPresentation.title(of: model.recording) != "")
     }
 
+    /// Clicking into the name and clicking straight back out is the ordinary
+    /// accident, and it has to cost nothing — the field saves on losing focus,
+    /// so an unchanged name reaching `rename` is the common case and not the
+    /// odd one.
+    @Test("Saving an unchanged name changes nothing")
+    func renamingToTheSameName() async throws {
+        let (model, database) = try await loadedWithStore()
+        let id = try #require(model.recording.id)
+        let before = try #require(model.recording.topic)
+
+        await model.rename(to: before)
+
+        #expect(model.recording.topic == before)
+        let stored = try await LibraryRepository(database).recording(id)
+        #expect(stored?.topic == before)
+    }
+
     @Test("The recording moves to another course in the same term")
     func moving() async throws {
         let (model, database) = try await loadedWithStore()

@@ -300,6 +300,11 @@ struct DetailMetaStrip: View {
                 // focus in the same pass that creates it is a focus on a view
                 // AppKit has not been told about yet, and it does not take.
                 .task { isTopicFocused = true }
+                // Losing focus already saves, and a click on the notes or the
+                // tabs does not take focus away from a text field — see the
+                // modifier. Without it an edit opened by accident stayed open
+                // for the rest of the session.
+                .endsEditingOnClickOutside(isEditing: isEditingTopic) { commitTopic() }
         } else {
             Text(verbatim: RecordingPresentation.title(of: model.recording))
                 .retainStyle(RetainTypography.metaValue)
