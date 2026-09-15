@@ -55,7 +55,7 @@ final class RecordingEngine {
     private var ring: AudioRingBuffer?
     private var writer: RecordingWriter?
     private var watcher: InputDeviceWatcher?
-    private var drainTimer: DispatchSourceTimer?
+    private var drainTimer: DrainTimer?
     private var tappedFormat: AVAudioFormat?
 
     /// Four seconds at 48 kHz float, one channel. Sized so that a stall on the
@@ -250,15 +250,15 @@ final class RecordingEngine {
 
     private func startDraining() {
         stopDraining()
-        let timer = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
-        timer.schedule(deadline: .now() + Self.drainInterval, repeating: Self.drainInterval, leeway: .milliseconds(50))
-        timer.setEventHandler { [weak self] in
+        // The handler is built here rather than written inline in the call, and
+        // `DrainTimer` takes it as `@Sendable`. Inline it was inferred
+        // `@MainActor` — this file's default — and the runtime check that
+        // inference compiles in trapped on the first tick. See `DrainTimer`.
+        drainTimer = DrainTimer(interval: Self.drainInterval) { [weak self] in
             // Reading `writer` off the main actor would be a data race, so the
             // hop is real work rather than ceremony. It is 10 Hz.
-            Task { @MainActor [weak self] in self?.writer?.drain() }
+            Task { @MainActor in self?.writer?.drain() }
         }
-        timer.resume()
-        drainTimer = timer
     }
 
     private func stopDraining() {
