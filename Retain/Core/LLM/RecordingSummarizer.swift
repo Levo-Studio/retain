@@ -90,14 +90,7 @@ actor RecordingSummarizer {
             as: NoteReduction.NotesAnswer.self
         )
 
-        return NoteReduction.notes(
-            from: reply.answer,
-            blocks: notes,
-            // Handed on so each section can be anchored to the minute it is
-            // about, rather than to a share of the recording.
-            transcript: transcript,
-            markers: markers
-        )
+        return NoteReduction.notes(from: reply.answer, markers: markers)
     }
 
     /// Refuses a reduce that cannot fit before spending minutes on it.

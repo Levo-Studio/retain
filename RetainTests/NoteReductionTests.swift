@@ -443,35 +443,67 @@ struct NoteReductionTests {
         }
     }
 
-    @Test("The notes are the model's Markdown, held to the subset")
-    func notesCarryTheMarkdown() {
+    @Test("The notes are the model's own sections, held to the subset")
+    func notesCarryTheSections() {
         let answer = NoteReduction.NotesAnswer(
             topic: "Virtueller Speicher und Paging",
-            markdown: "# Seitenersetzung\nDie Auswahl entscheidet über die **Trefferrate**."
+            sections: [
+                .init(startsAt: "0:00", markdown: "# Seitenersetzung\nDie Auswahl entscheidet über die **Trefferrate**."),
+            ]
         )
 
-        let notes = NoteReduction.notes(from: answer, blocks: cards(2))
+        let notes = NoteReduction.notes(from: answer)
 
         #expect(notes.topic == "Virtueller Speicher und Paging")
+        // `#` is held down to `##`: the subset the notes are drawn in has one
+        // heading level.
         #expect(notes.markdown.hasPrefix("## Seitenersetzung"))
-        #expect(notes.blocks.count == 2)
+        #expect(notes.blocks.count == 1)
     }
 
-    @Test("The cards stay with the notes, because the rail is read from them")
-    func cardsAreKept() {
-        let answer = NoteReduction.NotesAnswer(topic: "Paging", markdown: "## Alles\nAbsatz.")
-        let notes = NoteReduction.notes(from: answer, blocks: cards(3))
+    @Test("A block starts where the model said it does")
+    func blocksTakeTheirTimeFromTheAnswer() {
+        let answer = NoteReduction.NotesAnswer(
+            topic: "Paging",
+            sections: [
+                .init(startsAt: "0:00", markdown: "## Eins\nAbsatz mit **Begriff**."),
+                .init(startsAt: "3:00", markdown: "## Zwei\nAbsatz mit **Anderes**."),
+                .init(startsAt: "6:00", markdown: "## Drei\nAbsatz mit **Drittes**."),
+            ]
+        )
 
-        #expect(notes.chapters.map(\.title) == ["Überschrift 1", "Überschrift 2", "Überschrift 3"])
+        let notes = NoteReduction.notes(from: answer)
+
+        // Copied from the transcript by the model, not recovered from the
+        // Markdown by searching for each section's bold term — which is what
+        // this used to do, invented share of the recording and all.
+        #expect(notes.chapters.map(\.title) == ["Eins", "Zwei", "Drei"])
         #expect(notes.chapters.map(\.time) == [0, 180, 360])
+    }
+
+    @Test("An hour-long recording keeps its hours")
+    func longTimestampsAreRead() {
+        #expect(NoteReduction.seconds(from: "0:00") == 0)
+        #expect(NoteReduction.seconds(from: "12:40") == 760)
+        #expect(NoteReduction.seconds(from: "1:05:30") == 3930)
+        // Anything unreadable lands at the start rather than refusing the
+        // section: a chapter row at zero is worse than nothing, and no notes
+        // are worse than both.
+        #expect(NoteReduction.seconds(from: "bald") == 0)
+        #expect(NoteReduction.seconds(from: "") == 0)
     }
 
     @Test("Markers come along in time order")
     func markersAreSorted() {
-        let answer = NoteReduction.NotesAnswer(topic: "Paging", markdown: "## Alles\nAbsatz.")
+        let answer = NoteReduction.NotesAnswer(
+            topic: "Paging",
+            sections: [
+                .init(startsAt: "0:00", markdown: "## Eins\nAbsatz mit **Begriff**."),
+                .init(startsAt: "3:00", markdown: "## Zwei\nAbsatz mit **Anderes**."),
+            ]
+        )
         let notes = NoteReduction.notes(
             from: answer,
-            blocks: cards(2),
             markers: [RecordingMarker(time: 300, text: "b"), RecordingMarker(time: 100, text: "a")]
         )
 
@@ -479,13 +511,33 @@ struct NoteReductionTests {
         #expect(notes.chapters.map(\.hasMarker) == [true, true])
     }
 
+    @Test("An answer with no sections is a rung that failed")
+    func emptySectionsAreUnusable() {
+        // The one shape this answer can take that parses and says nothing. It
+        // has to reach the ladder as a failure — being stored as an empty set
+        // is what put "No notes yet" over a lecture the model had read in full.
+        #expect(NoteReduction.NotesAnswer(topic: "Paging", sections: []).isUsable == false)
+        #expect(
+            NoteReduction.NotesAnswer(
+                topic: "Paging",
+                sections: [.init(startsAt: "0:00", markdown: "## Nur eine Überschrift")]
+            ).isUsable == false
+        )
+        #expect(
+            NoteReduction.NotesAnswer(
+                topic: "Paging",
+                sections: [.init(startsAt: "0:00", markdown: "## Eins\nEin Absatz mit **Begriff** darin.")]
+            ).isUsable
+        )
+    }
+
     @Test("A refused topic leaves the recording without one")
     func refusedTopicsBecomeNil() {
         let answer = NoteReduction.NotesAnswer(
             topic: "Zusammenfassung der Vorlesung",
-            markdown: "## Alles\nAbsatz."
+            sections: [.init(startsAt: "0:00", markdown: "## Alles\nEin Absatz mit **Begriff**.")]
         )
-        #expect(NoteReduction.notes(from: answer, blocks: cards(1)).topic == nil)
+        #expect(NoteReduction.notes(from: answer).topic == nil)
     }
 
     /// Worse notes than a reduce produces, and far better than none.
@@ -522,15 +574,15 @@ struct NoteReductionTests {
     func missingTopicIsTolerated() throws {
         let answer = try StructuredJSON.decode(
             NoteReduction.NotesAnswer.self,
-            from: "{\"markdown\":\"## Eins\\nAbsatz.\"}"
+            from: "{\"sections\":[{\"starts_at\":\"0:00\",\"markdown\":\"## Eins\\nAbsatz.\"}]}"
         )
 
         #expect(answer.topic.isEmpty)
-        #expect(NoteReduction.notes(from: answer, blocks: []).topic == nil)
+        #expect(NoteReduction.notes(from: answer).topic == nil)
     }
 
     @Test("An answer with no notes in it is not an answer")
-    func missingMarkdownFails() {
+    func missingSectionsFails() {
         #expect(throws: (any Error).self) {
             try StructuredJSON.decode(NoteReduction.NotesAnswer.self, from: "{\"topic\":\"Paging\"}")
         }

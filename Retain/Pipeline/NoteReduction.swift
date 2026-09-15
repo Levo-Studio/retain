@@ -161,9 +161,14 @@ nonisolated enum NoteReduction {
         characters. No verb, no sentence, no full stop. Never a generic label such as \
         "Zusammenfassung", "Vorlesung" or "Notizen".
 
-        markdown — three to eight sections in the order things were said. Merge \
-        consecutive drafts that turned out to be about the same thing; split one that \
-        covered two. Each section is, in this order and nothing else:
+        sections — three to eight of them, in the order things were said. Each has a \
+        starts_at and a markdown.
+
+        starts_at — the timestamp in front of the transcript line that section begins \
+        at, copied exactly as it appears there, for example 12:40. It is what a reader \
+        clicks to hear that part again, so copy it rather than estimating it.
+
+        markdown — one section, in this order and nothing else:
 
         1. one heading line beginning with "## "
         2. one or two sentences of plain text
@@ -230,9 +235,27 @@ nonisolated enum NoteReduction {
                     )
                 ),
                 (
-                    "markdown",
-                    JSONSchema.string(
-                        "The notes as Markdown: three to eight sections in the order things were said, each a '## ' heading naming that part of the lesson, then one or two sentences, then two to six '- ' items carrying the content — every definition, rule, date, figure, name and task that was said, with every number kept. One **bold** term per section. No other Markdown, and never placeholder text."
+                    "sections",
+                    JSONSchema.array(
+                        of: JSONSchema.object(
+                            "One section of the notes.",
+                            [
+                                (
+                                    "starts_at",
+                                    JSONSchema.string(
+                                        "Where this section begins, copied from the timestamp in front of the transcript line it starts at. Exactly as it appears there, for example 12:40."
+                                    )
+                                ),
+                                (
+                                    "markdown",
+                                    JSONSchema.string(
+                                        "The section as Markdown: a '## ' heading naming that part of the lesson, then one or two sentences, then two to six '- ' items carrying the content — every definition, rule, date, figure, name and task that was said, with every number kept. One **bold** term. No other Markdown, and never placeholder text."
+                                    )
+                                ),
+                            ]
+                        ),
+                        "Three to eight sections, in the order things were said.",
+                        maximum: 8
                     )
                 ),
             ]
@@ -267,12 +290,44 @@ nonisolated enum NoteReduction {
     /// What the model sends back for the whole recording.
     nonisolated struct NotesAnswer: Hashable, Sendable, Codable {
 
-        var topic: String
-        var markdown: String
+        /// One section of the notes, as the model wrote it.
+        ///
+        /// **The model says where a section starts; Retain does not work it
+        /// out.** The structure used to be recovered from the Markdown by
+        /// string matching — headings found by their `##`, the subject found by
+        /// its asterisks, the minute found by searching the transcript for that
+        /// word, and a share of the recording invented when the search failed.
+        /// Every one of those is a guess about an answer whose author was right
+        /// there and had the timestamps in front of it.
+        nonisolated struct Section: Hashable, Sendable, Codable {
 
-        init(topic: String, markdown: String) {
+            /// Where in the recording this section begins, as it appears in the
+            /// transcript the model was given: `mm:ss`, or `h:mm:ss`.
+            var startsAt: String
+
+            /// The section as Markdown, heading and all.
+            var markdown: String
+
+            enum CodingKeys: String, CodingKey {
+                case startsAt = "starts_at"
+                case markdown
+            }
+        }
+
+        var topic: String
+        var sections: [Section]
+
+        /// The notes as one document, for export, for search and for the chat.
+        ///
+        /// Assembled from the sections rather than asked for twice: two fields
+        /// holding the same notes are two things that can disagree.
+        var markdown: String {
+            sections.map(\.markdown).joined(separator: "\n\n")
+        }
+
+        init(topic: String, sections: [Section]) {
             self.topic = topic
-            self.markdown = markdown
+            self.sections = sections
         }
 
         init(from decoder: any Decoder) throws {
@@ -281,7 +336,11 @@ nonisolated enum NoteReduction {
             // that produced no notes is a failed reduce, and a recording with
             // no topic is a recording the library draws by its date.
             topic = try container.decodeIfPresent(String.self, forKey: .topic) ?? ""
-            markdown = try container.decode(String.self, forKey: .markdown)
+            sections = try container.decode([Section].self, forKey: .sections)
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case topic, sections
         }
     }
 
@@ -309,33 +368,62 @@ nonisolated enum NoteReduction {
 
     // MARK: - Reduce: cards become notes
 
-    /// - Parameters:
-    ///   - blocks: the draft cards, where there were any. Empty now — nothing
-    ///     is summarised while a lecture runs — and the finished blocks are cut
-    ///     out of the answer's own headings instead.
-    ///   - transcript: what the model was given, for anchoring each block to
-    ///     the minute it is about. See `NoteSections`.
+    /// The finished notes, as the model wrote them.
+    ///
+    /// **The blocks come from the answer and nothing is inferred.** They used
+    /// to be the draft cards passed through, which returned an empty list once
+    /// there were no drafts — the Markdown came back, the blocks did not,
+    /// nothing was stored, and the window said "No notes yet" over a lecture
+    /// the model had just read in full. The fix after that was worse: the
+    /// sections were recovered from the Markdown by string matching and their
+    /// times by searching the transcript for each section's bold term, with an
+    /// invented share of the recording when the search failed. Every one of
+    /// those is a guess about an answer whose author had the timestamps in
+    /// front of it and could simply be asked.
     static func notes(
         from answer: NotesAnswer,
-        blocks: [NoteBlock],
-        transcript: [TranscriptLine] = [],
         markers: [RecordingMarker] = []
     ) -> RecordingNotes {
-        let markdown = NoteMarkdown.sanitised(answer.markdown)
-
-        // **The blocks come from the answer, not from the drafts.** Passing the
-        // drafts through worked for as long as there were drafts; handed an
-        // empty array it returned one, so the Markdown came back and the block
-        // list did not. Nothing was stored, and the window said "No notes yet"
-        // over a lecture the model had just answered about in full.
-        let cut = NoteSections.blocks(from: markdown, transcript: transcript)
+        let blocks = answer.sections.enumerated().map { index, section in
+            NoteBlock(
+                number: index + 1,
+                markdown: NoteMarkdown.sanitised(section.markdown),
+                start: seconds(from: section.startsAt),
+                // Up to where the next one begins. The last runs to the end of
+                // what there is, which the caller knows and this does not.
+                end: index + 1 < answer.sections.count
+                    ? seconds(from: answer.sections[index + 1].startsAt)
+                    : .greatestFiniteMagnitude,
+                state: .written
+            )
+        }
 
         return RecordingNotes(
             topic: topic(from: answer.topic),
-            markdown: markdown,
-            blocks: cut.isEmpty ? blocks : cut,
+            markdown: blocks.map(\.markdown).joined(separator: "\n\n"),
+            blocks: blocks,
             markers: markers.sorted { $0.time < $1.time }
         )
+    }
+
+    /// `mm:ss` or `h:mm:ss` back into seconds — the inverse of `timestamp(_:)`,
+    /// which is the format the transcript is handed to the model in and the
+    /// format the model is asked to copy back.
+    ///
+    /// Anything that is not one of those is zero rather than a refusal: a
+    /// section whose time could not be read is still a section worth reading,
+    /// and the chapter row for it lands at the start instead of nowhere.
+    static func seconds(from timestamp: String) -> TimeInterval {
+        let parts = timestamp
+            .trimmingCharacters(in: .whitespaces)
+            .split(separator: ":")
+            .compactMap { Int($0) }
+
+        switch parts.count {
+        case 2: return TimeInterval(parts[0] * 60 + parts[1])
+        case 3: return TimeInterval(parts[0] * 3600 + parts[1] * 60 + parts[2])
+        default: return 0
+        }
     }
 
     /// The notes when the reduce could not be run at all — the model was
@@ -471,6 +559,19 @@ nonisolated enum NoteReduction {
 }
 
 // MARK: - When a note is a note
+
+nonisolated extension NoteReduction.NotesAnswer: UsableAnswer {
+
+    /// Notes with no sections in them are not notes.
+    ///
+    /// It is the one shape this answer can take that parses and says nothing,
+    /// and it has to reach the ladder as a failure rather than being stored as
+    /// an empty set — that was the bug: a lecture the model had read in full,
+    /// and a window saying "No notes yet" over it.
+    var isUsable: Bool {
+        sections.contains { NoteReduction.isUsableNote($0.markdown) }
+    }
+}
 
 nonisolated extension NoteReduction.BlockAnswer: UsableAnswer {
 
