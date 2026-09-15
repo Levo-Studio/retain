@@ -309,15 +309,31 @@ nonisolated enum NoteReduction {
 
     // MARK: - Reduce: cards become notes
 
+    /// - Parameters:
+    ///   - blocks: the draft cards, where there were any. Empty now — nothing
+    ///     is summarised while a lecture runs — and the finished blocks are cut
+    ///     out of the answer's own headings instead.
+    ///   - transcript: what the model was given, for anchoring each block to
+    ///     the minute it is about. See `NoteSections`.
     static func notes(
         from answer: NotesAnswer,
         blocks: [NoteBlock],
+        transcript: [TranscriptLine] = [],
         markers: [RecordingMarker] = []
     ) -> RecordingNotes {
-        RecordingNotes(
+        let markdown = NoteMarkdown.sanitised(answer.markdown)
+
+        // **The blocks come from the answer, not from the drafts.** Passing the
+        // drafts through worked for as long as there were drafts; handed an
+        // empty array it returned one, so the Markdown came back and the block
+        // list did not. Nothing was stored, and the window said "No notes yet"
+        // over a lecture the model had just answered about in full.
+        let cut = NoteSections.blocks(from: markdown, transcript: transcript)
+
+        return RecordingNotes(
             topic: topic(from: answer.topic),
-            markdown: NoteMarkdown.sanitised(answer.markdown),
-            blocks: blocks,
+            markdown: markdown,
+            blocks: cut.isEmpty ? blocks : cut,
             markers: markers.sorted { $0.time < $1.time }
         )
     }
