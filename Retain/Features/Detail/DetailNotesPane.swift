@@ -24,21 +24,27 @@ struct DetailNotesPane: View {
                 .retainStyle(RetainTypography.noteParagraphDetail)
                 .foregroundStyle(RetainPalette.inkDim)
 
-            switch model.noteWriting {
-            case .running(let done, let total):
-                Text(verbatim: DetailCopy.writingNotes(done: done, total: total))
-                    .retainStyle(RetainTypography.captionSmall)
-                    .foregroundStyle(RetainPalette.inkLabel)
+            // The button is drawn in **every** state, disabled while a run is
+            // in flight. It used to be hidden by the running case, so a run
+            // that never came back — a model still being read off disk, a
+            // server that went away mid-answer — left the pane with a line of
+            // progress text and no control at all, which reads as the button
+            // having disappeared.
+            HStack(spacing: RetainMetrics.settingsModelRowGap) {
+                writeButton
 
-            case .failed(let reason):
+                if case .running(let done, let total) = model.noteWriting {
+                    Text(verbatim: DetailCopy.writingNotes(done: done, total: total))
+                        .retainStyle(RetainTypography.captionSmall)
+                        .foregroundStyle(RetainPalette.inkLabel)
+                }
+            }
+
+            if case .failed(let reason) = model.noteWriting {
                 Text(verbatim: reason)
                     .retainStyle(RetainTypography.captionSmall)
                     .foregroundStyle(RetainPalette.redInk)
                     .fixedSize(horizontal: false, vertical: true)
-                writeButton
-
-            case .idle:
-                writeButton
             }
         }
     }
