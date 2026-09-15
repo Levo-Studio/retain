@@ -264,6 +264,22 @@ final class LibraryModel {
     ///
     /// Read here rather than in the view: the chips have to arrive correct
     /// rather than filling in a frame later, and the view has no repository.
+    /// Counts what deleting a recording would cost, then opens the
+    /// confirmation.
+    ///
+    /// Read before the sheet rather than inside it, so the dialog arrives able
+    /// to say what is lost instead of filling the number in a frame later —
+    /// which is a confirmation somebody can agree to before it has told them
+    /// anything.
+    func confirmDeletion(of recording: Recording) async {
+        guard let impact = await LibraryEditing.impact(of: recording, in: libraryRepository) else { return }
+        sheet = .deleteRecording(
+            recording,
+            courseName: selectedCourse?.course.name ?? "",
+            impact: impact
+        )
+    }
+
     /// Counts what deleting a term would cost, then opens the confirmation.
     ///
     /// The count is read before the sheet rather than inside it, so the dialog

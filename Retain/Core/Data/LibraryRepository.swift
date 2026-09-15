@@ -170,6 +170,95 @@ nonisolated struct LibraryRepository: Sendable {
         }
     }
 
+    /// What deleting one recording would take with it.
+    ///
+    /// Counted before the confirmation rather than after, for the same reason
+    /// as a term's: this is the only copy. The audio is usually already gone by
+    /// the time a recording is in the library — it is deleted as soon as it has
+    /// been transcribed — so what is at stake is the transcript, the notes, and
+    /// the marks the user typed during the lecture.
+    func deletionImpact(ofRecording recordingID: Int64) async throws -> RecordingDeletion {
+        try await database.writer.read { db in
+            func count(_ table: String) throws -> Int {
+                try Int.fetchOne(
+                    db,
+                    sql: "SELECT COUNT(*) FROM \(table) WHERE recordingID = ?",
+                    arguments: [recordingID]
+                ) ?? 0
+            }
+
+            let row = try Row.fetchOne(
+                db,
+                sql: "SELECT state, filename FROM recording WHERE id = ?",
+                arguments: [recordingID]
+            )
+
+            return RecordingDeletion(
+                transcriptLines: try count("transcriptLine"),
+                noteBlocks: try count("noteBlock"),
+                annotations: try count("annotation"),
+                highlights: try count("highlight"),
+                hasAudio: (row?["filename"] as String?).map { !$0.isEmpty } ?? false,
+                isRecording: (row?["state"] as String?) == RecordingState.recording.rawValue
+            )
+        }
+    }
+
+    /// Deletes one recording and everything filed under it.
+    ///
+    /// The row cascades to the transcript, the notes, the annotations and the
+    /// highlights, and the FTS indexes follow through their own triggers. What
+    /// the database cannot do is remove the audio, so the file name is read
+    /// first and handed back for the caller to unlink — the repository does not
+    /// touch the disk, and `TransientAudio` is the only thing that does.
+    ///
+    /// **A recording that is still running is refused.** The microphone is open
+    /// and the writer holds the file; deleting the row underneath it would
+    /// leave a recording writing into a lecture that no longer exists.
+    @discardableResult
+    func delete(recording recordingID: Int64) async throws -> String? {
+        try await database.writer.write { db in
+            let row = try Row.fetchOne(
+                db,
+                sql: "SELECT state, filename FROM recording WHERE id = ?",
+                arguments: [recordingID]
+            )
+            guard let row else { return nil }
+            guard (row["state"] as String?) != RecordingState.recording.rawValue else { return nil }
+
+            let filename = row["filename"] as String?
+            try db.execute(sql: "DELETE FROM recording WHERE id = ?", arguments: [recordingID])
+            return filename
+        }
+    }
+
+    /// Settles recordings that a quit or a crash left mid-flight.
+    ///
+    /// A row in `recording`, `transcribing` or `summarizing` is a claim that
+    /// something is happening to it — and at launch nothing is, because the
+    /// process that was doing it is gone. The library drew such a row as
+    /// "recording" in red for ever, which is a lie the user cannot act on and
+    /// cannot clear.
+    ///
+    /// They are settled to `done` rather than deleted. Whatever was written
+    /// before the process died is real and belongs to the user; deciding for
+    /// them that a short lecture is worthless is not this function's call. The
+    /// row can now be deleted from the table if they want it gone.
+    ///
+    /// **Only safe at launch**, before anything starts recording — which is
+    /// the only place it is called. Run later it would settle a lecture that is
+    /// genuinely in progress.
+    @discardableResult
+    func settleInterruptedRecordings() async throws -> Int {
+        try await database.writer.write { db in
+            try db.execute(
+                sql: "UPDATE recording SET state = ? WHERE state <> ?",
+                arguments: [RecordingState.done.rawValue, RecordingState.done.rawValue]
+            )
+            return db.changesCount
+        }
+    }
+
     // MARK: - Courses
 
     /// The courses of one term, in the order they were created, each with the

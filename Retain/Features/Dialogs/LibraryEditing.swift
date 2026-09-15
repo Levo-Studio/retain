@@ -34,12 +34,18 @@ nonisolated enum LibrarySheet: Identifiable, Equatable, Sendable {
     /// anything.
     case deleteTerm(Term, TermDeletion)
 
+    /// One recording, the course it belongs to, and what deleting it would
+    /// cost. The course name travels with it because "Delete recording" alone
+    /// does not say which lecture is about to go.
+    case deleteRecording(Recording, courseName: String, impact: RecordingDeletion)
+
     var id: String {
         switch self {
         case .nameTerm(let term): "term-\(term?.id ?? 0)"
         case .newCourse(let termID): "course-\(termID ?? 0)"
         case .editCourse(let course, _): "edit-course-\(course.id ?? 0)"
         case .deleteTerm(let term, _): "delete-term-\(term.id ?? 0)"
+        case .deleteRecording(let recording, _, _): "delete-recording-\(recording.id ?? 0)"
         }
     }
 }
@@ -97,6 +103,33 @@ enum LibraryEditing {
     static func delete(_ term: Term, in library: LibraryRepository) async {
         guard let id = term.id else { return }
         try? await library.delete(term: id)
+    }
+
+    /// Deletes a recording, and the audio file if there still is one.
+    ///
+    /// Two steps because they are two stores: the row and everything cascading
+    /// off it go in one transaction, and the file on disk is unlinked
+    /// afterwards using the name that transaction handed back. A file left
+    /// behind would be a recording nothing will ever read again.
+    static func delete(_ recording: Recording, in library: LibraryRepository) async {
+        guard let id = recording.id else { return }
+
+        // `try?` on a call that already returns an optional gives a double
+        // optional: the outer is "the write threw", the inner is "there was no
+        // file". Flattened here rather than nested, because they mean the same
+        // thing to this function — nothing to unlink.
+        let filename = (try? await library.delete(recording: id)) ?? nil
+        guard let filename, !filename.isEmpty else { return }
+
+        try? FileManager.default.removeItem(
+            at: RecordingStore.directory.appendingPathComponent(filename)
+        )
+    }
+
+    /// Reads what deleting a recording would cost.
+    static func impact(of recording: Recording, in library: LibraryRepository) async -> RecordingDeletion? {
+        guard let id = recording.id else { return nil }
+        return try? await library.deletionImpact(ofRecording: id)
     }
 
     /// Reads what a deletion would cost, for the sheet that is about to ask.
@@ -178,6 +211,22 @@ extension View {
                             guard let library else { return }
                             Task {
                                 await LibraryEditing.delete(term, in: library)
+                                await reload()
+                            }
+                        },
+                        cancel: { sheet.wrappedValue = nil }
+                    )
+
+                case .deleteRecording(let recording, let courseName, let impact):
+                    DeleteRecordingDialog(
+                        recording: recording,
+                        courseName: courseName,
+                        impact: impact,
+                        delete: {
+                            sheet.wrappedValue = nil
+                            guard let library else { return }
+                            Task {
+                                await LibraryEditing.delete(recording, in: library)
                                 await reload()
                             }
                         },

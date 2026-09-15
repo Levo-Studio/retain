@@ -2,6 +2,10 @@
   "sourceLanguage": "en",
   "strings": {
     "": {},
+    "%1$@ holds %2$lld lines of transcript, %3$lld note blocks and %4$lld annotations.": {
+      "comment": "Delete-recording dialog body counting what would be lost",
+      "extractionState": "manual"
+    },
     "%@ W": {
       "comment": "The live power reading beside a running recording, in watts",
       "extractionState": "manual"
@@ -16,6 +20,10 @@
     },
     "%@ holds one recording. Deleting the term deletes it, with its transcript, notes and annotations.": {
       "comment": "Delete-term dialog body naming the single recording that would be lost",
+      "extractionState": "manual"
+    },
+    "%@ is being recorded right now. Stop it first; a recording cannot be deleted while the microphone is open.": {
+      "comment": "Delete-recording dialog body when the lecture is still being recorded",
       "extractionState": "manual"
     },
     "%@ of %@": {
@@ -414,6 +422,14 @@
       "comment": "Button beside the term picker that opens the delete-term confirmation",
       "extractionState": "manual"
     },
+    "Delete recording": {
+      "comment": "Delete-recording dialog title, and the button that confirms it",
+      "extractionState": "manual"
+    },
+    "Delete recording…": {
+      "comment": "Context menu item on a recording row that opens the delete confirmation",
+      "extractionState": "manual"
+    },
     "Delete term": {
       "comment": "Delete-term dialog title, and the button that confirms it",
       "extractionState": "manual"
@@ -660,6 +676,10 @@
     },
     "Nothing was recorded in %@. Deleting the term removes it and nothing else.": {
       "comment": "Delete-term dialog body for a term that holds nothing",
+      "extractionState": "manual"
+    },
+    "Nothing was written down for %@. Deleting it removes the row and nothing else.": {
+      "comment": "Delete-recording dialog body for a recording that holds nothing",
       "extractionState": "manual"
     },
     "Open System Settings": {
@@ -960,6 +980,14 @@
     },
     "Testing …": {
       "comment": "Status line while the connection test is running",
+      "extractionState": "manual"
+    },
+    "The audio has not been transcribed yet and goes with it.": {
+      "comment": "Delete-recording dialog sentence for a recording whose audio is still on disk",
+      "extractionState": "manual"
+    },
+    "The audio was deleted when the lecture was transcribed, so this is the only copy.": {
+      "comment": "Delete-recording dialog sentence for a recording whose audio is already gone",
       "extractionState": "manual"
     },
     "The keychain holds something Retain cannot read as an API key.": {

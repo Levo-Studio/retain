@@ -23,6 +23,11 @@ nonisolated enum LibraryCopy {
         String(localized: "Record", comment: "Button that starts a recording")
     }
 
+    /// The recording table's context menu.
+    static var deleteRecording: String {
+        String(localized: "Delete recording…", comment: "Context menu item on a recording row that opens the delete confirmation")
+    }
+
     static var deleteTerm: String {
         String(localized: "Delete term…", comment: "Context menu item on the term picker that opens the delete-term confirmation")
     }

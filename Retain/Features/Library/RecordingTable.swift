@@ -32,6 +32,16 @@ struct RecordingTable: View {
                                 ) {
                                     model.open(recording)
                                 }
+                                // Right-click rather than a button in the row:
+                                // board 05 draws the table as four columns of
+                                // text with no control in them, and the course
+                                // rows in the sidebar beside it already carry
+                                // their action the same way.
+                                .contextMenu {
+                                    Button(LibraryCopy.deleteRecording) {
+                                        Task { await model.confirmDeletion(of: recording) }
+                                    }
+                                }
                             }
                         }
                     }
