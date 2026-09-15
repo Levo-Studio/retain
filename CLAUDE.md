@@ -7,6 +7,12 @@ repository.
 It is the first file every agent reads. If you have read only this file and
 `docs/design/`, you know enough not to get anything badly wrong.
 
+**Read `CONTEXT.md` second.** This file says how to work here; that one says
+where the work actually stands — what the current pipeline is, which traps have
+already cost a day, what changed recently and why, and what is left. It exists
+so a session can be closed at any point without the next one starting from
+nothing.
+
 ## What Retain is
 
 Retain is a **menu-bar app for macOS**. It records the lesson through the
@@ -318,6 +324,29 @@ microphone.
 Every fix ships with a test that fails **without** the fix. The counter-check is
 mandatory: pull the fix, watch it go red, put it back, watch it go green. A
 regression test nobody has seen fail is decoration.
+
+## Keeping `CONTEXT.md` true
+
+`CONTEXT.md` is the handover. Its promise is that somebody who reads it knows
+what the last session knew, so it is **updated in the same commit as the change
+it describes**, never in a sweep afterwards — a sweep is how it becomes a file
+nobody trusts, and an untrusted handover is worse than none.
+
+What belongs in it:
+
+- a decision that changes how the app works, especially one that contradicts
+  something written down elsewhere;
+- a trap that cost real time, with the symptom it presents as — the symptom is
+  the part that saves the next person;
+- what is deliberately unfinished, and why;
+- a standing instruction from the owner about how work is delivered.
+
+What does not: a list of commits (git has one), anything the code already says
+plainly, or a roadmap.
+
+If a change makes a sentence in it wrong, fix the sentence. A handover that
+describes a pipeline the app no longer has is the same bug as a comment that
+promises what the code does not do.
 
 ## Commits
 
