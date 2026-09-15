@@ -27,14 +27,23 @@ final class SettingsModel {
     // MARK: - Language model
 
     var address: String {
-        didSet { Defaults[.languageModelAddress] = address }
+        didSet {
+            Defaults[.languageModelAddress] = address
+            // The pill in three windows is showing what the old address said.
+            LanguageModelPresence.shared.refresh()
+        }
     }
 
     /// `nil` while the address is one Retain may open, the reason otherwise.
     var addressRejection: String? { BaseAddress.rejection(for: address) }
 
     var selectedModel: String {
-        didSet { Defaults[.languageModelName] = selectedModel }
+        didSet {
+            Defaults[.languageModelName] = selectedModel
+            // Choosing a model is the moment to start reading it into memory,
+            // rather than the first block of the next lecture.
+            LanguageModelPresence.shared.refresh()
+        }
     }
 
     private(set) var availableModels: [LanguageModelDescriptor] = []

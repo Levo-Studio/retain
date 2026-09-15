@@ -46,7 +46,13 @@ nonisolated final class LMStudioBackend: SummarizationBackend {
         try check(response)
 
         let list = try decoder.decode(OpenAIModelList.self, from: data)
-        return list.data.map { LanguageModelDescriptor(id: $0.id, contextLength: nil) }
+        return list.data.map {
+            LanguageModelDescriptor(
+                id: $0.id,
+                contextLength: $0.loadedContextLength ?? $0.maxContextLength,
+                state: LanguageModelDescriptor.State.from($0.state)
+            )
+        }
     }
 
     func loadedContextLength(of model: String) async throws -> Int? {
@@ -60,6 +66,31 @@ nonisolated final class LMStudioBackend: SummarizationBackend {
 
         let detail = try decoder.decode(NativeModel.self, from: data)
         return detail.loadedContextLength
+    }
+
+    /// Asks the server to read the model into memory.
+    ///
+    /// One token, no schema, no history: the cheapest request that makes LM
+    /// Studio load a model it is not holding. It returns when the model is
+    /// there, which for a 20B model off a cold disk is twenty seconds — and the
+    /// waiting is exactly what this exists to make visible.
+    func load(_ model: String) async throws {
+        guard !model.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw SummarizationError.noModelSelected
+        }
+
+        var request = URLRequest(url: endpoint.chatCompletions)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        authorise(&request)
+        request.httpBody = try JSONEncoder().encode(WarmUpRequest(model: model))
+
+        // No timeout of our own: the load is the slow part and cutting it short
+        // would report a working server as unreachable.
+        request.timeoutInterval = 600
+
+        let (_, response) = try await transport.send(request)
+        try check(response)
     }
 
     func checkConnection() async throws -> ConnectionReport {
@@ -334,6 +365,11 @@ private nonisolated struct OpenAIModelList: Decodable {
 
     nonisolated struct Model: Decodable {
         let id: String
+        /// `/api/v0/models` says whether a model is in memory; the OpenAI
+        /// `/v1/` shape does not, and then this is absent.
+        let state: String?
+        let loadedContextLength: Int?
+        let maxContextLength: Int?
     }
 
     let data: [Model]
@@ -342,4 +378,28 @@ private nonisolated struct OpenAIModelList: Decodable {
 private nonisolated struct NativeModel: Decodable {
     let id: String
     let loadedContextLength: Int?
+}
+
+
+/// The smallest thing that makes LM Studio load a model.
+///
+/// `max_tokens: 1` and a single word: the answer is thrown away, and what is
+/// wanted is the side effect of the server having to have the model in memory
+/// to produce one at all.
+private nonisolated struct WarmUpRequest: Encodable {
+
+    let model: String
+    let messages: [Message] = [Message(role: "user", content: "Hi")]
+    let maxTokens = 1
+    let stream = false
+
+    nonisolated struct Message: Encodable {
+        let role: String
+        let content: String
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case model, messages, stream
+        case maxTokens = "max_tokens"
+    }
 }

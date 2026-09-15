@@ -46,6 +46,8 @@ struct LibraryView: View {
         // No title in the bar. It is at the top of the sidebar, on the same
         // left edge as the course rows — see `RetainWindowTitle`.
         RetainTitleBar {
+            ModelStatusPill()
+
             recordButton
 
             // The same picker the settings boards draw, in the box this title

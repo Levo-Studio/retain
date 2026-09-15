@@ -26,6 +26,10 @@
       "comment": "Delete-recording dialog body when the lecture is still being recorded",
       "extractionState": "manual"
     },
+    "%@ is not on the server": {
+      "comment": "Model status when the chosen model is not one the server offers",
+      "extractionState": "manual"
+    },
     "%@ of %@": {
       "comment": "Byte counts on the speech model download card",
       "extractionState": "manual"
@@ -374,6 +378,10 @@
       "comment": "Rail segment showing the conversation about this recording",
       "extractionState": "manual"
     },
+    "Checking …": {
+      "comment": "Model status while the server is being asked",
+      "extractionState": "manual"
+    },
     "Choose a model": {
       "comment": "Model picker label before a model has been chosen",
       "extractionState": "manual"
@@ -546,6 +554,14 @@
       "comment": "Header of the popover's transcript section",
       "extractionState": "manual"
     },
+    "Loaded with room for %lld tokens": {
+      "comment": "Model status tooltip naming the context the model was loaded with",
+      "extractionState": "manual"
+    },
+    "Loading %@ …": {
+      "comment": "Model status while the server reads the model into memory",
+      "extractionState": "manual"
+    },
     "Local language model": {
       "comment": "Settings section heading",
       "extractionState": "manual"
@@ -624,6 +640,14 @@
     },
     "No microphone found": {
       "comment": "Input picker label when the Mac has no audio input at all",
+      "extractionState": "manual"
+    },
+    "No model": {
+      "comment": "Model status in the title bar before a model has been chosen",
+      "extractionState": "manual"
+    },
+    "No model connection": {
+      "comment": "Model status when the server could not be reached",
       "extractionState": "manual"
     },
     "No model is chosen. Pick one in Settings under Local language model.": {

@@ -103,6 +103,13 @@ final class RetainApp: NSObject, NSApplicationDelegate {
         // for why there is no timer — and it happens off the launch path
         // because an interrupted deletion is not a reason to delay the status
         // item appearing.
+        // Asked for up front, and loaded if it is cold. The first summary of a
+        // lecture used to be what made LM Studio read a 20B model off disk —
+        // twenty seconds during which Retain looked like it was doing nothing,
+        // and looked exactly the same as a Retain that was never going to
+        // answer.
+        LanguageModelPresence.shared.refresh()
+
         if let database {
             Task {
                 // A row still claiming to be recording, transcribing or

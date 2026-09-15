@@ -35,6 +35,11 @@ nonisolated final class StubBackend: SummarizationBackend, @unchecked Sendable {
         contextLength
     }
 
+    /// A stub has nothing to read off disk. What the real one does here is wait
+    /// — see `LMStudioBackend.load` — which is exactly why it is a verb of its
+    /// own rather than something the first summary happens to trigger.
+    func load(_ model: String) async throws {}
+
     func checkConnection() async throws -> ConnectionReport {
         ConnectionReport(modelCount: 1, latency: 0.24)
     }

@@ -30,6 +30,13 @@ nonisolated final class SettingsStubBackend: SummarizationBackend, @unchecked Se
 
     func loadedContextLength(of model: String) async throws -> Int? { nil }
 
+    /// A stub server has nothing to read off disk, so loading is instant — but
+    /// it still fails when the whole backend is failing, because a test that
+    /// says "the server is down" means down for this too.
+    func load(_ model: String) async throws {
+        if let failure { throw failure }
+    }
+
     func checkConnection() async throws -> ConnectionReport {
         if let failure { throw failure }
         return report ?? ConnectionReport(modelCount: models.count, latency: 0)

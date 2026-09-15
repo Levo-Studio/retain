@@ -59,6 +59,13 @@ struct RecordingTitleBar: View {
                 .retainStyle(RetainTypography.titleBarStatus)
                 .foregroundStyle(RetainPalette.inkLabel)
 
+            // Beside the microphone's state, because they are the same
+            // question about the other half of the pipeline: the notes are
+            // being written by a model, and whether that model is there is
+            // something the lecturer wants to know at the start of the lesson
+            // rather than at the end of it.
+            ModelStatusPill()
+
             timerPill
         }
         .padding(RetainMetrics.titleBarPadding)

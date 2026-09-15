@@ -44,6 +44,11 @@ struct RecordingDetailView: View {
 
     private var titleBar: some View {
         RetainTitleBar {
+            // The chat and the notes both live off this model, and this window
+            // is where a reader asks it questions. Whether it is going to
+            // answer belongs where they are looking.
+            ModelStatusPill()
+
             Button {
                 NotesExport.run(markdown: model.notes.markdown, recording: model.recording, course: courseName)
             } label: {

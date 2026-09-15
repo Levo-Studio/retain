@@ -145,11 +145,34 @@ nonisolated struct StructuredReply<Answer: Sendable>: Sendable {
 /// A model the server offers.
 nonisolated struct LanguageModelDescriptor: Hashable, Sendable, Identifiable {
 
+    /// Whether the server has the model in memory.
+    ///
+    /// LM Studio lists every model it knows about, loaded or not, and the first
+    /// request to an unloaded one waits for it to be read off disk — twenty
+    /// seconds for a 20B model, during which Retain looked like it was doing
+    /// nothing. Knowing which state a model is in is what lets that be said out
+    /// loud instead.
+    enum State: String, Hashable, Sendable {
+        case loaded
+        case notLoaded = "not-loaded"
+        case loading
+
+        /// Anything the server says that is none of the above. Reported as
+        /// not-loaded rather than as an error: a state Retain does not know is
+        /// not a reason to refuse to talk to the model.
+        static func from(_ raw: String?) -> State {
+            guard let raw else { return .notLoaded }
+            return State(rawValue: raw) ?? .notLoaded
+        }
+    }
+
     /// What the request has to say in its `model` field.
     let id: String
 
     /// `nil` when the server did not say.
     let contextLength: Int?
+
+    var state: State = .notLoaded
 }
 
 /// The answer to "Test connection".
@@ -276,6 +299,16 @@ nonisolated protocol SummarizationBackend: Sendable {
     /// 128k model at 4k by default — and it is the loaded one that decides
     /// whether a recording fits.
     func loadedContextLength(of model: String) async throws -> Int?
+
+    /// Asks the server to read the model into memory, and returns once it is
+    /// there.
+    ///
+    /// LM Studio loads on first use, so this is a request with nothing in it —
+    /// the cheapest thing that makes the server do the work. It is a separate
+    /// verb because the waiting is the point: a summary that takes twenty
+    /// seconds because the model was cold is indistinguishable from one that
+    /// is not coming, and only Retain can tell the user which it is.
+    func load(_ model: String) async throws
 
     func checkConnection() async throws -> ConnectionReport
 
