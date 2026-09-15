@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // MARK: - Root
@@ -36,10 +37,40 @@ struct RecordingTitleBar: View {
     let session: LectureSession
     let power: PowerDrawMonitor
 
+    private var libraryTitle: String {
+        String(localized: "Library", comment: "Title of the library window")
+    }
+
+    /// Opens the library. Through the responder chain, the way the application
+    /// menu's own Library item does, so the window needs no plumbing for it.
+    private func openLibrary() {
+        NSApp.sendAction(#selector(RetainApp.openLibrary(_:)), to: nil, from: nil)
+    }
+
     var body: some View {
         HStack(spacing: RetainMetrics.titleBarGroupGap) {
             // The traffic lights are the system's and are drawn over this, so
-            // the left of the bar is deliberately empty.
+            // the strip reserves their width rather than drawing into it.
+            RetainTrafficLightSpace()
+
+            // The way back. The recording window covers the library and there
+            // was no route between them except the menu bar — which is where
+            // the recording was started from, and not a place anybody looks for
+            // a back button. It does not stop the recording; the lecture goes
+            // on with nothing on screen, which is the ordinary case.
+            Button(action: openLibrary) {
+                Text(verbatim: RetainGlyph.back + " " + libraryTitle)
+            }
+            .buttonStyle(
+                RetainSecondaryButtonStyle(
+                    textStyle: RetainTypography.titleBarStatus,
+                    padding: RetainMetrics.titleBarButtonPadding,
+                    cornerRadius: RetainMetrics.radiusExportButton,
+                    isFilled: true
+                )
+            )
+            .fixedSize()
+
             Spacer(minLength: 0)
 
             HStack(spacing: RetainMetrics.titleBarSpeechGap) {

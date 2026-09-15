@@ -27,6 +27,12 @@ nonisolated enum RetainGlyph {
     /// The `+` in front of "New course". The export draws it as part of the
     /// button's text, one space in front of the label.
     static let add = "+"
+
+    /// The arrow in front of the recording window's way back to the library.
+    /// Written the same way as the two above — part of the button's text, one
+    /// space in front of the label — rather than as an SF Symbol, which would
+    /// sit on a different baseline and a different optical weight.
+    static let back = "‹"
 }
 
 // MARK: - Field chrome
