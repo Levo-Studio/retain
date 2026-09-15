@@ -44,6 +44,11 @@ struct AnnotationComposer: View {
             cornerRadius: RetainMetrics.radiusAnnotationBarRecording,
             padding: RetainMetrics.annotationBarRecordingPadding
         )
+        // **Inset from the window.** The board draws this bar inside a notes
+        // column that had its own padding; the column is gone and the bar was
+        // left flush against three edges of the window, its rounded corners
+        // running into the frame.
+        .padding(RetainMetrics.annotationBarInset)
         .onChange(of: shell.annotationFocusRequests) { _, _ in
             isFocused = true
         }

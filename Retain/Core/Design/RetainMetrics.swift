@@ -224,6 +224,11 @@ nonisolated enum RetainMetrics {
 
     static let transcriptFullPadding = edges(28, 34, 28)
 
+    /// Around the annotation bar, now that it sits against the window rather
+    /// than inside a notes column. The transcript's own side inset, so the bar
+    /// and the words above it share an edge.
+    static let annotationBarInset = edges(0, 34, 22)
+
     /// Between two lines of the live transcript.
     static let transcriptFullLineGap: CGFloat = 14
 
@@ -238,6 +243,11 @@ nonisolated enum RetainMetrics {
     /// Wide enough for the moving dots, so the three rows do not shift
     /// sideways as each step starts and finishes.
     static let processingMarkerColumn: CGFloat = 26
+
+    /// The progress bar under a step that reports a real fraction, at the
+    /// speech-model download's own height.
+    static let processingBarHeight: CGFloat = 4
+    static let processingBarGap: CGFloat = 8
 
     /// Between the "no notes yet" sentence and what can be done about it.
     static let detailEmptyNotesGap: CGFloat = 14

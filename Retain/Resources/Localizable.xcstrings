@@ -790,6 +790,10 @@
       "comment": "Title bar button that has the model write the notes again",
       "extractionState": "manual"
     },
+    "Reading %lld lines of transcript": {
+      "comment": "Shown while the model writes the notes, saying how much it was given",
+      "extractionState": "manual"
+    },
     "Ready": {
       "comment": "Popover header when nothing is recording",
       "extractionState": "manual"
@@ -1156,10 +1160,6 @@
     },
     "Writing an answer": {
       "comment": "Accessibility label of the three-dot typing indicator",
-      "extractionState": "manual"
-    },
-    "Writing notes · %1$lld of %2$lld": {
-      "comment": "Progress while the language model works through a finished recording",
       "extractionState": "manual"
     },
     "Writing the notes": {

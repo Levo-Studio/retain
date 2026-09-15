@@ -47,23 +47,52 @@ struct ProcessingPane: View {
     private func row(_ step: ProcessingStep) -> some View {
         let state = step.state(in: phase)
 
-        return HStack(alignment: .firstTextBaseline, spacing: RetainMetrics.processingRowGap) {
-            marker(for: state)
-                .frame(width: RetainMetrics.processingMarkerColumn, alignment: .leading)
+        return VStack(alignment: .leading, spacing: RetainMetrics.processingBarGap) {
+            HStack(alignment: .firstTextBaseline, spacing: RetainMetrics.processingRowGap) {
+                marker(for: state)
+                    .frame(width: RetainMetrics.processingMarkerColumn, alignment: .leading)
 
-            Text(verbatim: step.title)
-                .retainStyle(RetainTypography.fieldText)
-                .foregroundStyle(ink(for: state))
+                Text(verbatim: step.title)
+                    .retainStyle(RetainTypography.fieldText)
+                    .foregroundStyle(ink(for: state))
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
 
+                if case .running(let fraction) = state, let fraction {
+                    Text(verbatim: ProcessingCopy.percent(fraction))
+                        .retainStyle(RetainTypography.captionSmall)
+                        .foregroundStyle(RetainPalette.inkLabel)
+                        .monospacedDigit()
+                }
+            }
+
+            // A bar only where there is a real fraction behind it. The model
+            // writing the notes reports none, and a bar that moves on a guess
+            // is a lie the eye believes — that step keeps its moving dots and
+            // nothing else.
             if case .running(let fraction) = state, let fraction {
-                Text(verbatim: ProcessingCopy.percent(fraction))
-                    .retainStyle(RetainTypography.captionSmall)
-                    .foregroundStyle(RetainPalette.inkLabel)
-                    .monospacedDigit()
+                bar(fraction)
             }
         }
+    }
+
+    /// The progress of one pass, as the export draws a progress bar: a track
+    /// and a fill, at the speech-model download's own height and radius.
+    private func bar(_ fraction: Double) -> some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width * max(0, min(1, fraction))
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(RetainPalette.surfaceInsetControl)
+
+                Capsule()
+                    .fill(RetainPalette.accent)
+                    .frame(width: width)
+            }
+        }
+        .frame(height: RetainMetrics.processingBarHeight)
+        .padding(.leading, RetainMetrics.processingMarkerColumn + RetainMetrics.processingRowGap)
     }
 
     @ViewBuilder
