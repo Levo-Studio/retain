@@ -1,5 +1,6 @@
 import Defaults
 import Foundation
+import GRDB
 import Observation
 
 /// What the settings window is bound to.
@@ -296,6 +297,22 @@ final class SettingsModel {
     }
 
     // MARK: - General
+
+    /// Follows the library for as long as the pane is open.
+    ///
+    /// The General pane is one of the two places a term or a course is created,
+    /// and the library window is the other. Without this, each of them showed
+    /// its own idea of the list until Retain was quit.
+    func followLibrary() async {
+        guard let library else { return }
+        do {
+            for try await _ in library.changes {
+                await loadLibrary()
+            }
+        } catch {
+            await loadLibrary()
+        }
+    }
 
     func loadLibrary() async {
         guard let library else { return }

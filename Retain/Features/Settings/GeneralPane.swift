@@ -48,7 +48,7 @@ struct GeneralPane: View {
                 }
             }
         }
-        .task { await model.loadLibrary() }
+        .task { await model.followLibrary() }
         .onChange(of: model.selectedTermID) { _, _ in
             Task { await model.loadCourses() }
         }

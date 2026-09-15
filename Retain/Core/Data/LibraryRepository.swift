@@ -39,6 +39,10 @@ nonisolated struct LibraryRepository: Sendable {
         self.database = database
     }
 
+    /// The store behind this repository, for a caller that wants to be told
+    /// when it changes rather than to read it. See `LibraryChanges`.
+    var changes: AsyncValueObservation<Int64> { LibraryChanges.stream(in: database) }
+
     // MARK: - Terms
 
     /// Newest first, which is the order the picker opens in.

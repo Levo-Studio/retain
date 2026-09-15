@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import Observation
 
 /// Board 05, and the one thing it is really about: **the term is chosen once at
@@ -51,6 +52,29 @@ final class LibraryModel {
     /// exactly how it was reported.
     var sheet: LibrarySheet?
 
+    /// Starts a recording for the course the window is on.
+    ///
+    /// Filled in by the window controller, which is the only object that can
+    /// see both the library and the shell. `nil` while there is no shell —
+    /// the button is then drawn unavailable rather than doing nothing, which is
+    /// the difference between a control that is off and one that is broken.
+    var onRecord: ((Course, Term) -> Void)?
+
+    /// Whether Retain is free to start one. Asked of the shell through a
+    /// closure for the same reason as above.
+    var canRecord: () -> Bool = { false }
+
+    /// True when there is a course to record and nothing in the way.
+    var isRecordable: Bool {
+        selectedCourse != nil && selectedTerm?.id != nil && onRecord != nil && canRecord()
+    }
+
+    /// The verb behind the button.
+    func record() {
+        guard let course = selectedCourse?.course, let term = selectedTerm else { return }
+        onRecord?(course, term)
+    }
+
     /// Opening a recording, optionally at a second — which is what a search hit
     /// is: a recording and a place in it.
     var onOpenRecording: ((Recording, TimeInterval?) -> Void)?
@@ -66,11 +90,77 @@ final class LibraryModel {
         self.database = database
     }
 
-    /// Reads everything back after a dialog wrote something. A sheet that
-    /// dismisses onto a stale sidebar is the same bug as one that did nothing.
+    /// Reads everything back after a dialog wrote something.
+    ///
+    /// The observation in `follow()` would deliver this on its own; it is still
+    /// called directly so the sheet dismisses onto a sidebar that has already
+    /// changed rather than one that changes a frame later.
     func reloadAfterEditing() async {
-        await load()
+        await refresh()
     }
+
+    /// Follows the library for as long as the window is open.
+    ///
+    /// **The window used to read once and keep what it read.** A course created
+    /// in Settings did not appear here, a deleted term stayed in the picker,
+    /// and the only way to see either was to quit Retain and open it again.
+    ///
+    /// The first element of the stream arrives immediately, so this is the
+    /// window's load as well as its subscription — one code path rather than a
+    /// load followed by a subscription with a gap between them.
+    func follow() async {
+        do {
+            for try await _ in LibraryChanges.stream(in: database) {
+                await refresh()
+            }
+        } catch {
+            // The observation stopped. Read once more so the window is not left
+            // showing whatever it happened to have.
+            await refresh()
+        }
+    }
+
+    /// Re-reads everything, **keeping what the user is looking at**.
+    ///
+    /// The difference from `load()` is the whole point: a course added in
+    /// another window must not move the library off the course being read. The
+    /// term and the course are kept when they still exist, and only fall back
+    /// when they do not — which is what deleting them looks like from here.
+    func refresh() async {
+        let library = LibraryRepository(database)
+        guard let all = try? await library.terms() else { return }
+        terms = all
+
+        // The term the window is already on wins, so a course added somewhere
+        // else does not move the reader to another half-year. `??` cannot be
+        // used for the fallbacks: its right side is an autoclosure, and one of
+        // them is a database read.
+        var opening = terms.first { $0.id == selectedTerm?.id }
+        if opening == nil { opening = try? await library.currentTerm() }
+        if opening == nil { opening = terms.first }
+
+        guard let term = opening else {
+            clearSelection()
+            return
+        }
+        selectedTerm = term
+
+        guard let termID = term.id else {
+            clearSelection()
+            return
+        }
+        courses = (try? await library.courses(in: termID)) ?? []
+
+        if let course = courses.first(where: { $0.id == selectedCourse?.id }) ?? courses.first {
+            await select(course: course)
+        } else {
+            selectedCourse = nil
+            recordings = []
+        }
+
+        if isShowingResults { search() }
+    }
+
 
     // MARK: - Loading
 
@@ -145,24 +235,6 @@ final class LibraryModel {
         do {
             recordings = try await LibraryRepository(database).recordings(in: courseID, during: termID)
         } catch {
-            recordings = []
-        }
-    }
-
-    /// Called after a course or a recording was added elsewhere — the
-    /// new-course dialog, or a recording that has just stopped.
-    func refresh() async {
-        guard let term = selectedTerm, let termID = term.id else { return }
-        let library = LibraryRepository(database)
-        courses = (try? await library.courses(in: termID)) ?? courses
-
-        if let selected = selectedCourse?.id,
-           let again = courses.first(where: { $0.id == selected }) {
-            await select(course: again)
-        } else if let first = courses.first {
-            await select(course: first)
-        } else {
-            selectedCourse = nil
             recordings = []
         }
     }

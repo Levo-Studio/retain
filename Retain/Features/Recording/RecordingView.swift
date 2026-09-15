@@ -23,7 +23,7 @@ struct RecordingRoot: View {
             .frame(maxHeight: .infinity)
         }
         .background(RetainPalette.surfaceWindow)
-        .task { await shell.courses.reload() }
+        .task { await shell.courses.follow() }
     }
 }
 

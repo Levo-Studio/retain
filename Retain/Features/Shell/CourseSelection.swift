@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import Observation
 
 /// What the ready state's field is a picker for.
@@ -84,6 +85,28 @@ final class CourseSelection {
             self.selected = courses.first { $0.id == selected.id }
         } else {
             selected = courses.first
+        }
+    }
+
+
+    /// Follows the library for as long as the popover or the recording window
+    /// is on screen.
+    ///
+    /// `reload()` on open was not enough. The popover stays up while somebody
+    /// adds a course in Settings, and the recording window's picker outlives
+    /// both — so a course created in another window was missing from the field
+    /// until Retain was quit.
+    func follow() async {
+        guard let library else {
+            await reload()
+            return
+        }
+        do {
+            for try await _ in library.changes {
+                await reload()
+            }
+        } catch {
+            await reload()
         }
     }
 

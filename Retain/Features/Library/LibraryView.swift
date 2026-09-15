@@ -22,7 +22,7 @@ struct LibraryView: View {
             .frame(maxHeight: .infinity)
         }
         .background(RetainPalette.surfaceWindow)
-        .task { await model.load() }
+        .task { await model.follow() }
         .libraryEditingSheet(
             $model.sheet,
             terms: model.terms,
@@ -43,7 +43,11 @@ struct LibraryView: View {
     }
 
     private var titleBar: some View {
-        RetainTitleBar(title: LibraryCopy.windowTitle) {
+        // No title in the bar. It is at the top of the sidebar, on the same
+        // left edge as the course rows — see `RetainWindowTitle`.
+        RetainTitleBar {
+            recordButton
+
             // The same picker the settings boards draw, in the box this title
             // bar draws it in: a rounder corner and tighter padding, with the
             // accent dot in front of the name.
@@ -78,6 +82,40 @@ struct LibraryView: View {
                 }
             }
         }
+    }
+
+    /// Starts a recording for the course in the sidebar, without going back to
+    /// the menu bar to pick the same course a second time.
+    ///
+    /// Not on board 05, which draws the library as a place to read what was
+    /// already recorded. It is here because the library is where somebody sits
+    /// with the course they are about to be taught open in front of them, and
+    /// the alternative was the status item, a second picker, and the same
+    /// choice made twice.
+    ///
+    /// The red outline is the mark Retain gives a control that starts or ends a
+    /// recording — the same one board 02 draws on "Stop" and "Finish".
+    private var recordButton: some View {
+        Button {
+            model.record()
+        } label: {
+            HStack(spacing: RetainMetrics.titleBarPillGap) {
+                RetainStatusDot(colour: RetainPalette.redRecording, diameter: RetainMetrics.statusDotSmall)
+                Text(verbatim: LibraryCopy.record)
+            }
+        }
+        .buttonStyle(
+            RetainSecondaryButtonStyle(
+                textStyle: RetainTypography.titleBarButton,
+                padding: RetainMetrics.titleBarButtonPadding,
+                cornerRadius: RetainMetrics.radiusExportButton,
+                isFilled: true,
+                ink: RetainPalette.redInk,
+                border: RetainPalette.redBorderSwatch
+            )
+        )
+        .disabled(!model.isRecordable)
+        .fixedSize()
     }
 
     // MARK: - Search, then either the table or the results
@@ -124,6 +162,8 @@ struct LibrarySidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: RetainMetrics.sidebarRowGap) {
+            RetainWindowTitle(title: LibraryCopy.windowTitle, inset: RetainMetrics.sidebarRowLibrary)
+
             termHeader
 
             if model.courses.isEmpty {
