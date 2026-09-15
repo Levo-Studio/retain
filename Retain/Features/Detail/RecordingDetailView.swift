@@ -71,7 +71,10 @@ struct RecordingDetailView: View {
         // sat under was empty on the left — the owner asked for the two to be
         // one, with the name where it already was and the controls where they
         // already were.
-        RetainTitleBar(title: DetailCopy.joined(courseName, started)) {
+        RetainTitleBar(
+            title: DetailCopy.joined(courseName, started),
+            bottomGap: RetainMetrics.titleBarBottomGap
+        ) {
             // The chat and the notes both live off this model, and this window
             // is where a reader asks it questions. Whether it is going to
             // answer belongs where they are looking.
@@ -120,9 +123,15 @@ struct RecordingDetailView: View {
             tab(.notes, title: DetailCopy.notesTab)
             tab(.transcript, title: DetailCopy.transcriptTab)
             Spacer(minLength: 0)
+            // Out past the tab bar's own inset, so it lines up with the Export
+            // button in the bar above rather than sitting short of it. The
+            // tabs keep the 34 the export draws them at; the padding is put on
+            // the leading edge alone rather than on both.
             railToggle
+                .padding(.trailing, RetainMetrics.titleBarPadding.trailing)
         }
-        .padding(RetainMetrics.tabBarPadding)
+        .padding(.leading, RetainMetrics.tabBarPadding.leading)
+        .padding(.vertical, RetainMetrics.tabBarPadding.top)
         .background(RetainPalette.surfaceWindow)
         .overlay(alignment: .bottom) { RetainDivider() }
     }

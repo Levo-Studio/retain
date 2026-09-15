@@ -143,10 +143,15 @@ struct RetainTitleBar<Trailing: View>: View {
     /// top of it instead. See `RetainWindowTitle`.
     var title: String = ""
 
+    /// Room under the contents, for a bar that carries a name as well as
+    /// controls. See `RetainMetrics.titleBarBottomGap`.
+    var bottomGap: CGFloat = 0
+
     @ViewBuilder var trailing: Trailing
 
-    init(title: String = "", @ViewBuilder trailing: () -> Trailing) {
+    init(title: String = "", bottomGap: CGFloat = 0, @ViewBuilder trailing: () -> Trailing) {
         self.title = title
+        self.bottomGap = bottomGap
         self.trailing = trailing()
     }
 
@@ -171,6 +176,7 @@ struct RetainTitleBar<Trailing: View>: View {
         }
         .padding(RetainMetrics.titleBarPadding)
         .frame(height: RetainMetrics.titleBarHeight)
+        .padding(.bottom, bottomGap)
         .background(RetainPalette.surfaceTitleBar)
         .overlay(alignment: .bottom) { RetainDivider() }
     }

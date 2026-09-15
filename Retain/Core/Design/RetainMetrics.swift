@@ -128,6 +128,15 @@ nonisolated enum RetainMetrics {
     static let dialogWidth: CGFloat = 430
 
     static let titleBarHeight: CGFloat = 38
+
+    /// Extra room under the title bar's contents, where a window asks for it.
+    ///
+    /// **Not drawn.** The export's bar carries controls and nothing else, and
+    /// the detail window's now carries the recording's name as well — which
+    /// used to have a row of its own. At 38 points flat the name sits against
+    /// the rule under it, so that bar is given the gap back and the others are
+    /// left at the height they are drawn at.
+    static let titleBarBottomGap: CGFloat = 14
     static let titleBarPadding = horizontal(14)
     static let titleBarGap: CGFloat = 9
 
