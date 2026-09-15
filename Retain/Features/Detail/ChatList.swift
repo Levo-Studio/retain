@@ -163,7 +163,12 @@ struct ChatTurnView: View {
                 )
                 .fill(RetainPalette.surfaceChatBubble)
             }
-            .frame(maxWidth: width * RetainMetrics.chatBubbleMaxWidthFraction, alignment: .leading)
+            // Both alignments trailing, and the inner one is the one that was
+            // wrong. It put the bubble at the left of a box 86 % of the rail
+            // wide, and the outer frame then right-aligned that box — so a
+            // two-letter question sat in the middle of the rail with a hand's
+            // width of space to its right.
+            .frame(maxWidth: width * RetainMetrics.chatBubbleMaxWidthFraction, alignment: .trailing)
             .frame(maxWidth: .infinity, alignment: .trailing)
     }
 

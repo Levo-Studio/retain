@@ -427,8 +427,14 @@ final class RecordingDetailModel {
         isAnswering = true
         defer { isAnswering = false }
 
-        // The question shows in the rail the moment it is sent: the actor has
-        // already appended it, and the answer can take a small model a while.
+        // **Shown before the request, not after it.** The comment here used to
+        // say the question appears the moment it is sent, and it did not:
+        // `turns` was read back only once the answer had arrived, so typing a
+        // question and pressing Return produced nothing at all for as long as
+        // the model took. A local turn goes up now and the actor's own list
+        // replaces it when the answer lands.
+        turns.append(ChatTurn(author: .you, text: asked))
+
         do {
             _ = try await chat.ask(asked)
             turns = await chat.turns
