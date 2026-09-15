@@ -63,7 +63,11 @@ final class SpeechModels {
     /// **It gates the live transcript only.** The batch pass reads the whole
     /// file with no gate at all, so nothing said in the room is lost from the
     /// transcript of record because of this number.
-    nonisolated static let speechThreshold: Float = 0.5
+    /// Lowered again, to 0.3, after 0.5 still dropped a voice the microphone
+    /// was plainly picking up. The level meter moved and the words did not
+    /// arrive, which is the clearest evidence there is that the gate and not
+    /// the microphone was the problem.
+    nonisolated static let speechThreshold: Float = 0.3
 
     /// Chunk tier in milliseconds.
     ///
