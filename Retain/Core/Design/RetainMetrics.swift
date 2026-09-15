@@ -114,6 +114,16 @@ nonisolated enum RetainMetrics {
     /// Detail, transcript, library and settings all share one window size.
     static let detailWindowSize = CGSize(width: 1120, height: 700)
 
+    /// The smallest a window may be dragged to.
+    ///
+    /// Not in the export, which draws one size per board. Without a floor a
+    /// window can be pulled down to nothing and every fixed measure in it —
+    /// the 330-point rail, the meta strip's three columns — starts overlapping
+    /// the text. This is the width at which a collapsed rail still leaves a
+    /// readable column, and the height at which the title bar, the strip, the
+    /// tabs and two lines of notes are all still on screen.
+    static let windowMinimumSize = CGSize(width: 680, height: 420)
+
     static let popoverWidth: CGFloat = 470
     static let dialogWidth: CGFloat = 430
 
@@ -473,6 +483,15 @@ nonisolated enum RetainMetrics {
     /// font, because `ch` is a measure in the text's own zero.
     static let noteParagraphWidthRecording: CGFloat = 64
     static let noteParagraphWidthDetail: CGFloat = 70
+
+    /// The widest the detail measure grows to when the window is made wide.
+    ///
+    /// The export draws one window width and therefore one measure. On a
+    /// display twice that wide, 70ch leaves most of the column empty, and the
+    /// owner asked for the space to be used. It is a ceiling and not a target:
+    /// a line of prose stops being readable somewhere past a hundred
+    /// characters, so the column grows with the window and then stops.
+    static let noteParagraphWidthDetailWide: CGFloat = 96
     static let settingsDescriptionWidth: CGFloat = 70
 
     // MARK: - Opacity ladder

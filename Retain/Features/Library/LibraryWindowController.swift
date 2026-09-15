@@ -132,6 +132,7 @@ final class LibraryWindowController: NSObject, NSWindowDelegate {
         window.backgroundColor = .black
 
         window.setContentSize(size)
+        window.contentMinSize = RetainMetrics.windowMinimumSize
         window.center()
         window.delegate = self
         return window

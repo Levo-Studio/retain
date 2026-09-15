@@ -35,7 +35,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let hosting = NSHostingController(rootView: SettingsView(model: model, drawsTrafficLights: false))
 
         let window = NSWindow(contentViewController: hosting)
-        window.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
@@ -46,6 +46,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.backgroundColor = NSColor(RetainPalette.surfaceWindow)
 
         window.setContentSize(RetainMetrics.detailWindowSize)
+        window.contentMinSize = RetainMetrics.windowMinimumSize
         window.center()
         window.delegate = self
 

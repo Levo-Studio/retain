@@ -39,6 +39,14 @@ struct RetainMarkdownView: View {
 
     var layout: RetainNoteLayout = .detail
 
+    /// How wide the column actually is, when the caller knows.
+    ///
+    /// `nil` keeps the export's fixed measure. A caller that passes one gets a
+    /// measure that grows with it, between the drawn width and
+    /// `noteParagraphWidthDetailWide` — which is how a window dragged wider
+    /// fills with text instead of with gutter.
+    var available: CGFloat?
+
     /// Character ranges into `RetainMarkdown.plainText(of:)`.
     var highlights: [Range<Int>] = []
 
@@ -205,11 +213,20 @@ struct RetainMarkdownView: View {
 
     /// `64ch` and `70ch` resolved against the paragraph's own zero, because a
     /// `ch` is a measure in the text's font and not a point value.
+    ///
+    /// On the detail screen it is a floor and a ceiling rather than one number:
+    /// a column wider than the drawn measure takes as much of it as it has, up
+    /// to `noteParagraphWidthDetailWide`, and a narrower one is simply
+    /// narrower — `maxWidth` is what both ends of that are built on.
     private var paragraphWidth: CGFloat {
-        let measure = layout == .recording
-            ? RetainMetrics.noteParagraphWidthRecording
-            : RetainMetrics.noteParagraphWidthDetail
-        return RetainTypography.chWidth(of: paragraphStyle) * measure
+        let ch = RetainTypography.chWidth(of: paragraphStyle)
+        guard layout == .detail else {
+            return ch * RetainMetrics.noteParagraphWidthRecording
+        }
+
+        let drawn = ch * RetainMetrics.noteParagraphWidthDetail
+        guard let available else { return drawn }
+        return min(max(drawn, available), ch * RetainMetrics.noteParagraphWidthDetailWide)
     }
 
     private var headingInk: Color {

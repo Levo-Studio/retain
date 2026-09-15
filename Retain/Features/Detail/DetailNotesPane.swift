@@ -24,6 +24,11 @@ struct DetailNotesPane: View {
     /// geometry reader on each card and read by nothing else.
     @State private var tops: [Int: CGFloat] = [:]
 
+    /// How wide the column is, so the measure can grow into a window that was
+    /// dragged wider. Zero until it has been laid out once, which the renderer
+    /// reads as "no answer" and falls back to the drawn measure for.
+    @State private var columnWidth: CGFloat = 0
+
     /// The steps, while the model is working — **wherever it is working from**.
     ///
     /// It used to live inside the empty state, so it appeared only for a
@@ -113,6 +118,12 @@ struct DetailNotesPane: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(RetainMetrics.notesPaneDetail)
+                .onGeometryChange(for: CGFloat.self) { @Sendable proxy in
+                    proxy.size.width
+                } action: { width in
+                    columnWidth = max(0, width - RetainMetrics.notesPaneDetail.leading
+                        - RetainMetrics.notesPaneDetail.trailing)
+                }
             }
             .coordinateSpace(.named(Self.space))
             .scrollContentBackground(.hidden)
@@ -155,6 +166,7 @@ struct DetailNotesPane: View {
             RetainMarkdownView(
                 markdown: block.markdown,
                 layout: .detail,
+                available: columnWidth > 0 ? columnWidth : nil,
                 highlights: model.highlightRanges[block.number] ?? [],
                 highlightStyle: RetainNoteHighlightStyle(
                     background: RetainInteraction.highlightBackground,

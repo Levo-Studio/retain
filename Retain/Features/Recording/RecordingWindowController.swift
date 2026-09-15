@@ -47,7 +47,10 @@ final class RecordingWindowController: NSObject, NSWindowDelegate {
         let size = RetainMetrics.recordingWindowSize
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
+            // `.resizable` because a lecture is watched on whatever screen is
+            // in the room, and a window that cannot be made bigger wastes a
+            // large one and cannot be tucked into a corner of a small one.
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -72,6 +75,7 @@ final class RecordingWindowController: NSObject, NSWindowDelegate {
         }
         window.contentView = NSHostingView(rootView: root)
         window.setContentSize(size)
+        window.contentMinSize = RetainMetrics.windowMinimumSize
 
         return window
     }
