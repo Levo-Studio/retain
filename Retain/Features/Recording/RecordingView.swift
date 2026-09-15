@@ -14,8 +14,6 @@ struct RecordingRoot: View {
     /// see both this window and the library's.
     var openFinished: ((Int64) -> Void)?
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     /// **One window, three states, in the order a lecture goes through them.**
     ///
     /// While it runs there is the transcript and nothing else — no notes
@@ -24,8 +22,9 @@ struct RecordingRoot: View {
     /// and hands the lecture to its own window, where the notes, the chapters
     /// and the transcript tab live.
     ///
-    /// The three cross-fade rather than cut, because they are one thing
-    /// changing rather than three screens.
+    /// They swap instantly. Every one of them is drawn from something already
+    /// in memory, and a fade on a local change is Retain adding a delay to
+    /// something that is already there.
     var body: some View {
         VStack(spacing: 0) {
             RecordingTitleBar(shell: shell)
@@ -33,7 +32,6 @@ struct RecordingRoot: View {
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .animation(RetainMotion.reveal(reduceMotion: reduceMotion), value: stage)
         }
         .background(RetainPalette.surfaceWindow)
         .task { await shell.courses.follow() }
@@ -60,15 +58,12 @@ struct RecordingRoot: View {
         switch stage {
         case .recording:
             LiveTranscriptPane(shell: shell)
-                .transition(.opacity)
 
         case .processing:
             ProcessingPane(phase: shell.session.phase, title: lectureTitle)
-                .transition(.opacity)
 
         case .finished:
             FinishedPane(phase: shell.session.phase)
-                .transition(.opacity)
         }
     }
 

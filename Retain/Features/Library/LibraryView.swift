@@ -6,8 +6,6 @@ struct LibraryView: View {
 
     @Bindable var model: LibraryModel
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         VStack(spacing: 0) {
             titleBar
@@ -133,9 +131,6 @@ struct LibraryView: View {
         )
         .disabled(model.isLectureRunning ? false : !model.isRecordable)
         .fixedSize()
-        // The label and the dot change together, so the swap reads as one
-        // control changing its mind rather than two things happening.
-        .animation(RetainMotion.reveal(reduceMotion: reduceMotion), value: model.isLectureRunning)
     }
 
     // MARK: - Search, then either the table or the results

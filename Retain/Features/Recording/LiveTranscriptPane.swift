@@ -64,7 +64,6 @@ struct LiveTranscriptPane: View {
                     isNewest: line.id == newest
                 )
                 .id(line.id)
-                .transition(.opacity)
             }
         }
         .frame(maxWidth: RetainMetrics.transcriptFullColumn, alignment: .leading)

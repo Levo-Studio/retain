@@ -20,8 +20,6 @@ struct ProcessingPane: View {
     /// than working in the abstract.
     let title: String
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         VStack(alignment: .leading, spacing: RetainMetrics.processingGap) {
             Text(verbatim: ProcessingCopy.heading)
@@ -42,7 +40,6 @@ struct ProcessingPane: View {
         }
         .frame(maxWidth: RetainMetrics.processingColumn, alignment: .leading)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(RetainMotion.reveal(reduceMotion: reduceMotion), value: phase)
     }
 
     // MARK: - One step
