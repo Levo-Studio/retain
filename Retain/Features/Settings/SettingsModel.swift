@@ -265,12 +265,17 @@ final class SettingsModel {
         guard !hasLoadedAPIKey else { return }
 
         do {
-            apiKeyText = try keychain.read() ?? ""
+            // Through the shared cache where there is one, so opening the pane
+            // costs no access of its own: on a build whose signature the item
+            // does not recognise, every access is its own password sheet, and
+            // this used to be a second one on top of the backend's.
+            if let keyCache {
+                apiKeyText = keyCache.value() ?? ""
+            } else {
+                apiKeyText = try keychain.read() ?? ""
+            }
             hasStoredKey = !apiKeyText.isEmpty
             hasLoadedAPIKey = true
-            // One read, shared: the pane and the backend ask the same cache, so
-            // opening Settings does not cost a second prompt.
-            keyCache?.replace(with: apiKeyText.isEmpty ? nil : apiKeyText)
             apiKeyProblem = nil
         } catch {
             // Deliberately still `false`. The field does not mirror the item,
@@ -295,19 +300,18 @@ final class SettingsModel {
                 // and acting on it is how a key gets deleted by an app that was
                 // only trying to display it.
                 guard hasLoadedAPIKey else { return }
-                try keychain.delete()
-                hasStoredKey = false
             } else {
-                try keychain.write(trimmed)
-                hasStoredKey = true
                 // What is in the field is now what is stored, whatever the read
                 // did or did not manage earlier.
                 hasLoadedAPIKey = true
             }
-            // The backend reads the key once per launch and holds it, so a key
-            // changed here is handed over rather than left for a read that will
-            // not happen again.
-            keyCache?.replace(with: trimmed.isEmpty ? nil : trimmed)
+
+            if let keyCache {
+                try keyCache.write(trimmed)
+            } else {
+                if trimmed.isEmpty { try keychain.delete() } else { try keychain.write(trimmed) }
+            }
+            hasStoredKey = !trimmed.isEmpty
             apiKeyProblem = nil
         } catch {
             apiKeyProblem = Self.message(for: error)

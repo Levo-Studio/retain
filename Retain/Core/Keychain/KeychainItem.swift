@@ -82,24 +82,77 @@ nonisolated struct KeychainItem: Hashable, Sendable {
 
         guard let data = trimmed.data(using: .utf8) else { throw KeychainError.unexpectedData }
 
-        // Update before add, rather than delete before add: updating leaves the
-        // item's access control alone, where deleting and re-adding hands the
-        // new item whatever ACL the current process happens to imply.
-        let attributes: [CFString: Any] = [
-            kSecValueData: data,
-            kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-        ]
-
-        let updated = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        if updated == errSecSuccess { return }
-        guard updated == errSecItemNotFound else { throw KeychainError.from(updated) }
+        // **Replaced, not updated.** Updating leaves the item's access policy
+        // alone, and the policy is the thing that has to change: an item
+        // written by an earlier build names that build as the only program
+        // allowed to read it, so every later build got a password sheet.
+        // Re-entering the key is then the one action a user can take that
+        // fixes it, and it only fixes it if the item is made anew.
+        //
+        // Safe because the policy is set explicitly below rather than left to
+        // whatever the process implies, which is what the old comment here was
+        // worried about.
+        try delete()
 
         var addition = query
         addition[kSecValueData] = data
         addition[kSecAttrAccessible] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        if let access = Self.openAccess() {
+            addition[kSecAttrAccess] = access
+        }
 
         let added = SecItemAdd(addition as CFDictionary, nil)
         guard added == errSecSuccess else { throw KeychainError.from(added) }
+    }
+
+    /// An access policy that does not put a password sheet in front of a read.
+    ///
+    /// **The default policy names the binary that created the item**, and macOS
+    /// asks the user whenever a different one reads it. Every ad-hoc signed
+    /// build of Retain is a different binary, so every launch asked again, and
+    /// "Always Allow" never held — it allowed the build that had just been
+    /// replaced. Reported, reasonably, as being asked for a password every time
+    /// the app opens.
+    ///
+    /// An ACL built with no trusted applications means *any* application may
+    /// read the item without prompting, which is the trade being made here and
+    /// it is worth saying plainly: another program on this Mac could read the
+    /// key. What it guards is a token for a language model on `localhost`, and
+    /// the alternative on offer was a password sheet at every launch, which
+    /// teaches people to click through password sheets.
+    ///
+    /// Only applied when the item is **created**. An item that already exists
+    /// keeps whatever policy it has — see the update above — so this takes
+    /// effect the next time a key is entered.
+    private static func openAccess() -> SecAccess? {
+        var access: SecAccess?
+        guard SecAccessCreate("Retain" as CFString, nil, &access) == errSecSuccess,
+              let access
+        else { return nil }
+
+        // `SecAccessCreate` alone is not enough, and getting this wrong is
+        // worse than not trying: an **empty** trusted-application list means no
+        // application is trusted, so every read prompts — including Retain's
+        // own. A **nil** list on the ACL's contents is what means "any
+        // application, without asking", and it has to be set on the ACLs the
+        // access already carries.
+        guard let acls = SecAccessCopyMatchingACLList(access, kSecACLAuthorizationDecrypt) as? [SecACL] else {
+            return nil
+        }
+
+        for acl in acls {
+            var applications: CFArray?
+            var description: CFString?
+            var prompt = SecKeychainPromptSelector()
+            guard SecACLCopyContents(acl, &applications, &description, &prompt) == errSecSuccess else {
+                return nil
+            }
+            guard SecACLSetContents(acl, nil, description ?? "Retain" as CFString, prompt) == errSecSuccess else {
+                return nil
+            }
+        }
+
+        return access
     }
 
     /// Removes the item. Removing one that is not there succeeds.

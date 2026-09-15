@@ -60,4 +60,22 @@ nonisolated final class LanguageModelKey: @unchecked Sendable {
         defer { lock.unlock() }
         cached = nil
     }
+
+    /// Writes a key and keeps the cache in step, in one place.
+    ///
+    /// **Every touch of the item goes through here.** Settings used to read it
+    /// with its own `KeychainItem` while the backend read it through this
+    /// cache, so opening the pane cost a second access — and on a build whose
+    /// signature the item does not recognise, each access is its own password
+    /// sheet. One launch could ask three times.
+    func write(_ key: String) throws {
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            try item.delete()
+            replace(with: nil)
+        } else {
+            try item.write(trimmed)
+            replace(with: trimmed)
+        }
+    }
 }
